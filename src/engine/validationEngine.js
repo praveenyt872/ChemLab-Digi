@@ -1,0 +1,168 @@
+/**
+ * Validation Engine for ChemLab AI
+ * Analyzes observation readings and calculated results against physical laws,
+ * fluid mechanics principles, and apparatus bounds.
+ */
+
+export function validateObservationData(experimentConfig, observationRows = [], calculatedRows = []) {
+  const flags = [];
+  const validationRanges = experimentConfig.validation_ranges || {};
+  const expId = experimentConfig.experiment_id;
+
+  if (!observationRows || observationRows.length === 0) {
+    flags.push({
+      id: 'empty_table',
+      type: 'blue',
+      severity: 'info',
+      title: 'Empty Observation Table',
+      description: 'No readings entered yet. Enter physical lab observations or click "Load Sample Data".',
+      why: 'Live calculations, trend graphs, and AI validation require at least one trial reading row to execute.',
+      suggestion: null,
+      rowIndex: null,
+      field: null
+    });
+    return flags;
+  }
+
+  // Row by row inspection
+  observationRows.forEach((row, idx) => {
+    const rowNum = idx + 1;
+    const calcRow = calculatedRows[idx] || {};
+
+    // 1. Check for incomplete or missing fields
+    const trialInputs = experimentConfig.trial_inputs || [];
+    const missingFields = trialInputs.filter(input => {
+      const val = row[input.id];
+      return val === undefined || val === '' || val === null || isNaN(val);
+    });
+
+    if (missingFields.length > 0 && missingFields.length < trialInputs.length) {
+      flags.push({
+        id: `missing_fields_row_${rowNum}`,
+        type: 'blue',
+        severity: 'info',
+        title: `Incomplete Readings in Trial ${rowNum}`,
+        description: `Trial ${rowNum} is missing: ${missingFields.map(f => f.label).join(', ')}.`,
+        why: 'Derived calculations require all trial input fields to compute accurate intermediate and final values.',
+        suggestion: null,
+        rowIndex: rowNum,
+        field: missingFields[0].id
+      });
+    }
+
+    // 2. Physical Impossibility Checks (Red Flags)
+    // Non-positive time or volume
+    if (row.t !== undefined && row.t !== '' && parseFloat(row.t) <= 0) {
+      flags.push({
+        id: `invalid_time_row_${rowNum}`,
+        type: 'red',
+        severity: 'error',
+        title: `Physically Impossible Time in Trial ${rowNum}`,
+        description: `Recorded time (${row.t} sec) is zero or negative.`,
+        why: 'Elapsed stopwatch time must always be strictly positive (t > 0 sec) for fluid collection.',
+        suggestion: { rowIdx: idx, field: 't', val: 30 },
+        rowIndex: rowNum,
+        field: 't'
+      });
+    }
+
+    if (row.V !== undefined && row.V !== '' && parseFloat(row.V) <= 0) {
+      flags.push({
+        id: `invalid_volume_row_${rowNum}`,
+        type: 'red',
+        severity: 'error',
+        title: `Physically Impossible Volume in Trial ${rowNum}`,
+        description: `Collected volume (${row.V} m³) is zero or negative.`,
+        why: 'Volume measured in collecting jar must be greater than zero.',
+        suggestion: { rowIdx: idx, field: 'V', val: 0.002 },
+        rowIndex: rowNum,
+        field: 'V'
+      });
+    }
+
+    // Venturi / Orifice manometer pressure check (h1 vs h2)
+    if (row.h1 !== undefined && row.h2 !== undefined && row.h1 !== '' && row.h2 !== '') {
+      const h1Val = parseFloat(row.h1);
+      const h2Val = parseFloat(row.h2);
+
+      if (h1Val < h2Val) {
+        flags.push({
+          id: `manometer_inverted_row_${rowNum}`,
+          type: 'amber',
+          severity: 'warning',
+          title: `Inverted Manometer Levels in Trial ${rowNum}`,
+          description: `Upstream reading h1 (${h1Val} m) is smaller than downstream reading h2 (${h2Val} m).`,
+          why: 'In forward pipe flow, static pressure drops at the throat due to acceleration. Thus h1 should exceed h2 under standard manometer line connections.',
+          suggestion: { rowIdx: idx, field: 'h1', val: h2Val + 0.10 },
+          rowIndex: rowNum,
+          field: 'h1'
+        });
+      }
+    }
+
+    // 3. Calculated Value Physics Violations
+    if (calcRow.Cd !== undefined && calcRow.Cd !== null) {
+      const cdVal = calcRow.Cd;
+
+      if (cdVal > 1.0) {
+        flags.push({
+          id: `cd_exceeds_one_row_${rowNum}`,
+          type: 'red',
+          severity: 'error',
+          title: `Physically Impossible Cd in Trial ${rowNum}`,
+          description: `Calculated Coefficient of Discharge Cd (${cdVal.toFixed(3)}) exceeds 1.0.`,
+          why: 'Cd = Qa / Qth. By energy conservation, actual real fluid flow cannot exceed theoretical frictionless flow (Cd ≤ 1.0). Check if time t was recorded too small or manometer difference was read incorrectly.',
+          suggestion: { rowIdx: idx, field: 't', val: Math.round((row.t || 30) * cdVal) },
+          rowIndex: rowNum,
+          field: 't'
+        });
+      } else if (expId === 'venturi_meter' && (cdVal < 0.90 || cdVal > 0.99)) {
+        flags.push({
+          id: `venturi_cd_range_row_${rowNum}`,
+          type: 'amber',
+          severity: 'warning',
+          title: `Unusual Venturi Cd in Trial ${rowNum}`,
+          description: `Cd (${cdVal.toFixed(3)}) is outside expected Venturi range (~0.94–0.98).`,
+          why: 'Venturi meters have streamlined, gradual converging and diverging cones that yield high hydraulic efficiency (Cd ≈ 0.95–0.98). Lower values indicate valve throttling or air trapped in manometer lines.',
+          suggestion: null,
+          rowIndex: rowNum,
+          field: null
+        });
+      } else if (expId === 'orifice_meter' && (cdVal < 0.55 || cdVal > 0.70)) {
+        flags.push({
+          id: `orifice_cd_range_row_${rowNum}`,
+          type: 'amber',
+          severity: 'warning',
+          title: `Unusual Orifice Cd in Trial ${rowNum}`,
+          description: `Cd (${cdVal.toFixed(3)}) is outside expected Orifice range (~0.60–0.65).`,
+          why: 'Orifice plates produce a pronounced jet contraction (vena contracta) and severe eddy recirculation, leading to typical Cd values of 0.60–0.65.',
+          suggestion: null,
+          rowIndex: rowNum,
+          field: null
+        });
+      }
+    }
+  });
+
+  // 4. Cross-row data pattern checks (Duplicate readings / copy-paste detection)
+  if (observationRows.length >= 3) {
+    const serializedRows = observationRows.map(r => JSON.stringify(r));
+    const uniqueRows = new Set(serializedRows);
+
+    if (uniqueRows.size < observationRows.length) {
+      flags.push({
+        id: 'duplicate_trial_readings',
+        type: 'grey',
+        severity: 'info',
+        title: 'Duplicate Trial Readings Detected',
+        description: 'Identical input values were detected across multiple trial rows.',
+        why: 'In physical laboratory experiments, changing flow rate valves produces distinct time and manometer readings for each trial.',
+        suggestion: null,
+        rowIndex: null,
+        field: null
+      });
+    }
+  }
+
+  return flags;
+}

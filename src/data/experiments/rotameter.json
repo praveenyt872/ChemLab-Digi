@@ -1,0 +1,78 @@
+{
+  "experiment_id": "rotameter_calibration",
+  "subject": "fluid_mechanics",
+  "title": "Calibration of Rotameter",
+  "short_name": "Rotameter Calibration",
+  "aim": "To generate the calibration curve for the given rotameter.",
+  "apparatus": [
+    "Rotameter setup with graduated glass tube",
+    "Measuring jar (volumetric cylinder)",
+    "Digital Stopwatch / Stop clock",
+    "Water supply line & flow control valves"
+  ],
+  "theory": "For a given flow rate, the equilibrium position of the float in a rotameter is established by a balance of three forces: (1) the weight of the float, (2) the buoyancy force of the fluid on the float, and (3) the drag force on the float. Force 1 acts downwards and forces 2 and 3 act upward.\n\nFor equilibrium:\nF_D g_c = v_f ρ_f g - v_f ρ g = m_f g (1 - ρ/ρ_f)\n\nWhere F_D = drag force, g = acceleration due to gravity, v_f = volume of float, ρ_f = density of float, ρ = density of fluid. For a linearly tapered tube with a diameter at the bottom about equal to the float diameter, rotameters tend to have a nearly linear relationship between flow rate and position of the float.",
+  "procedure": [
+    "Set a particular flow rate using a rotameter.",
+    "Measure the outlet flow rate from the rotameter using measuring jar and stopwatch.",
+    "Repeat the experiment for 10 different readings."
+  ],
+  "formulas": [
+    {
+      "id": "Q",
+      "label": "Observed Flow Rate (Q)",
+      "latex": "Q = \\frac{V}{t}",
+      "derivation": "The volumetric flow rate Q represents the volume of fluid V collected in the measuring jar per unit time t:\n\n1. Measure volume V collected in cubic meters (m³).\n2. Record time t taken in seconds (s).\n3. Divide V by t: Q = V / t (m³/s).",
+      "purpose": "Calculates the actual volumetric flow rate passing through the rotameter for a given float reading.",
+      "variables": [
+        { "symbol": "V", "meaning": "Volume of water collected", "unit": "m³", "typical_range": "0.001 – 0.01 m³" },
+        { "symbol": "t", "meaning": "Time taken for volume collection", "unit": "sec", "typical_range": "5 – 60 s" },
+        { "symbol": "Q", "meaning": "Observed Volumetric Flow Rate", "unit": "m³/s", "typical_range": "1×10⁻⁵ – 5×10⁻⁴ m³/s" }
+      ],
+      "assumptions": [
+        "Incompressible steady liquid flow",
+        "Negligible evaporation during measurement",
+        "Constant float orientation and centered alignment"
+      ],
+      "practical_application": "Rotameters are widely used in chemical plants, gas metering, and water treatment facilities for visual, direct-reading flow monitoring."
+    }
+  ],
+  "trial_inputs": [
+    { "id": "R", "label": "Rotameter Reading", "unit": "mm", "type": "number", "placeholder": "e.g. 50", "tooltip": "Position of float top edge on scale" },
+    { "id": "V", "label": "Volume Collected", "unit": "m³", "type": "number", "placeholder": "e.g. 0.002", "tooltip": "Volume of water collected in measuring jar" },
+    { "id": "t", "label": "Time Taken", "unit": "sec", "type": "number", "placeholder": "e.g. 20", "tooltip": "Stopwatch duration for collecting volume V" }
+  ],
+  "fixed_inputs": [],
+  "calculations": {
+    "Q": "V / t"
+  },
+  "calculated_columns": [
+    { "id": "Q", "label": "Observed Flow Rate (Q)", "unit": "m³/s", "format": "scientific" }
+  ],
+  "graph": {
+    "type": "scatter_with_trend",
+    "x": "Q",
+    "y": "R",
+    "x_label": "Observed Flow Rate Q (m³/s)",
+    "y_label": "Rotameter Reading R (mm)",
+    "title": "Rotameter Calibration Curve (R vs Q)"
+  },
+  "validation_ranges": {
+    "R": { "min": 5, "max": 300, "label": "Rotameter Reading" },
+    "V": { "min": 0.0001, "max": 0.05, "label": "Volume (m³)" },
+    "t": { "min": 2, "max": 180, "label": "Time (sec)" }
+  },
+  "sample_data": [
+    { "R": 20, "V": 0.001, "t": 45 },
+    { "R": 40, "V": 0.002, "t": 42 },
+    { "R": 60, "V": 0.003, "t": 38 },
+    { "R": 80, "V": 0.004, "t": 35 },
+    { "R": 100, "V": 0.005, "t": 31 },
+    { "R": 120, "V": 0.006, "t": 28 }
+  ],
+  "result_template": "The given rotameter is calibrated.",
+  "precautions": [
+    "Ensure float is free from air bubbles or debris sticking to its body.",
+    "Read the top scale edge of the float at eye level to avoid parallax error.",
+    "Adjust flow control valves smoothly without sudden pressure surges."
+  ]
+}

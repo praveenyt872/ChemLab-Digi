@@ -1,0 +1,150 @@
+{
+  "experiment_id": "venturi_meter",
+  "subject": "fluid_mechanics",
+  "title": "Determine Coefficient of Discharge for Venturi Meter",
+  "short_name": "Venturi Meter",
+  "aim": "To determine the coefficient of discharge of Venturi meter.",
+  "apparatus": [
+    "Venturi meter",
+    "Sump tank",
+    "Measuring tank",
+    "Manometer",
+    "Globe valve",
+    "Stop watch",
+    "Collector"
+  ],
+  "theory": "These Flow Meters are based on the general energy conservation equation. Because pressure drop is measured after introducing the meter. This pressure head is converted into downstream velocity (measured at minimum cross-sectional area) which is in turn converted into volumetric flow rate by multiplying it by throat cross-sectional area.\n\nBernoulli Equation:\n(P1 / ρ) + (V1² / 2) + g Z1 = (P2 / ρ) + (V2² / 2) + g Z2\nFor horizontal pipe (Z1 = Z2):\n(P1 / ρ) - (P2 / ρ) = (V2² / 2) - (V1² / 2)\n\nTheoretical Flow Rate:\nQth = (A1 A2 √(2 g H)) / √(A1² - A2²)\n\nActual Discharge:\nQa = volume / time\n\nCoefficient of Discharge:\nCd = Qa / Qth",
+  "procedure": [
+    "Check all the clamps for tightness.",
+    "Open the gate valve and start the flow.",
+    "Open the outlet valve of the venturimeter and close valve of orificemeter.",
+    "First open air cocks then open the venturimeter cocks, remove all the air bubbles and close the air cocks slowly and simultaneously so that mercury does not run away into water.",
+    "Close the drain valve of measuring tank and measure the time taken for 10 lt. water discharge and also the manometer difference.",
+    "Repeat the procedure by changing the discharge and calculate Cd."
+  ],
+  "formulas": [
+    {
+      "id": "h",
+      "label": "Manometer Differential Head (h)",
+      "latex": "h = |h_1 - h_2|",
+      "derivation": "Direct measurement of mercury level difference in left limb (h1) and right limb (h2) of U-tube manometer.",
+      "purpose": "Measures differential pressure across inlet and throat in meters of mercury (m of Hg).",
+      "variables": [
+        { "symbol": "h1", "meaning": "Left limb mercury level", "unit": "m", "typical_range": "0.05 – 0.5 m" },
+        { "symbol": "h2", "meaning": "Right limb mercury level", "unit": "m", "typical_range": "0.01 – 0.4 m" },
+        { "symbol": "h", "meaning": "Manometer difference", "unit": "m", "typical_range": "0.02 – 0.4 m" }
+      ],
+      "assumptions": ["Stable mercury meniscus", "Air purged completely from manometer tubes"],
+      "practical_application": "Differential head reading is the primary transducer input for differential pressure flowmeters."
+    },
+    {
+      "id": "H",
+      "label": "Equivalent Water Head (H)",
+      "latex": "H = h \\times (S_{Hg} - S_w) = h \\times 12.6",
+      "derivation": "Converts mercury column height difference h into equivalent head of flowing fluid (water):\n\nH = h × (ρ_Hg / ρ_w - 1) = h × (13.6 - 1) = 12.6 × h",
+      "purpose": "Converts manometer mercury reading into equivalent water head in meters of water (m H₂O).",
+      "variables": [
+        { "symbol": "h", "meaning": "Manometer difference in meters of Hg", "unit": "m", "typical_range": "0.02 – 0.4 m" },
+        { "symbol": "H", "meaning": "Equivalent pressure head of water", "unit": "m", "typical_range": "0.25 – 5.04 m" }
+      ],
+      "assumptions": ["Specific gravity of Mercury = 13.6", "Specific gravity of Water = 1.0"],
+      "practical_application": "Head conversion is required whenever dense manometer liquids (like mercury) are used for fluid differential pressure measurement."
+    },
+    {
+      "id": "Qa",
+      "label": "Actual Discharge (Qa)",
+      "latex": "Q_a = \\frac{V}{t}",
+      "derivation": "Actual volumetric flow rate Qa determined by collecting 10 liters (0.01 m³) of water in measuring tank over time t.",
+      "purpose": "Determines actual real-world flow rate passed by the pipe network.",
+      "variables": [
+        { "symbol": "V", "meaning": "Volume collected (0.01 m³ for 10 L)", "unit": "m³", "typical_range": "0.01 m³" },
+        { "symbol": "t", "meaning": "Time for 10 L collection", "unit": "sec", "typical_range": "15 – 90 s" },
+        { "symbol": "Qa", "meaning": "Actual Volumetric Discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 7×10⁻⁴ m³/s" }
+      ],
+      "assumptions": ["Accurate tank volume calibration", "Steady flow during timing period"],
+      "practical_application": "Direct volumetric tank measurements are the gold standard for calibrating industrial flowmeters."
+    },
+    {
+      "id": "Qth",
+      "label": "Theoretical Discharge (Qth)",
+      "latex": "Q_{th} = \\frac{A_1 A_2 \\sqrt{2 g H}}{\\sqrt{A_1^2 - A_2^2}}",
+      "derivation": "Derived from frictionless 1D Bernoulli equation combined with continuity equation A1 V1 = A2 V2 across pipe area A1 (3.46×10⁻⁴ m²) and throat area A2 (1.26×10⁻⁴ m²).\n\nQth = (A1 A2 √(2gH)) / √(A1² - A2²)",
+      "purpose": "Calculates ideal zero-friction flow rate theoretically predicted by fluid dynamics laws.",
+      "variables": [
+        { "symbol": "A1", "meaning": "Inlet pipe cross-sectional area", "unit": "m²", "typical_range": "3.46×10⁻⁴ m²" },
+        { "symbol": "A2", "meaning": "Throat cross-sectional area", "unit": "m²", "typical_range": "1.26×10⁻⁴ m²" },
+        { "symbol": "g", "meaning": "Acceleration due to gravity", "unit": "m/s²", "typical_range": "9.81 m/s²" },
+        { "symbol": "H", "meaning": "Equivalent pressure head", "unit": "m", "typical_range": "0.25 – 5.0 m" },
+        { "symbol": "Qth", "meaning": "Theoretical Discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 8×10⁻⁴ m³/s" }
+      ],
+      "assumptions": ["Incompressible ideal fluid flow", "Uniform velocity profiles at inlet and throat"],
+      "practical_application": "Forms the theoretical basis for differential flowmeter designs worldwide."
+    },
+    {
+      "id": "Cd",
+      "label": "Coefficient of Discharge (Cd)",
+      "latex": "C_d = \\frac{Q_a}{Q_{th}}",
+      "derivation": "The dimensionless ratio of actual flow rate Qa to theoretical flow rate Qth.",
+      "purpose": "Quantifies hydraulic efficiency and accounts for boundary layer friction and turbulence energy losses.",
+      "variables": [
+        { "symbol": "Qa", "meaning": "Actual discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 7×10⁻⁴ m³/s" },
+        { "symbol": "Qth", "meaning": "Theoretical discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 8×10⁻⁴ m³/s" },
+        { "symbol": "Cd", "meaning": "Venturi Coefficient of Discharge", "unit": "dimensionless", "typical_range": "0.94 – 0.98" }
+      ],
+      "assumptions": ["Fully developed turbulent flow", "Smooth internal surface finishes"],
+      "practical_application": "Cd is the primary design rating parameter supplied by valve & meter manufacturers."
+    }
+  ],
+  "trial_inputs": [
+    { "id": "h1", "label": "Left Limb h1", "unit": "m", "type": "number", "placeholder": "e.g. 0.28", "tooltip": "Mercury height in left manometer tube (in meters)" },
+    { "id": "h2", "label": "Right Limb h2", "unit": "m", "type": "number", "placeholder": "e.g. 0.12", "tooltip": "Mercury height in right manometer tube (in meters)" },
+    { "id": "t", "label": "Time for 10L", "unit": "sec", "type": "number", "placeholder": "e.g. 22", "tooltip": "Stopwatch time for collecting 10 Liters (0.01 m³)" }
+  ],
+  "fixed_inputs": [
+    { "id": "A1", "label": "Inlet Pipe Area (A1)", "value": 0.000346, "unit": "m²", "description": "3.46 × 10⁻⁴ m² (Pipe diameter 21 mm)" },
+    { "id": "A2", "label": "Throat Area (A2)", "value": 0.000126, "unit": "m²", "description": "1.26 × 10⁻⁴ m² (Throat diameter 12.6 mm)" },
+    { "id": "V", "label": "Collection Volume (V)", "value": 0.01, "unit": "m³", "description": "10 Liters = 0.01 m³" },
+    { "id": "g", "label": "Gravity Acceleration (g)", "value": 9.81, "unit": "m/s²", "description": "Standard gravitational acceleration" }
+  ],
+  "calculations": {
+    "h": "abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)",
+    "H": "(abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6",
+    "Qa": "0.01 / t",
+    "Qth": "(0.000346 * 0.000126 * sqrt(2 * 9.81 * ((abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6))) / sqrt(0.000346^2 - 0.000126^2)",
+    "Cd": "(0.01 / t) / ((0.000346 * 0.000126 * sqrt(2 * 9.81 * ((abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6))) / sqrt(0.000346^2 - 0.000126^2))"
+  },
+  "calculated_columns": [
+    { "id": "h", "label": "Diff. Head (h)", "unit": "m", "format": "decimal" },
+    { "id": "H", "label": "Water Head (H)", "unit": "m", "format": "decimal" },
+    { "id": "Qa", "label": "Actual Flow (Qa)", "unit": "m³/s", "format": "scientific" },
+    { "id": "Qth", "label": "Theoretical Flow (Qth)", "unit": "m³/s", "format": "scientific" },
+    { "id": "Cd", "label": "Coeff. of Discharge (Cd)", "unit": "-", "format": "decimal_3" }
+  ],
+  "graph": {
+    "type": "scatter_with_trend",
+    "x": "Qth",
+    "y": "Cd",
+    "x_label": "Theoretical Flow Rate Qth (m³/s)",
+    "y_label": "Coefficient of Discharge (Cd)",
+    "title": "Venturi Meter Calibration (Cd vs Qth)"
+  },
+  "validation_ranges": {
+    "h1": { "min": 0.01, "max": 0.9, "label": "Left Limb h1 (m)" },
+    "h2": { "min": 0.0, "max": 0.9, "label": "Right Limb h2 (m)" },
+    "t": { "min": 5, "max": 180, "label": "Time for 10L (sec)" },
+    "Cd": { "min": 0.90, "max": 0.99, "label": "Coefficient of Discharge (Cd)" }
+  },
+  "sample_data": [
+    { "h1": 0.28, "h2": 0.12, "t": 22 },
+    { "h1": 0.25, "h2": 0.13, "t": 25 },
+    { "h1": 0.22, "h2": 0.14, "t": 30 },
+    { "h1": 0.19, "h2": 0.14, "t": 36 },
+    { "h1": 0.17, "h2": 0.14, "t": 45 }
+  ],
+  "result_template": "The coefficient of discharge for venturi meter or venturi coefficient is {avg_Cd}.",
+  "precautions": [
+    "Operate the manometer valve gently. Air bubbles are to be removed so that mercury does not run away into water.",
+    "Don't close the outlet valve completely.",
+    "There should be no air bubbles entrapped while taking reading of liquid level in tubes."
+  ]
+}

@@ -1,0 +1,221 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  FlaskConical,
+  BookOpen,
+  Calculator,
+  LineChart,
+  ShieldCheck,
+  AlertTriangle,
+  FileText,
+  ChevronRight,
+  Info
+} from 'lucide-react';
+import { useExperimentStore } from '../store/experimentStore';
+import { formatScientific } from '../engine/formulaEngine';
+import { GlassCard } from '../components/common/GlassCard';
+import { ObservationTable } from '../components/workspace/ObservationTable';
+import { LiveResultsPanel } from '../components/workspace/LiveResultsPanel';
+import { GraphPanel } from '../components/workspace/GraphPanel';
+import { FormulaCard } from '../components/workspace/FormulaCard';
+import { AIValidationPanel } from '../components/workspace/AIValidationPanel';
+
+export function WorkspacePage({ onNavigate }) {
+  const { experimentConfig, headlineResult } = useExperimentStore();
+  const [mobileTab, setMobileTab] = useState('data');
+
+  if (!experimentConfig) return null;
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      
+      {/* Experiment Title Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl glass-panel border border-cyan-500/30">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-mono text-cyan-300">
+            <span className="uppercase tracking-wider">Fluid Mechanics</span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            <span>REC ChemEngg 2026 Lab</span>
+          </div>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-100 mt-1">
+            {experimentConfig.title}
+          </h1>
+          <p className="text-xs text-slate-300 font-sans mt-1 max-w-3xl">
+            {experimentConfig.aim}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="px-4 py-2 rounded-xl bg-slate-900/80 border border-cyan-500/20 text-right font-mono">
+            <span className="text-[10px] text-slate-400 block uppercase">Headline Output</span>
+            <span className="text-lg font-bold text-cyan-300">
+              {headlineResult.mean !== null
+                ? experimentConfig.experiment_id === 'rotameter_calibration'
+                  ? formatScientific(headlineResult.mean, 4)
+                  : `Cd = ${headlineResult.mean.toFixed(3)}`
+                : '—'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Tabs (visible only on small viewports) */}
+      <div className="flex lg:hidden rounded-xl bg-slate-900/80 p-1 border border-cyan-500/20 font-mono text-xs overflow-x-auto">
+        <button
+          onClick={() => setMobileTab('data')}
+          className={`flex-1 py-2 px-3 rounded-lg font-bold text-center transition-all ${
+            mobileTab === 'data' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400'
+          }`}
+        >
+          Data Input
+        </button>
+        <button
+          onClick={() => setMobileTab('results')}
+          className={`flex-1 py-2 px-3 rounded-lg font-bold text-center transition-all ${
+            mobileTab === 'results' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400'
+          }`}
+        >
+          Results
+        </button>
+        <button
+          onClick={() => setMobileTab('graph')}
+          className={`flex-1 py-2 px-3 rounded-lg font-bold text-center transition-all ${
+            mobileTab === 'graph' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400'
+          }`}
+        >
+          Graph
+        </button>
+        <button
+          onClick={() => setMobileTab('theory')}
+          className={`flex-1 py-2 px-3 rounded-lg font-bold text-center transition-all ${
+            mobileTab === 'theory' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400'
+          }`}
+        >
+          Theory
+        </button>
+      </div>
+
+      {/* Split-Pane Desktop Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column: Scrollable Content (Aim, Apparatus, Formulas, Table, Graph, Precautions) */}
+        <div className={`lg:col-span-7 space-y-6 ${mobileTab !== 'data' && mobileTab !== 'theory' && mobileTab !== 'graph' ? 'hidden lg:block' : ''}`}>
+          
+          {/* Aim & Apparatus Card */}
+          <GlassCard className="space-y-4">
+            <div className="flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-cyan-400" />
+              <h3 className="font-heading text-lg font-bold text-slate-100">
+                Aim & Apparatus
+              </h3>
+            </div>
+
+            <div className="space-y-3 text-xs font-mono">
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <span className="text-cyan-400 font-bold uppercase tracking-wider block mb-1">AIM</span>
+                <p className="text-slate-300 font-sans leading-relaxed">{experimentConfig.aim}</p>
+              </div>
+
+              <div>
+                <span className="text-cyan-400 font-bold uppercase tracking-wider block mb-2">APPARATUS REQUIRED</span>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 font-sans">
+                  {(experimentConfig.apparatus || []).map((app, i) => (
+                    <li key={i} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                      <span>{app}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Expandable Theory & Formulas Section */}
+          <GlassCard className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-violet-400" />
+                <h3 className="font-heading text-lg font-bold text-slate-100">
+                  Theory & Formula Derivations
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-cyan-400">
+                {(experimentConfig.formulas || []).length} Formulas
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-300 font-sans leading-relaxed">
+              {experimentConfig.theory}
+            </p>
+
+            <div className="space-y-3 pt-2">
+              {(experimentConfig.formulas || []).map((formula) => (
+                <FormulaCard key={formula.id} formula={formula} />
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* Observation Table Input */}
+          <GlassCard className="space-y-4">
+            <ObservationTable />
+          </GlassCard>
+
+          {/* Graph Panel */}
+          <GlassCard className="space-y-4">
+            <GraphPanel />
+          </GlassCard>
+
+          {/* Result & Precautions Section */}
+          <GlassCard className="border-l-4 border-l-amber-400 space-y-4">
+            <h3 className="font-heading text-lg font-bold text-slate-100 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-amber-400" />
+              <span>Result & Experimental Precautions</span>
+            </h3>
+
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/20 text-xs font-mono space-y-1">
+              <span className="text-amber-400 font-bold uppercase tracking-wider block">STATUTORY RESULT</span>
+              <p className="text-sm font-semibold text-slate-100 font-sans">
+                {experimentConfig.experiment_id === 'rotameter_calibration' ? (
+                  'The calibration curve for the given rotameter is generated.'
+                ) : (
+                  `The mean coefficient of discharge for ${experimentConfig.short_name} Cd is found to be ${headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.`
+                )}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                LAB SAFETY & OPERATIONAL PRECAUTIONS
+              </span>
+              <ul className="space-y-1.5 text-xs text-slate-300 font-sans">
+                {(experimentConfig.precautions || []).map((prec, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-amber-400 font-bold">•</span>
+                    <span>{prec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </GlassCard>
+
+        </div>
+
+        {/* Right Column: Sticky Sidebar (Live Results, AI Validation) */}
+        <div className={`lg:col-span-5 lg:sticky lg:top-20 space-y-6 ${mobileTab !== 'results' ? 'hidden lg:block' : ''}`}>
+          
+          {/* Live Results Summary Panel */}
+          <GlassCard className="space-y-4">
+            <LiveResultsPanel />
+          </GlassCard>
+
+          {/* AI Validation Panel */}
+          <GlassCard className="space-y-4">
+            <AIValidationPanel />
+          </GlassCard>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}

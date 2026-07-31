@@ -1,0 +1,154 @@
+{
+  "experiment_id": "orifice_meter",
+  "subject": "fluid_mechanics",
+  "title": "Determine Coefficient of Discharge for Orifice Meter",
+  "short_name": "Orifice Meter",
+  "aim": "To determine the coefficient of discharge of the given orifice meter and to calibrate.",
+  "apparatus": [
+    "A pipe fitted with a orifice meter",
+    "A single column mercury manometer",
+    "Stop clock",
+    "Meter scale",
+    "A Collecting tank with piezometer"
+  ],
+  "theory": "An orifice meter is a simple device used for measuring the discharge through pipes. It works on the principle same as that of venturi meter i.e. by reducing the cross sectional area of the flow passage a pressure difference between the two sections is developed and the measurement of the pressure differences enables the determination of the discharge through the pipe. It consists of a flat circular plate with a circular hole called orifice, which is concentric with the pipe axis. The thickness of the plate less than or equal to 0.05 times the diameter of the piece.\n\nFormulas:\n1. Actual Discharge Qact = Ah/t in m³/sec (A = L × B = 0.4 × 0.4 = 0.16 m², h = 0.05 m rise)\n2. Theoretical Discharge Qth = {a1 a2 √(2gH)} / √(a1² - a2²) in m³/sec\n3. Coefficient of Discharge Cd = Qact / Qth\nWhere H = head over the orifice meter in m = h_diff × 12.6",
+  "procedure": [
+    "The internal dimensions of the collecting tank were measured (L = 0.4 m, B = 0.4 m).",
+    "Inlet valve of collecting tank was closed.",
+    "Water was allowed to rise of mercury in manometer.",
+    "Readings were taken down in both limbs of mercury in manometer (h1, h2).",
+    "Head of orifice meter was noted.",
+    "Inlet valve of collecting tank was opened.",
+    "Outlet valve was closed.",
+    "Time taken for 5 cms (0.05 m) rise of water in collecting tank was noted.",
+    "Procedure was repeated for various heads over the orifice meter and the coefficient of discharge was calculated."
+  ],
+  "formulas": [
+    {
+      "id": "h",
+      "label": "Manometer Differential (h)",
+      "latex": "h = |h_1 - h_2|",
+      "derivation": "Height differential of mercury column between upstream and downstream taps of the orifice plate.",
+      "purpose": "Measures differential pressure drop across the orifice plate in meters of mercury.",
+      "variables": [
+        { "symbol": "h1", "meaning": "Upstream mercury level", "unit": "m", "typical_range": "0.05 – 0.5 m" },
+        { "symbol": "h2", "meaning": "Downstream mercury level", "unit": "m", "typical_range": "0.01 – 0.4 m" },
+        { "symbol": "h", "meaning": "Differential manometer reading", "unit": "m", "typical_range": "0.01 – 0.3 m" }
+      ],
+      "assumptions": ["Purged manometer lines", "Stable mercury level balance"],
+      "practical_application": "Differential pressure taps near orifice plates are standardized in ISO/ASME codes."
+    },
+    {
+      "id": "H",
+      "label": "Total Water Head (H)",
+      "latex": "H = h \\times (S_{Hg} - S_w) = h \\times 12.6",
+      "derivation": "H = h × (ρ_Hg / ρ_water - 1) = h × (13.6 - 1) = 12.6 × h",
+      "purpose": "Converts differential height of mercury into equivalent meters of water column head.",
+      "variables": [
+        { "symbol": "h", "meaning": "Mercury level difference", "unit": "m", "typical_range": "0.01 – 0.3 m" },
+        { "symbol": "H", "meaning": "Total pressure head in meters of water", "unit": "m", "typical_range": "0.126 – 3.78 m" }
+      ],
+      "assumptions": ["Density of water = 1000 kg/m³", "Density of mercury = 13600 kg/m³"],
+      "practical_application": "Converts physical manometer heights into energy heads for Bernoulli equation calculations."
+    },
+    {
+      "id": "Qact",
+      "label": "Actual Discharge (Qact)",
+      "latex": "Q_{act} = \\frac{A \\cdot h_{rise}}{t}",
+      "derivation": "Qact = (L × B × 0.05) / t\nWhere L = 0.4 m, B = 0.4 m (Tank Area A = 0.16 m²), and h_rise = 0.05 m (5 cm rise). Thus Qact = 0.008 / t.",
+      "purpose": "Calculates true flow rate entering the collecting tank.",
+      "variables": [
+        { "symbol": "A", "meaning": "Tank plan area (L × B)", "unit": "m²", "typical_range": "0.16 m²" },
+        { "symbol": "h_rise", "meaning": "Water level rise in tank", "unit": "m", "typical_range": "0.05 m" },
+        { "symbol": "t", "meaning": "Time taken for 5 cm rise", "unit": "sec", "typical_range": "15 – 80 s" },
+        { "symbol": "Qact", "meaning": "Actual Discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 5×10⁻⁴ m³/s" }
+      ],
+      "assumptions": ["Constant collecting tank cross section", "Zero leakage during measurement"],
+      "practical_application": "Gravimetric/volumetric tank measurements provide primary standards for flow calibration."
+    },
+    {
+      "id": "Qth",
+      "label": "Theoretical Discharge (Qth)",
+      "latex": "Q_{th} = \\frac{a_1 a_2 \\sqrt{2 g H}}{\\sqrt{a_1^2 - a_2^2}}",
+      "derivation": "Derived from 1D energy equation between upstream pipe section (a1 = 3.46×10⁻⁴ m²) and orifice throat section (a2 = 1.26×10⁻⁴ m²).\n\nQth = (a1 a2 √(2gH)) / √(a1² - a2²)",
+      "purpose": "Predicts ideal flow rate theoretical output assuming zero frictional head loss.",
+      "variables": [
+        { "symbol": "a1", "meaning": "Inlet pipe area", "unit": "m²", "typical_range": "3.46×10⁻⁴ m²" },
+        { "symbol": "a2", "meaning": "Orifice hole area", "unit": "m²", "typical_range": "1.26×10⁻⁴ m²" },
+        { "symbol": "g", "meaning": "Acceleration of gravity", "unit": "m/s²", "typical_range": "9.81 m/s²" },
+        { "symbol": "H", "meaning": "Equivalent head of water", "unit": "m", "typical_range": "0.12 – 3.8 m" },
+        { "symbol": "Qth", "meaning": "Theoretical Discharge", "unit": "m³/s", "typical_range": "1.5×10⁻⁴ – 8×10⁻⁴ m³/s" }
+      ],
+      "assumptions": ["Frictionless flow stream", "Incompressible fluid"],
+      "practical_application": "Calculates primary flow index for standard orifice metering runs."
+    },
+    {
+      "id": "Cd",
+      "label": "Coefficient of Discharge (Cd)",
+      "latex": "C_d = \\frac{Q_{act}}{Q_{th}}",
+      "derivation": "The ratio of measured actual flow Qact to theoretical prediction Qth.",
+      "purpose": "Corrects theoretical discharge equation for jet contraction (vena contracta) and eddy dissipation losses.",
+      "variables": [
+        { "symbol": "Qact", "meaning": "Actual discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 5×10⁻⁴ m³/s" },
+        { "symbol": "Qth", "meaning": "Theoretical discharge", "unit": "m³/s", "typical_range": "1.5×10⁻⁴ – 8×10⁻⁴ m³/s" },
+        { "symbol": "Cd", "meaning": "Orifice Coefficient of Discharge", "unit": "dimensionless", "typical_range": "0.60 – 0.65" }
+      ],
+      "assumptions": ["Sharp upstream orifice edge", "Concentrically mounted plate"],
+      "practical_application": "Orifice Cd (~0.62) is essential for oil & gas metering calculations."
+    }
+  ],
+  "trial_inputs": [
+    { "id": "h1", "label": "Upstream h1", "unit": "m", "type": "number", "placeholder": "e.g. 0.26", "tooltip": "Upstream limb mercury reading (in meters)" },
+    { "id": "h2", "label": "Downstream h2", "unit": "m", "type": "number", "placeholder": "e.g. 0.16", "tooltip": "Downstream limb mercury reading (in meters)" },
+    { "id": "t", "label": "Time for 5cm Rise", "unit": "sec", "type": "number", "placeholder": "e.g. 19", "tooltip": "Time for 5 cm (0.05 m) water rise in tank" }
+  ],
+  "fixed_inputs": [
+    { "id": "L", "label": "Tank Length (L)", "value": 0.4, "unit": "m", "description": "0.4 m collecting tank length" },
+    { "id": "B", "label": "Tank Breadth (B)", "value": 0.4, "unit": "m", "description": "0.4 m collecting tank breadth" },
+    { "id": "h_rise", "label": "Tank Rise (h_rise)", "value": 0.05, "unit": "m", "description": "5 cm = 0.05 m water rise" },
+    { "id": "a1", "label": "Pipe Area (a1)", "value": 0.000346, "unit": "m²", "description": "3.46 × 10⁻⁴ m² (21 mm dia)" },
+    { "id": "a2", "label": "Orifice Area (a2)", "value": 0.000126, "unit": "m²", "description": "1.26 × 10⁻⁴ m² (12.6 mm dia)" },
+    { "id": "g", "label": "Gravity Acceleration (g)", "value": 9.81, "unit": "m/s²", "description": "Standard gravitational acceleration" }
+  ],
+  "calculations": {
+    "h": "abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)",
+    "H": "(abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6",
+    "Qact": "0.008 / t",
+    "Qth": "(0.000346 * 0.000126 * sqrt(2 * 9.81 * ((abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6))) / sqrt(0.000346^2 - 0.000126^2)",
+    "Cd": "(0.008 / t) / ((0.000346 * 0.000126 * sqrt(2 * 9.81 * ((abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6))) / sqrt(0.000346^2 - 0.000126^2))"
+  },
+  "calculated_columns": [
+    { "id": "h", "label": "Diff. Head (h)", "unit": "m", "format": "decimal" },
+    { "id": "H", "label": "Water Head (H)", "unit": "m", "format": "decimal" },
+    { "id": "Qact", "label": "Actual Flow (Qact)", "unit": "m³/s", "format": "scientific" },
+    { "id": "Qth", "label": "Theoretical Flow (Qth)", "unit": "m³/s", "format": "scientific" },
+    { "id": "Cd", "label": "Coeff. of Discharge (Cd)", "unit": "-", "format": "decimal_3" }
+  ],
+  "graph": {
+    "type": "scatter_with_trend",
+    "x": "Qth",
+    "y": "Cd",
+    "x_label": "Theoretical Flow Rate Qth (m³/s)",
+    "y_label": "Coefficient of Discharge (Cd)",
+    "title": "Orifice Meter Calibration (Cd vs Qth)"
+  },
+  "validation_ranges": {
+    "h1": { "min": 0.01, "max": 0.9, "label": "Upstream h1 (m)" },
+    "h2": { "min": 0.0, "max": 0.9, "label": "Downstream h2 (m)" },
+    "t": { "min": 5, "max": 180, "label": "Time for 5cm rise (sec)" },
+    "Cd": { "min": 0.55, "max": 0.72, "label": "Coefficient of Discharge (Cd)" }
+  },
+  "sample_data": [
+    { "h1": 0.26, "h2": 0.16, "t": 19 },
+    { "h1": 0.23, "h2": 0.15, "t": 22 },
+    { "h1": 0.20, "h2": 0.14, "t": 25 },
+    { "h1": 0.17, "h2": 0.13, "t": 30 },
+    { "h1": 0.15, "h2": 0.13, "t": 39 }
+  ],
+  "result_template": "Coefficient of Discharge for orifice meter is found to be , Cd = {avg_Cd}",
+  "precautions": [
+    "The sharp edge of the orifice plate must face upstream.",
+    "Purge all air bubbles from piezometer glass tubes and manometer lines before starting.",
+    "Read piezometer water levels at eye level to avoid meniscus reading errors."
+  ]
+}
