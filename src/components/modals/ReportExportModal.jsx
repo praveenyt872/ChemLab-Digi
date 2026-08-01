@@ -70,20 +70,30 @@ export function ReportExportModal() {
     if (!reportRef.current) return;
     try {
       setIsGeneratingPdf(true);
+
+      // Brief delay to ensure Recharts SVG and KaTeX DOM render completely
+      await new Promise(r => setTimeout(r, 200));
+
       const element = reportRef.current;
 
       const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
-        logging: false
+        allowTaint: true,
+        logging: false,
+        windowWidth: 1200
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+      });
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-
       const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
@@ -100,9 +110,11 @@ export function ReportExportModal() {
         heightLeft -= pdfHeight;
       }
 
-      pdf.save(`${experimentConfig.experiment_id}_Lab_Report.pdf`);
+      const fileName = `${experimentConfig?.experiment_id || 'experiment'}_Lab_Report.pdf`;
+      pdf.save(fileName);
     } catch (err) {
-      console.error('PDF export error:', err);
+      console.error('PDF export error, opening print dialog fallback:', err);
+      window.print();
     } finally {
       setIsGeneratingPdf(false);
     }
