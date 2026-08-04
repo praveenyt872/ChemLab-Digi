@@ -4,16 +4,33 @@ import { MessageSquare, X, Send, Bot, User, Sparkles, Loader2, CornerDownLeft } 
 import { useExperimentStore } from '../../store/experimentStore';
 
 export function AIChatWidget() {
-  const { isChatOpen, setChatOpen, chatMessages, sendChatMessage, isAiThinking, experimentConfig } = useExperimentStore();
+  const { isChatOpen, setChatOpen, chatMessages, sendChatMessage, isAiThinking, experimentConfig, activePartConfig, activePartId, currentSubject } = useExperimentStore();
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
 
-  const quickChips = [
-    'Explain this formula',
-    'Why is my Cd low?',
-    'Explain Bernoulli assumption',
-    'Real-world industry application'
-  ];
+  const config = activePartConfig || experimentConfig;
+  const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
+
+  const quickChips = isProcessControl
+    ? activePartId === 'partA'
+      ? [
+          'Explain time constant τ',
+          'What is 63.2% response?',
+          'Explain lumped capacitance model',
+          'Why is my τ different from theory?'
+        ]
+      : [
+          'Explain Amplitude Ratio (AR)',
+          'How is phase lag calculated?',
+          'Frequency of oscillation ω',
+          'Why does output wave lag?'
+        ]
+    : [
+        'Explain Cd formula',
+        'Why is my Cd low?',
+        'Explain Bernoulli principle',
+        'Real-world industry application'
+      ];
 
   const handleSend = (textToSend) => {
     const query = textToSend || inputText;

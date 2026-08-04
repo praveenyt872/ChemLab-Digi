@@ -261,7 +261,7 @@ export const useExperimentStore = create((set, get) => ({
   // Send AI Assistant Message
   sendChatMessage: async (text) => {
     if (!text.trim()) return;
-    const { chatMessages, activePartConfig, observationRows, calculatedRows, headlineResult } = get();
+    const { chatMessages, activePartConfig, experimentConfig, activePartId, currentSubject, observationRows, calculatedRows, headlineResult } = get();
 
     const userMsg = {
       id: Date.now().toString(),
@@ -270,29 +270,49 @@ export const useExperimentStore = create((set, get) => ({
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
+    const updatedHistory = [...chatMessages, userMsg];
+
     set({
-      chatMessages: [...chatMessages, userMsg],
+      chatMessages: updatedHistory,
       isAiThinking: true
     });
 
-    const aiReplyText = await askAILabAssistant(text.trim(), {
-      experimentConfig: activePartConfig,
-      observationData: observationRows,
-      calculatedRows,
-      headlineResult
-    });
+    try {
+      const aiReplyText = await askAILabAssistant(text.trim(), {
+        chatMessages: updatedHistory,
+        currentSubject,
+        experimentConfig,
+        activePartConfig,
+        activePartId,
+        observationData: observationRows,
+        calculatedRows,
+        headlineResult
+      });
 
-    const aiMsg = {
-      id: (Date.now() + 1).toString(),
-      sender: 'ai',
-      text: aiReplyText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+      const aiMsg = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: aiReplyText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
 
-    set((state) => ({
-      chatMessages: [...state.chatMessages, aiMsg],
-      isAiThinking: false
-    }));
+      set((state) => ({
+        chatMessages: [...state.chatMessages, aiMsg],
+        isAiThinking: false
+      }));
+    } catch (err) {
+      console.error('AI chat error:', err);
+      const errorMsg = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: "Having trouble reaching the AI assistant right now. Please try again in a moment.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      set((state) => ({
+        chatMessages: [...state.chatMessages, errorMsg],
+        isAiThinking: false
+      }));
+    }
   },
 
   // Modal Open/Close Controls
