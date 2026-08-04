@@ -4,7 +4,7 @@ import { useExperimentStore } from '../../store/experimentStore';
 import { formatValue, formatScientific } from '../../engine/formulaEngine';
 
 export function LiveResultsPanel() {
-  const { activePartConfig, experimentConfig, activePartId, calculatedRows, headlineResult, currentExperimentId } = useExperimentStore();
+  const { activePartConfig, experimentConfig, activePartId, calculatedRows, observationRows, headlineResult, currentExperimentId } = useExperimentStore();
 
   const config = activePartConfig || experimentConfig;
   const calcColumns = config?.calculated_columns || [];
