@@ -120,10 +120,11 @@ export function calculateSummary(calculatedRows = [], primaryMetricKey = 'Cd') {
  * @returns {String} Formatted string
  */
 export function formatScientific(value, precision = 4) {
-  if (value === null || value === undefined || isNaN(value)) return '—';
-  if (value === 0) return '0';
+  const num = typeof value === 'number' ? value : parseFloat(value);
+  if (num === null || num === undefined || isNaN(num) || !isFinite(num)) return '—';
+  if (num === 0) return '0';
 
-  const expStr = value.toExponential(precision);
+  const expStr = num.toExponential(precision);
   const [mantissa, exponent] = expStr.split('e');
   const expNum = parseInt(exponent, 10);
 
@@ -155,18 +156,19 @@ export function formatScientific(value, precision = 4) {
  * @returns {String} Formatted display string
  */
 export function formatValue(value, format = 'decimal') {
-  if (value === null || value === undefined || isNaN(value)) return '—';
+  const num = typeof value === 'number' ? value : parseFloat(value);
+  if (num === null || num === undefined || isNaN(num) || !isFinite(num)) return '—';
 
   switch (format) {
     case 'scientific':
-      return formatScientific(value, 4);
+      return formatScientific(num, 4);
     case 'decimal_3':
-      return value.toFixed(3);
+      return num.toFixed(3);
     case 'integer':
-      return Math.round(value).toString();
+      return Math.round(num).toString();
     case 'decimal':
     default:
-      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
   }
 }
 

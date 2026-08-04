@@ -35,8 +35,11 @@ export function GraphPanel() {
   // Transform calculated rows into plot points for standard scatter graph
   const chartData = calculatedRows
     .map((r, idx) => {
-      const xVal = r[graphConfig.x];
-      const yVal = r[graphConfig.y];
+      const rawX = r[graphConfig.x];
+      const rawY = r[graphConfig.y];
+      const xVal = typeof rawX === 'number' ? rawX : parseFloat(rawX);
+      const yVal = typeof rawY === 'number' ? rawY : parseFloat(rawY);
+
       if (
         xVal !== null &&
         yVal !== null &&
@@ -49,8 +52,8 @@ export function GraphPanel() {
           trial: idx + 1,
           x: xVal,
           y: yVal,
-          formattedX: typeof xVal === 'number' && Math.abs(xVal) < 0.01 && xVal !== 0 ? formatScientific(xVal, 4) : xVal.toFixed(3),
-          formattedY: typeof yVal === 'number' && Math.abs(yVal) < 0.01 && yVal !== 0 ? formatScientific(yVal, 4) : yVal.toFixed(3)
+          formattedX: Math.abs(xVal) < 0.01 && xVal !== 0 ? formatScientific(xVal, 4) : xVal.toFixed(3),
+          formattedY: Math.abs(yVal) < 0.01 && yVal !== 0 ? formatScientific(yVal, 4) : yVal.toFixed(3)
         };
       }
       return null;
@@ -59,29 +62,32 @@ export function GraphPanel() {
 
   // Special data transform for Part A Step Input: Normalized T'/K vs t/τ + Theoretical Overlay
   const stepData = calculatedRows.map((r) => {
-    const t = parseFloat(r.t || 0);
-    const normHeat = parseFloat(r.norm_heat || 0);
-    const tTheo = parseFloat(r.T_theo || 0);
+    const rawT = parseFloat(r.t);
+    const rawNorm = parseFloat(r.norm_heat);
+    const rawRise = parseFloat(r.T_rise);
+    const rawFall = parseFloat(r.T_fall);
     const tau = 10; // τ = 10s
+    const t = !isNaN(rawT) ? rawT : 0;
+    const normHeat = !isNaN(rawNorm) ? rawNorm : 0;
     return {
       t: t,
       t_over_tau: parseFloat((t / tau).toFixed(2)),
-      exp_norm: parseFloat((normHeat / 2.6).toFixed(3)), // T'/K where K=1, normalized
-      theo_norm: parseFloat((1 - Math.exp(-t / tau)).toFixed(3)), // Theoretical 1 - e^-t/τ
-      T_rise: parseFloat(r.T_rise || 0),
-      T_fall: parseFloat(r.T_fall || 0)
+      exp_norm: parseFloat((normHeat / 2.6).toFixed(3)),
+      theo_norm: parseFloat((1 - Math.exp(-t / tau)).toFixed(3)),
+      T_rise: !isNaN(rawRise) ? rawRise : 0,
+      T_fall: !isNaN(rawFall) ? rawFall : 0
     };
   });
 
   // Special data transform for Part B Sinusoidal Input: T_in vs T_out over time
   const sinusoidalData = calculatedRows.map((r) => {
-    const t = parseFloat(r.t || 0);
-    const T_in = parseFloat(r.T_in || 0);
-    const T_out = parseFloat(r.T_out || 0);
+    const rawT = parseFloat(r.t);
+    const rawIn = parseFloat(r.T_in);
+    const rawOut = parseFloat(r.T_out);
     return {
-      t: t,
-      T_in: T_in,
-      T_out: T_out
+      t: !isNaN(rawT) ? rawT : 0,
+      T_in: !isNaN(rawIn) ? rawIn : 0,
+      T_out: !isNaN(rawOut) ? rawOut : 0
     };
   });
 

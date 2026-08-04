@@ -14,6 +14,8 @@ import { ValidationDetailModal } from './components/modals/ValidationDetailModal
 import { ResetConfirmModal } from './components/modals/ResetConfirmModal';
 import { ReportExportModal } from './components/modals/ReportExportModal';
 
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
 
@@ -36,7 +38,11 @@ export default function App() {
         {currentPage === 'landing' && <LandingPage onNavigate={navigateTo} />}
         {currentPage === 'subject' && <SubjectSelectPage onNavigate={navigateTo} />}
         {currentPage === 'experiment' && <ExperimentSelectPage onNavigate={navigateTo} />}
-        {currentPage === 'workspace' && <WorkspacePage onNavigate={navigateTo} />}
+        {currentPage === 'workspace' && (
+          <ErrorBoundary>
+            <WorkspacePage onNavigate={navigateTo} />
+          </ErrorBoundary>
+        )}
       </main>
 
       {/* Footer */}

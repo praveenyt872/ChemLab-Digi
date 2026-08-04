@@ -98,8 +98,9 @@ export function ObservationTable() {
                 {trialInputs.map(input => {
                   const val = row[input.id] !== undefined ? row[input.id] : '';
                   const numVal = parseFloat(val);
-                  const isValid = val !== '' && !isNaN(numVal) && numVal > 0;
-                  const isInvalid = val !== '' && (isNaN(numVal) || numVal <= 0);
+                  const allowZero = config?.experiment_id === 'exp1-first-order-system-response' || input.id === 't';
+                  const isValid = val !== '' && !isNaN(numVal) && (allowZero ? numVal >= 0 : numVal > 0);
+                  const isInvalid = val !== '' && (isNaN(numVal) || (allowZero ? numVal < 0 : numVal <= 0));
 
                   return (
                     <td key={input.id} className="py-2.5 px-3">
