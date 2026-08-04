@@ -228,19 +228,40 @@ export function WorkspacePage({ onNavigate }) {
               <span>Result & Experimental Precautions</span>
             </h3>
 
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/20 text-xs font-mono space-y-1">
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/20 text-xs font-mono space-y-2">
               <span className="text-amber-400 font-bold uppercase tracking-wider block">STATUTORY RESULT</span>
-              <p className="text-sm font-semibold text-slate-100 font-sans">
-                {experimentConfig.experiment_id === 'rotameter_calibration' ? (
-                  'The calibration curve for the given rotameter is generated.'
-                ) : experimentConfig.experiment_id === 'exp1-first-order-system-response' ? (
-                  activePartId === 'partA'
-                    ? 'The step response of the first-order system is studied and the graphical time constant τ (at 63.2% response) is found to be 10.0 sec.'
-                    : 'The sinusoidal response of the thermowell/thermocouple is studied; amplitude ratio AR is found to be 0.375 and time constant τ is 27 sec.'
+              {experimentConfig.experiment_id === 'rotameter_calibration' ? (
+                <p className="text-sm font-semibold text-slate-100 font-sans">
+                  The calibration curve for the given rotameter is generated.
+                </p>
+              ) : experimentConfig.experiment_id === 'exp1-first-order-system-response' ? (
+                activePartId === 'partA' ? (
+                  <p className="text-sm font-semibold text-slate-100 font-sans">
+                    The step response of the first-order system is studied and the graphical time constant τ (at 63.2% response) is found to be 10.0 sec.
+                  </p>
                 ) : (
-                  `The mean coefficient of discharge for ${experimentConfig.short_name} Cd is found to be ${headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.`
-                )}
-              </p>
+                  <div className="space-y-2 font-sans">
+                    <p className="text-sm font-semibold text-slate-100">
+                      The sinusoidal response of the thermowell/thermocouple is evaluated with the following parameters:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-lg bg-slate-900 border border-violet-500/30 text-xs font-mono text-slate-200">
+                      <div>• I/p amplitude = <span className="text-cyan-300 font-bold">10 °C</span></div>
+                      <div>• O/p amplitude = <span className="text-cyan-300 font-bold">3 °C</span></div>
+                      <div>• Amplitude Ratio (AR) = <span className="text-cyan-300 font-bold">0.3</span></div>
+                      <div>• Freq of oscillation (ω) = <span className="text-cyan-300 font-bold">0.105 rad/s</span></div>
+                      <div>• Phase lag (φ) = <span className="text-cyan-300 font-bold">60°</span></div>
+                      <div>• θ / A = <span className="text-cyan-300 font-bold">0.1365</span></div>
+                      <div className="col-span-1 sm:col-span-2 text-emerald-400 font-bold border-t border-slate-800 pt-1.5 mt-1">
+                        • Time Constant (τ) = 30.36 sec
+                      </div>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <p className="text-sm font-semibold text-slate-100 font-sans">
+                  The mean coefficient of discharge for {experimentConfig.short_name} Cd is found to be {headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.
+                </p>
+              )}
             </div>
 
             <div>

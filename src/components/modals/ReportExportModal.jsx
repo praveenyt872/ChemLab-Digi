@@ -246,14 +246,31 @@ export function ReportExportModal() {
 
         {/* RESULT */}
         <div className="printable-section pt-1 border-t border-gray-300">
-          <span className="font-bold text-xs uppercase tracking-wider text-black font-mono underline mr-2">RESULT:</span>
-          <span className="text-xs font-semibold text-gray-900 font-sans">
-            {part.id === 'partA'
-              ? 'The step response of the first-order system is studied and the time constant τ at 63.2% response is found to be 10.0 sec.'
-              : part.id === 'partB'
-              ? 'The sinusoidal response of the thermowell/thermocouple is studied; amplitude ratio AR is found to be 0.375 and time constant τ is 27 sec.'
-              : `The mean value is calculated to be ${headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.`}
-          </span>
+          <span className="font-bold text-xs uppercase tracking-wider text-black font-mono underline block mb-1">RESULT:</span>
+          {part.id === 'partA' ? (
+            <p className="text-xs font-semibold text-gray-900 font-sans">
+              The step response of the first-order system is studied and the time constant τ at 63.2% response is found to be 10.0 sec.
+            </p>
+          ) : part.id === 'partB' ? (
+            <div className="text-xs text-gray-900 font-sans space-y-1">
+              <p className="font-bold text-black">The sinusoidal response of the first-order thermowell system is evaluated with the following result parameters:</p>
+              <table className="w-full text-left text-xs font-mono border border-black max-w-md my-1">
+                <tbody className="divide-y divide-black">
+                  <tr><td className="p-1.5 font-bold border-r border-black">I/p amplitude</td><td className="p-1.5 font-bold">10 °C</td></tr>
+                  <tr><td className="p-1.5 font-bold border-r border-black">O/p amplitude</td><td className="p-1.5 font-bold">3 °C</td></tr>
+                  <tr><td className="p-1.5 font-bold border-r border-black">Amplitude Ratio (AR)</td><td className="p-1.5 font-bold">0.3</td></tr>
+                  <tr><td className="p-1.5 font-bold border-r border-black">Frequency of oscillation (ω)</td><td className="p-1.5 font-bold">0.105 rad/s</td></tr>
+                  <tr><td className="p-1.5 font-bold border-r border-black">Phase lag (φ)</td><td className="p-1.5 font-bold">60°</td></tr>
+                  <tr><td className="p-1.5 font-bold border-r border-black">θ / A</td><td className="p-1.5 font-bold">0.1365</td></tr>
+                  <tr className="bg-gray-100"><td className="p-1.5 font-bold border-r border-black">Time Constant (τ)</td><td className="p-1.5 font-bold text-black">30.36 s</td></tr>
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs font-semibold text-gray-900 font-sans">
+              The mean value is calculated to be {headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.
+            </p>
+          )}
         </div>
       </div>
     );

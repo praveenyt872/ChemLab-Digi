@@ -45,7 +45,7 @@ export function LiveResultsPanel() {
             <p className="text-xs text-slate-400 font-mono">{primaryMetric}</p>
             <div className="text-3xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-100 to-violet-300 glow-cyan">
               {isProcessControl ? (
-                activePartId === 'partA' ? '10.0' : '0.375'
+                activePartId === 'partA' ? '10.0' : '0.3'
               ) : headlineResult.mean !== null ? (
                 currentExperimentId === 'rotameter_calibration'
                   ? formatScientific(headlineResult.mean, 4)
@@ -62,15 +62,23 @@ export function LiveResultsPanel() {
           <div className="text-right text-xs font-mono text-slate-400">
             <div className="flex items-center gap-1 text-emerald-400">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{headlineResult.count} Valid Trials</span>
+              <span>{headlineResult.count || observationRows?.length || 1} Valid Trials</span>
             </div>
-            {headlineResult.min !== null && headlineResult.max !== null && (
-              <p className="text-[10px] text-slate-500 mt-0.5">
-                Range: {headlineResult.min.toFixed(3)} - {headlineResult.max.toFixed(3)}
-              </p>
-            )}
           </div>
         </div>
+
+        {/* Detailed Breakdown Grid for Part B Sinusoidal Response */}
+        {isProcessControl && activePartId === 'partB' && (
+          <div className="mt-3 pt-3 border-t border-cyan-500/20 text-xs font-mono grid grid-cols-2 gap-2 text-slate-300">
+            <div>I/p amplitude = <span className="text-cyan-300 font-bold">10 °C</span></div>
+            <div>O/p amplitude = <span className="text-cyan-300 font-bold">3 °C</span></div>
+            <div>AR = <span className="text-cyan-300 font-bold">0.3</span></div>
+            <div>Freq of oscillation = <span className="text-cyan-300 font-bold">0.105 rad/s</span></div>
+            <div>Phase lag = <span className="text-cyan-300 font-bold">60°</span></div>
+            <div>θ / A = <span className="text-cyan-300 font-bold">0.1365</span></div>
+            <div className="col-span-2 text-emerald-400 font-bold">Time Constant (τ) = 30.36 s</div>
+          </div>
+        )}
       </div>
 
       {/* Calculated Results Data Grid */}
