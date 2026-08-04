@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserCheck, ShieldCheck, Lock, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { UserCheck, ShieldCheck, Lock, AlertCircle, CheckCircle2, X, ChevronDown, BookOpen } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
 
@@ -10,11 +10,11 @@ export function StudentDetailsGateModal({ onProceed }) {
     isStudentGateOpen,
     setStudentGateOpen,
     saveStudentDetails,
-    currentSubject
+    currentSubject,
+    setSubject
   } = useExperimentStore();
 
-  const activeSubjectInfo = SUBJECTS_CONFIG[currentSubject] || SUBJECTS_CONFIG.fluid_mechanics;
-
+  const [selectedSubjectKey, setSelectedSubjectKey] = useState(currentSubject || 'fluid_mechanics');
   const [name, setName] = useState(studentDetails?.studentName || '');
   const [regNo, setRegNo] = useState(studentDetails?.registerNumber || '');
   const [acadYear, setAcadYear] = useState(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
@@ -24,9 +24,18 @@ export function StudentDetailsGateModal({ onProceed }) {
     setName(studentDetails?.studentName || '');
     setRegNo(studentDetails?.registerNumber || '');
     setAcadYear(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
-  }, [studentDetails, isStudentGateOpen]);
+    setSelectedSubjectKey(currentSubject || 'fluid_mechanics');
+  }, [studentDetails, isStudentGateOpen, currentSubject]);
 
   if (!isStudentGateOpen) return null;
+
+  const activeSubjectInfo = SUBJECTS_CONFIG[selectedSubjectKey] || SUBJECTS_CONFIG.fluid_mechanics;
+
+  const handleSubjectChange = (e) => {
+    const newSubKey = e.target.value;
+    setSelectedSubjectKey(newSubKey);
+    setSubject(newSubKey);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -77,7 +86,7 @@ export function StudentDetailsGateModal({ onProceed }) {
                   <span>Student Details Identification Gate</span>
                 </h3>
                 <p className="text-xs text-slate-400 font-mono">
-                  Enter student details for lab verification and official report export
+                  Select course title and enter student details for official lab verification
                 </p>
               </div>
             </div>
@@ -85,7 +94,7 @@ export function StudentDetailsGateModal({ onProceed }) {
             {isComplete && (
               <button
                 onClick={() => setStudentGateOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -95,56 +104,71 @@ export function StudentDetailsGateModal({ onProceed }) {
           {/* Form Fields Grid */}
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Read-Only Subject & Institutional Metadata (4 Cards) */}
-            <div className="space-y-2">
+            {/* Course Title Selection & Academic Metadata */}
+            <div className="space-y-3">
               <span className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-bold block flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Active Course & Academic Config (Read-Only)</span>
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Inbuilt Course Title & Institutional Config</span>
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                
+                {/* Course Title Dropdown (Inbuilt Select Option) */}
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-mono text-slate-300 flex items-center justify-between">
+                    <span>Select Course Title <span className="text-cyan-400">*</span></span>
+                    <span className="text-[10px] text-cyan-400 font-semibold">Inbuilt Subjects List</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedSubjectKey}
+                      onChange={handleSubjectChange}
+                      className="w-full px-4 py-2.5 rounded-xl glass-input text-xs font-mono text-cyan-300 font-bold bg-slate-900 border border-cyan-500/40 focus:border-cyan-400 appearance-none cursor-pointer pr-10 shadow-[0_0_15px_rgba(0,229,255,0.1)]"
+                    >
+                      {Object.entries(SUBJECTS_CONFIG).map(([key, subj]) => (
+                        <option key={key} value={key} className="bg-slate-950 text-slate-100 font-mono">
+                          {subj.courseTitle} ({subj.courseCode}) — {subj.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-cyan-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Auto-Derived Course Code */}
+                <div className="p-3 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase">Course Code (Auto-Derived)</span>
+                    <span className="text-cyan-300 font-bold text-sm">{activeSubjectInfo.courseCode}</span>
+                  </div>
+                  <Lock className="w-3.5 h-3.5 text-slate-500" />
+                </div>
+
                 {/* Field */}
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Field</span>
+                    <span className="text-[10px] text-slate-400 block uppercase">Field</span>
                     <span className="text-slate-200 font-bold">{GLOBAL_APP_CONFIG.field}</span>
                   </div>
-                  <Lock className="w-3.5 h-3.5 text-slate-600" />
-                </div>
-
-                {/* Course Code */}
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Course Code</span>
-                    <span className="text-cyan-300 font-bold">{activeSubjectInfo.courseCode}</span>
-                  </div>
-                  <Lock className="w-3.5 h-3.5 text-slate-600" />
-                </div>
-
-                {/* Course Title */}
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Course Title</span>
-                    <span className="text-violet-300 font-bold truncate max-w-[180px]">{activeSubjectInfo.courseTitle}</span>
-                  </div>
-                  <Lock className="w-3.5 h-3.5 text-slate-600" />
+                  <Lock className="w-3.5 h-3.5 text-slate-500" />
                 </div>
 
                 {/* Semester & Section */}
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between sm:col-span-2">
                   <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Semester & Section</span>
-                    <span className="text-slate-200 font-bold">Sem {GLOBAL_APP_CONFIG.semester} — Sec {GLOBAL_APP_CONFIG.section}</span>
+                    <span className="text-[10px] text-slate-400 block uppercase">Semester & Section</span>
+                    <span className="text-slate-200 font-bold">Semester {GLOBAL_APP_CONFIG.semester} — Section {GLOBAL_APP_CONFIG.section}</span>
                   </div>
-                  <Lock className="w-3.5 h-3.5 text-slate-600" />
+                  <Lock className="w-3.5 h-3.5 text-slate-500" />
                 </div>
+
               </div>
             </div>
 
             {/* Editable Student Inputs (3 Required Fields) */}
             <div className="space-y-3 pt-2 border-t border-slate-800">
               <span className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-bold block">
-                Required Student Inputs
+                Required Student Details
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -213,7 +237,7 @@ export function StudentDetailsGateModal({ onProceed }) {
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 font-heading font-bold text-sm hover:brightness-110 shadow-[0_0_20px_rgba(0,229,255,0.4)] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="w-4 h-4 text-slate-950" />
-                <span>Save Details & Proceed to Lab Workspace</span>
+                <span>Save Details & Launch Selected Course</span>
               </button>
             </div>
 
