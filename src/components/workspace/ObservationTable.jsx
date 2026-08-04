@@ -4,6 +4,7 @@ import { useExperimentStore } from '../../store/experimentStore';
 
 export function ObservationTable() {
   const {
+    activePartConfig,
     experimentConfig,
     observationRows,
     updateCell,
@@ -13,7 +14,8 @@ export function ObservationTable() {
     loadSampleData
   } = useExperimentStore();
 
-  const trialInputs = experimentConfig?.trial_inputs || [];
+  const config = activePartConfig || experimentConfig;
+  const trialInputs = config?.trial_inputs || [];
 
   return (
     <div className="space-y-4">

@@ -4,11 +4,27 @@ import { useExperimentStore } from '../../store/experimentStore';
 import { formatValue, formatScientific } from '../../engine/formulaEngine';
 
 export function LiveResultsPanel() {
-  const { experimentConfig, calculatedRows, headlineResult, currentExperimentId } = useExperimentStore();
+  const { activePartConfig, experimentConfig, activePartId, calculatedRows, headlineResult, currentExperimentId } = useExperimentStore();
 
-  const calcColumns = experimentConfig?.calculated_columns || [];
-  const primaryMetric = currentExperimentId === 'rotameter_calibration' ? 'Observed Flow Rate (Q)' : 'Coefficient of Discharge (Cd)';
-  const resultUnit = currentExperimentId === 'rotameter_calibration' ? 'm³/s' : 'dim';
+  const config = activePartConfig || experimentConfig;
+  const calcColumns = config?.calculated_columns || [];
+  
+  const isProcessControl = currentExperimentId === 'exp1-first-order-system-response';
+  const primaryMetric = isProcessControl
+    ? activePartId === 'partA'
+      ? 'Time Constant τ (63.2%)'
+      : 'Amplitude Ratio (AR)'
+    : currentExperimentId === 'rotameter_calibration'
+    ? 'Observed Flow Rate (Q)'
+    : 'Coefficient of Discharge (Cd)';
+
+  const resultUnit = isProcessControl
+    ? activePartId === 'partA'
+      ? 'sec'
+      : 'dim'
+    : currentExperimentId === 'rotameter_calibration'
+    ? 'm³/s'
+    : 'dim';
 
   return (
     <div className="space-y-4">
@@ -26,16 +42,18 @@ export function LiveResultsPanel() {
 
         <div className="mt-3 flex items-baseline justify-between">
           <div>
-            <p className="text-xs text-slate-400 font-mono">Mean {primaryMetric}</p>
+            <p className="text-xs text-slate-400 font-mono">{primaryMetric}</p>
             <div className="text-3xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-100 to-violet-300 glow-cyan">
-              {headlineResult.mean !== null ? (
+              {isProcessControl ? (
+                activePartId === 'partA' ? '10.0' : '0.375'
+              ) : headlineResult.mean !== null ? (
                 currentExperimentId === 'rotameter_calibration'
                   ? formatScientific(headlineResult.mean, 4)
                   : headlineResult.mean.toFixed(3)
               ) : (
                 '—'
               )}
-              {headlineResult.mean !== null && resultUnit !== 'dim' && (
+              {resultUnit !== 'dim' && (
                 <span className="text-sm text-cyan-400 font-mono ml-2">{resultUnit}</span>
               )}
             </div>

@@ -1,0 +1,287 @@
+{
+  "experiment_id": "exp1-first-order-system-response",
+  "subject": "instrumentation-process-control",
+  "subject_name": "Instrumentation & Process Control Lab",
+  "title": "Response of First-Order System",
+  "short_name": "First-Order System",
+  "aim": "To study the behavior and determine the time constant of a first-order process subjected to step and sinusoidal heat input changes.",
+  "apparatus": [
+    "Thermocouple / RTD / Mercury thermometer",
+    "Circulating water bath with electric heater",
+    "Stopwatch",
+    "Cyclic timer (ON/OFF)"
+  ],
+  "materials": [
+    "Clean water",
+    "Ice cubes"
+  ],
+  "parts": [
+    {
+      "id": "partA",
+      "title": "Part A: Step Input Response",
+      "short_title": "Part A — Step Input",
+      "aim": "To study the behavior and to determine the time constant of a first-order process subjected to a step change in heat input (thermometer/thermocouple immersed in a heating bath).",
+      "system": "Changes in the temperature of a fluid due to step changes in the external heat supply.",
+      "theory": "Heat transfer between the heating bath surroundings at temperature T_s and the temperature sensor (thermocouple/RTD/thermometer) at temperature T' is governed by a first-order dynamic energy balance.\n\nAssumptions:\n(i) Uniform bead temperature (no gradients in thermocouple bead)\n(ii) No conduction in the leads\n(iii) Constant physical properties (density, specific heat, heat transfer coefficient)\n(iv) Fast sensor millivolt-to-°C conversion with zero dynamics\n\nEnergy Balance:\nhA(T - T_s) = m C_p (dT'/dt)\n\nAt Steady State:\nhA(T_s - T_s') = m C_p (dT_s'/dt) = 0\n\nIntroducing Deviation Variables T̄ = T - T_s and T̄' = T' - T_s':\nhA(T̄ - T̄') = m C_p (dT̄'/dt) => T̄ - T̄' = τ (dT̄'/dt)\nwhere τ = (m C_p) / (h A) is the time constant.\n\nLaplace Domain Transfer Function:\nT̄'(s) / T̄(s) = 1 / (τs + 1) = K e^{-Ds} / (τs + 1)\n\nStep Response Solution:\nT̄'(t) = K (1 - e^{-(t-D)/τ})\nAt t = τ, T̄'(τ) = 0.632 × ΔT (63.2% of total temperature rise).",
+      "formulas": [
+        {
+          "id": "energy_balance",
+          "label": "Sensor Energy Balance",
+          "latex": "hA(T - T_s) = m C_p \\frac{dT'}{dt}",
+          "derivation": "Dynamic heat transfer from bath surroundings at T_s to sensor bead at T'.",
+          "purpose": "Establishes dynamic thermal equilibrium for the sensor.",
+          "variables": [
+            { "symbol": "m", "meaning": "Mass of sensor / thermocouple fluid", "unit": "g", "typical_range": "1.0 g" },
+            { "symbol": "C_p", "meaning": "Specific heat capacity", "unit": "cal/g·°C", "typical_range": "0.25 cal/g·°C" },
+            { "symbol": "h", "meaning": "Heat transfer coefficient", "unit": "cal/cm²·h·°C", "typical_range": "12.0 cal/cm²·h·°C" },
+            { "symbol": "A", "meaning": "Surface area of sensor bead", "unit": "cm²", "typical_range": "7.5 cm²" }
+          ],
+          "assumptions": ["Uniform bead temperature", "No lead conduction", "Constant physical properties", "Fast sensor response"]
+        },
+        {
+          "id": "time_constant_definition",
+          "label": "Time Constant (τ)",
+          "latex": "\\tau = \\frac{m C_p}{h A}",
+          "derivation": "Defined by grouping physical properties m C_p divided by h A.",
+          "purpose": "Measures system response speed. Smaller τ means faster response.",
+          "variables": [
+            { "symbol": "τ", "meaning": "System time constant", "unit": "sec", "typical_range": "5 – 25 s" },
+            { "symbol": "m", "meaning": "Sensor mass", "unit": "g", "typical_range": "1.0 g" },
+            { "symbol": "C_p", "meaning": "Specific heat", "unit": "cal/g·°C", "typical_range": "0.25" },
+            { "symbol": "h", "meaning": "Heat transfer coefficient", "unit": "cal/cm²·h·°C", "typical_range": "12.0" },
+            { "symbol": "A", "meaning": "Surface area", "unit": "cm²", "typical_range": "7.5" }
+          ],
+          "assumptions": ["Ideal lumped capacitance system"]
+        },
+        {
+          "id": "laplace_tf",
+          "label": "Laplace Transfer Function",
+          "latex": "\\frac{\\bar{T}'(s)}{\\bar{T}(s)} = \\frac{1}{\\tau s + 1} = \\frac{K e^{-D s}}{\\tau s + 1}",
+          "derivation": "Transformed into s-domain using deviation variables.",
+          "purpose": "Relates output deviation temperature to input step in s-domain.",
+          "variables": [
+            { "symbol": "K", "meaning": "Steady-state gain", "unit": "dim", "typical_range": "1.0" },
+            { "symbol": "D", "meaning": "Dead time / time delay", "unit": "sec", "typical_range": "5 s" }
+          ],
+          "assumptions": ["Linear first-order system with dead time"]
+        },
+        {
+          "id": "step_response",
+          "label": "Time Domain Step Response",
+          "latex": "\\bar{T}'(t) = K \\left(1 - e^{-\\frac{t-D}{\\tau}}\\right)",
+          "derivation": "Inverse Laplace transform of unit step response.",
+          "purpose": "Predicts sensor output temperature at any time t following step change.",
+          "variables": [
+            { "symbol": "T̄'(t)", "meaning": "Deviation temperature at time t", "unit": "°C", "typical_range": "0 – 26 °C" },
+            { "symbol": "t", "meaning": "Elapsed time", "unit": "sec", "typical_range": "0 – 100 s" }
+          ],
+          "assumptions": ["Pure step change in bath temperature"]
+        }
+      ],
+      "fixed_inputs": [
+        { "id": "m", "label": "Mass of sensor (m)", "value": 1.0, "unit": "g", "description": "Mass of fluid/thermocouple (1 g)" },
+        { "id": "Cp", "label": "Specific heat (Cp)", "value": 0.25, "unit": "cal/g·°C", "description": "Specific heat of fluid/sensor" },
+        { "id": "h", "label": "Heat transfer coeff (h)", "value": 12.0, "unit": "cal/cm²·h·°C", "description": "Heat transfer coefficient" },
+        { "id": "A", "label": "Surface area (A)", "value": 7.5, "unit": "cm²", "description": "Surface area of sensor" },
+        { "id": "T_initial", "label": "Room/Initial Temp (T_initial)", "value": 25.0, "unit": "°C", "description": "Initial steady temperature" },
+        { "id": "T_final", "label": "Final Steady Temp (T_final)", "value": 51.0, "unit": "°C", "description": "Final steady temperature" },
+        { "id": "D", "label": "Time delay (D)", "value": 5.0, "unit": "sec", "description": "Dead time / lag" },
+        { "id": "V", "label": "Input Voltage (V)", "value": 6.0, "unit": "% of 230V @ 5A", "description": "Heater step voltage percentage" },
+        { "id": "sensor_type", "label": "Sensor Type", "value": "Mercury Thermometer", "unit": "-", "description": "Dropdown selection: Mercury Thermometer / Thermocouple / RTD" }
+      ],
+      "trial_inputs": [
+        { "id": "t", "label": "Time (t)", "unit": "s", "type": "number", "placeholder": "e.g. 10", "tooltip": "Elapsed time in seconds" },
+        { "id": "T_rise", "label": "Rise in Temp (°C) [Heating]", "unit": "°C", "type": "number", "placeholder": "e.g. 45", "tooltip": "Observed temperature during heating" },
+        { "id": "T_fall", "label": "Fall in Temp (°C) [Cooling]", "unit": "°C", "type": "number", "placeholder": "e.g. 32", "tooltip": "Observed temperature during cooling" }
+      ],
+      "calculations": {
+        "dT": "T_final - T_initial",
+        "K": "(T_final - T_initial) / ((V / 100) * 230 * 5 * 0.05)",
+        "tau_theo": "(m * Cp) / (h * A / 3600)",
+        "T_dev_heat": "T_rise - T_initial",
+        "T_dev_cool": "T_fall - T_final",
+        "norm_heat": "(T_rise - T_initial) / 10",
+        "norm_cool": "T_fall / 10",
+        "T_theo": "T_initial + (T_final - T_initial) * (1 - exp(-1 * t / 10))"
+      },
+      "calculated_columns": [
+        { "id": "T_dev_heat", "label": "T̄'(t) Heating", "unit": "°C", "format": "decimal" },
+        { "id": "norm_heat", "label": "T̄'(t)/τ Heating", "unit": "-", "format": "decimal" },
+        { "id": "T_dev_cool", "label": "T̄'(t) Cooling", "unit": "°C", "format": "decimal" },
+        { "id": "norm_cool", "label": "T̄'(t)/τ Cooling", "unit": "-", "format": "decimal" },
+        { "id": "T_theo", "label": "T_theo (t)", "unit": "°C", "format": "decimal" }
+      ],
+      "validation_ranges": {
+        "t": { "min": 0, "max": 600, "label": "Time (s)" },
+        "T_rise": { "min": 10, "max": 100, "label": "Heating Temp (°C)" },
+        "T_fall": { "min": 10, "max": 100, "label": "Cooling Temp (°C)" }
+      },
+      "sample_data": [
+        { "t": 0, "T_rise": 25, "T_fall": 51 },
+        { "t": 5, "T_rise": 35, "T_fall": 40.77 },
+        { "t": 10, "T_rise": 41.4, "T_fall": 34.56 },
+        { "t": 15, "T_rise": 45.2, "T_fall": 30.8 },
+        { "t": 20, "T_rise": 47.5, "T_fall": 28.5 },
+        { "t": 25, "T_rise": 48.9, "T_fall": 27.13 },
+        { "t": 30, "T_rise": 49.7, "T_fall": 26.3 },
+        { "t": 100, "T_rise": 50.99, "T_fall": 25.0 }
+      ],
+      "graph": {
+        "type": "first_order_step",
+        "x": "t",
+        "y": "norm_heat",
+        "x_label": "Time / τ",
+        "y_label": "T̄'(t) / K",
+        "title": "First-Order Step Response (Experimental vs Theoretical 63.2% Curve)"
+      },
+      "viva_questions": [
+        {
+          "question": "1. What is the time constant? How does it affect the response of a system?",
+          "answer": "Time constant (τ) is the time required for the system response to reach 63.2% of its ultimate final steady-state value following a step change. A smaller time constant indicates a fast, responsive system, whereas a larger time constant indicates a slow, sluggish system."
+        },
+        {
+          "question": "2. Do the size of the bulb and the amount of mercury affect the response of the thermometer?",
+          "answer": "Yes. The time constant τ = (m Cp) / (h A) depends directly on the mass of mercury (m) and surface area (A). A larger bulb contains more mercury (higher mass m), which increases heat capacity and lengthens the time constant, making response slower unless surface area A increases proportionally."
+        },
+        {
+          "question": "3. What is the physical significance of steady-state gain?",
+          "answer": "Steady-state gain (K) is the ratio of ultimate output change to input step change (ΔY / ΔX). Higher process gain means the system produces a larger output change for a given input change, making the process highly sensitive and requiring less aggressive controller action."
+        }
+      ]
+    },
+    {
+      "id": "partB",
+      "title": "Part B: Sinusoidal Input Response",
+      "short_title": "Part B — Sinusoidal Input",
+      "aim": "To study the sinusoidal response of a thermowell/thermocouple in a circulating water bath to a sinusoidal (cyclic ON/OFF) heat input, and compare input vs output temperature-time curves, amplitude ratio, and phase lag.",
+      "system": "Thermowell in a circulating water bath subjected to periodic cyclic heating.",
+      "theory": "The dynamic response of a first-order thermal instrument to a sinusoidal temperature variation is modeled by:\nτ (dθ/dt) + θ = A sin(ωt)\nwhere θ is indicated temperature deviation, t is time, τ is time constant, A is input amplitude, and ω = 2π / T is circular frequency.\n\nSteady-State Solution:\nθ(t) / A = (1 / √(1 + (ωτ)²)) × sin(ωt - φ)\nwhere φ = arctan(ωτ) is the phase lag angle.\n\nFull Solution (Transient + Steady State):\nT̄'(t) = [A₀ / √(1 + (ωτ)²)] × [ -e^{-t/τ} / √(1 + (ωτ)²) + sin(ω₀t - ψ) ]\nFor long term (t >> τ), transient decay vanishes, leaving steady sinusoidal output.\n\nAmplitude Ratio (AR):\nAR = A₂ / A₁ = 1 / √(1 + (ωτ)²)\nTime constant from AR: τ = √( (1/AR)² - 1 ) / ω\n\nPhase Lag (φ):\nφ = arctan(-ωτ) => Time constant from phase lag: τ = -tan(φ) / ω\nWhen the two τ estimates differ (AR vs phase lag), the larger value is taken as representative.",
+      "formulas": [
+        {
+          "id": "sinusoidal_ode",
+          "label": "Sinusoidal Governing ODE",
+          "latex": "\\tau \\frac{d\\theta}{dt} + \\theta = A \\sin(\\omega t)",
+          "derivation": "First-order differential equation driven by sinusoidal heat input.",
+          "purpose": "Models temperature oscillation of sensor in cyclic thermal bath.",
+          "variables": [
+            { "symbol": "θ", "meaning": "Indicated temperature deviation", "unit": "°C", "typical_range": "32 – 48 °C" },
+            { "symbol": "τ", "meaning": "Time constant", "unit": "sec", "typical_range": "10 – 27 s" },
+            { "symbol": "A", "meaning": "Input cycle amplitude A₁", "unit": "°C", "typical_range": "8.0 °C" },
+            { "symbol": "ω", "meaning": "Circular frequency (2π/T)", "unit": "rad/s", "typical_range": "0.105 rad/s" }
+          ],
+          "assumptions": ["Constant bath circulation rate", "Harmonic heat supply cycle"]
+        },
+        {
+          "id": "steady_state_sinusoidal",
+          "label": "Steady-State Solution",
+          "latex": "\\frac{\\theta(t)}{A} = \\frac{1}{\\sqrt{1 + (\\omega \\tau)^2}} \\sin(\\omega t - \\phi)",
+          "derivation": "Particular integral of first-order ODE for t >> τ.",
+          "purpose": "Calculates output wave amplitude attenuation and phase shift.",
+          "variables": [
+            { "symbol": "φ", "meaning": "Phase lag angle = arctan(ωτ)", "unit": "rad", "typical_range": "0.6 – 1.2 rad" },
+            { "symbol": "AR", "meaning": "Amplitude ratio = 1/√(1+(ωτ)²)", "unit": "dim", "typical_range": "0.375" }
+          ],
+          "assumptions": ["Long-term steady oscillation (t >> τ)"]
+        },
+        {
+          "id": "amplitude_ratio_tau",
+          "label": "Time Constant from Amplitude Ratio",
+          "latex": "\\tau_{AR} = \\frac{\\sqrt{(1 / AR)^2 - 1}}{\\omega}",
+          "derivation": "Solved by isolating τ in AR = A₂/A₁ = 1/√(1+(ωτ)²).",
+          "purpose": "Calculates process time constant directly from peak-to-peak amplitude attenuation.",
+          "variables": [
+            { "symbol": "AR", "meaning": "Amplitude ratio (A₂/A₁)", "unit": "dim", "typical_range": "0.375" },
+            { "symbol": "ω", "meaning": "Angular frequency 2π/T", "unit": "rad/s", "typical_range": "0.105 rad/s" },
+            { "symbol": "τ_AR", "meaning": "Time constant from AR", "unit": "sec", "typical_range": "27 s" }
+          ],
+          "assumptions": ["Symmetric sinusoidal input and output peaks"]
+        },
+        {
+          "id": "phase_lag_tau",
+          "label": "Time Constant from Phase Lag",
+          "latex": "\\tau_{\\phi} = \\frac{-\\tan(\\phi)}{\\omega}",
+          "derivation": "Derived from phase lag relation φ = arctan(-ωτ).",
+          "purpose": "Calculates process time constant from time shift Δt between input and output peaks.",
+          "variables": [
+            { "symbol": "φ", "meaning": "Phase lag angle", "unit": "rad", "typical_range": "-1.2 rad" },
+            { "symbol": "τ_φ", "meaning": "Time constant from phase lag", "unit": "sec", "typical_range": "3.05 – 27 s" }
+          ],
+          "assumptions": ["Accurate peak timestamp measurement"]
+        }
+      ],
+      "fixed_inputs": [
+        { "id": "m", "label": "Mass of sensor (m)", "value": 1.0, "unit": "g", "description": "Mass of thermocouple (1 g)" },
+        { "id": "Cp", "label": "Specific heat (Cp)", "value": 0.25, "unit": "cal/g·°C", "description": "Specific heat of sensor" },
+        { "id": "h", "label": "Heat transfer coeff (h)", "value": 12.0, "unit": "cal/cm²·h·°C", "description": "Heat transfer coefficient" },
+        { "id": "A", "label": "Surface area (A)", "value": 7.5, "unit": "cm²", "description": "Surface area" },
+        { "id": "input_min", "label": "Input Temp Min", "value": 32.0, "unit": "°C", "description": "Minimum input bath temperature" },
+        { "id": "input_max", "label": "Input Temp Max", "value": 48.0, "unit": "°C", "description": "Maximum input bath temperature" },
+        { "id": "timer_on", "label": "Cyclic Timer ON", "value": 30.0, "unit": "sec", "description": "Heater ON duration" },
+        { "id": "timer_off", "label": "Cyclic Timer OFF", "value": 30.0, "unit": "sec", "description": "Heater OFF duration" }
+      ],
+      "trial_inputs": [
+        { "id": "t", "label": "Time (s)", "unit": "s", "type": "number", "placeholder": "e.g. 15", "tooltip": "Elapsed time in seconds" },
+        { "id": "T_in", "label": "Input Temp (°C)", "unit": "°C", "type": "number", "placeholder": "e.g. 48", "tooltip": "Bath temperature" },
+        { "id": "T_out", "label": "Output Temp (°C)", "unit": "°C", "type": "number", "placeholder": "e.g. 41.5", "tooltip": "Thermowell sensor temperature" }
+      ],
+      "calculations": {
+        "period": "timer_on + timer_off",
+        "omega": "2 * 3.14159265 / (timer_on + timer_off)",
+        "tau_theo": "(m * Cp) / (h * A / 3600)",
+        "A1": "(input_max - input_min) / 2",
+        "A2": "3.0",
+        "AR": "3.0 / 8.0",
+        "tau_AR": "sqrt((1 / (3.0/8.0))^2 - 1) / (2 * 3.14159265 / (timer_on + timer_off))",
+        "K": "3.0 / 8.0"
+      },
+      "calculated_columns": [
+        { "id": "T_in", "label": "Input Bath (°C)", "unit": "°C", "format": "decimal" },
+        { "id": "T_out", "label": "Output Sensor (°C)", "unit": "°C", "format": "decimal" }
+      ],
+      "validation_ranges": {
+        "t": { "min": 0, "max": 1000, "label": "Time (s)" },
+        "T_in": { "min": 20, "max": 80, "label": "Input Temp (°C)" },
+        "T_out": { "min": 20, "max": 80, "label": "Output Temp (°C)" }
+      },
+      "sample_data": [
+        { "t": 0, "T_in": 40, "T_out": 40 },
+        { "t": 15, "T_in": 48, "T_out": 41.5 },
+        { "t": 30, "T_in": 40, "T_out": 37 },
+        { "t": 45, "T_in": 32, "T_out": 39.5 },
+        { "t": 60, "T_in": 40, "T_out": 43 },
+        { "t": 75, "T_in": 48, "T_out": 40 },
+        { "t": 90, "T_in": 40, "T_out": 37 },
+        { "t": 105, "T_in": 32, "T_out": 40 },
+        { "t": 120, "T_in": 40, "T_out": 43 },
+        { "t": 135, "T_in": 48, "T_out": 40 },
+        { "t": 150, "T_in": 39.5, "T_out": 37 },
+        { "t": 165, "T_in": 32, "T_out": 40 },
+        { "t": 180, "T_in": 40.5, "T_out": 43 },
+        { "t": 195, "T_in": 48, "T_out": 40 },
+        { "t": 210, "T_in": 39.5, "T_out": 37 }
+      ],
+      "graph": {
+        "type": "first_order_sinusoidal",
+        "x": "t",
+        "y": "T_out",
+        "x_label": "Time (sec)",
+        "y_label": "Temperature (°C)",
+        "title": "Sinusoidal Response of Thermal Bath (Input vs Output Temperature Overlay)"
+      },
+      "viva_questions": [
+        {
+          "question": "1. What is the time constant? How does it affect the response of a system?",
+          "answer": "Time constant (τ) is the characteristic response time of the first-order system. In sinusoidal testing, a larger time constant causes greater attenuation (smaller Amplitude Ratio AR) and larger phase lag angle φ."
+        },
+        {
+          "question": "2. Do the size of the bulb and the amount of mercury affect the response of the thermometer?",
+          "answer": "Yes, time constant depends on thermal mass m Cp and heat transfer surface area A: τ = (m Cp) / (h A). Increasing mercury mass increases thermal inertia, resulting in a larger phase lag and smaller output amplitude."
+        },
+        {
+          "question": "3. What is the physical significance of steady-state gain?",
+          "answer": "Steady-state gain (K) measures the magnitude ratio of output change to input change at low frequencies (ω -> 0). For temperature sensors, K ≈ 1.0 indicates accurate tracking of bath temperature changes."
+        }
+      ]
+    }
+  ]
+}

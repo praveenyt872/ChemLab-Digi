@@ -144,23 +144,52 @@ export function validateObservationData(experimentConfig, observationRows = [], 
     }
   });
 
-  // 4. Cross-row data pattern checks (Duplicate readings / copy-paste detection)
-  if (observationRows.length >= 3) {
-    const serializedRows = observationRows.map(r => JSON.stringify(r));
-    const uniqueRows = new Set(serializedRows);
+  // 5. First-Order System Process Control Validation Rules (Part A & Part B)
+  if (expId === 'exp1-first-order-system-response' || experimentConfig.id === 'partA' || experimentConfig.id === 'partB') {
+    // Check Part A Monotonicity
+    if (experimentConfig.id === 'partA' || (!experimentConfig.id && observationRows[0]?.T_rise !== undefined)) {
+      for (let i = 1; i < observationRows.length; i++) {
+        const prevHeating = parseFloat(observationRows[i - 1].T_rise);
+        const currHeating = parseFloat(observationRows[i].T_rise);
+        if (!isNaN(prevHeating) && !isNaN(currHeating) && currHeating < prevHeating) {
+          flags.push({
+            id: `non_monotonic_heating_${i + 1}`,
+            type: 'amber',
+            severity: 'warning',
+            title: `Non-Monotonic Heating Curve in Trial ${i + 1}`,
+            description: `Temperature dropped from ${prevHeating}°C to ${currHeating}°C during step heating.`,
+            why: 'A first-order thermal system subjected to a positive step input in heat supply must monotonically approach steady-state temperature without dips or oscillations.',
+            suggestion: null,
+            rowIndex: i + 1,
+            field: 'T_rise'
+          });
+          break;
+        }
+      }
+    }
 
-    if (uniqueRows.size < observationRows.length) {
-      flags.push({
-        id: 'duplicate_trial_readings',
-        type: 'grey',
-        severity: 'info',
-        title: 'Duplicate Trial Readings Detected',
-        description: 'Identical input values were detected across multiple trial rows.',
-        why: 'In physical laboratory experiments, changing flow rate valves produces distinct time and manometer readings for each trial.',
-        suggestion: null,
-        rowIndex: null,
-        field: null
-      });
+    // Check Part B Amplitude Ratio (AR <= 1.0)
+    if (experimentConfig.id === 'partB' || (!experimentConfig.id && observationRows[0]?.T_out !== undefined)) {
+      const inVals = observationRows.map(r => parseFloat(r.T_in)).filter(v => !isNaN(v));
+      const outVals = observationRows.map(r => parseFloat(r.T_out)).filter(v => !isNaN(v));
+
+      if (inVals.length > 2 && outVals.length > 2) {
+        const inSpan = Math.max(...inVals) - Math.min(...inVals);
+        const outSpan = Math.max(...outVals) - Math.min(...outVals);
+        if (inSpan > 0 && outSpan > inSpan) {
+          flags.push({
+            id: 'ar_exceeds_one',
+            type: 'red',
+            severity: 'error',
+            title: 'Physically Implausible Sinusoidal Response (AR > 1.0)',
+            description: `Output temperature span (${outSpan.toFixed(1)}°C) exceeds input temperature span (${inSpan.toFixed(1)}°C).`,
+            why: 'First-order thermal systems act as low-pass filters. Output signal amplitude must be attenuated (AR ≤ 1.0), never amplified.',
+            suggestion: null,
+            rowIndex: null,
+            field: 'T_out'
+          });
+        }
+      }
     }
   }
 

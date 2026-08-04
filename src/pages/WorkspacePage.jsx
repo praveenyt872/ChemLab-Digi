@@ -9,7 +9,8 @@ import {
   AlertTriangle,
   FileText,
   ChevronRight,
-  Info
+  Info,
+  HelpCircle
 } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
 import { formatScientific } from '../engine/formulaEngine';
@@ -21,10 +22,21 @@ import { FormulaCard } from '../components/workspace/FormulaCard';
 import { AIValidationPanel } from '../components/workspace/AIValidationPanel';
 
 export function WorkspacePage({ onNavigate }) {
-  const { experimentConfig, headlineResult } = useExperimentStore();
+  const {
+    experimentConfig,
+    activePartConfig,
+    activePartId,
+    setActivePart,
+    headlineResult,
+    currentSubject
+  } = useExperimentStore();
   const [mobileTab, setMobileTab] = useState('data');
 
-  if (!experimentConfig) return null;
+  const config = activePartConfig || experimentConfig;
+  if (!config) return null;
+
+  const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
+  const hasParts = Array.isArray(experimentConfig?.parts) && experimentConfig.parts.length > 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -33,7 +45,9 @@ export function WorkspacePage({ onNavigate }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl glass-panel border border-cyan-500/30">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-cyan-300">
-            <span className="uppercase tracking-wider">Fluid Mechanics</span>
+            <span className="uppercase tracking-wider">
+              {isProcessControl ? 'Instrumentation & Process Control Lab' : 'Fluid Mechanics Lab'}
+            </span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
             <span>REC ChemEngg 2026 Lab</span>
           </div>
@@ -41,7 +55,7 @@ export function WorkspacePage({ onNavigate }) {
             {experimentConfig.title}
           </h1>
           <p className="text-xs text-slate-300 font-sans mt-1 max-w-3xl">
-            {experimentConfig.aim}
+            {config.aim}
           </p>
         </div>
 
@@ -52,12 +66,35 @@ export function WorkspacePage({ onNavigate }) {
               {headlineResult.mean !== null
                 ? experimentConfig.experiment_id === 'rotameter_calibration'
                   ? formatScientific(headlineResult.mean, 4)
+                  : experimentConfig.experiment_id === 'exp1-first-order-system-response'
+                  ? activePartId === 'partA'
+                    ? `τ = 10.0 s (63.2%)`
+                    : `AR = 0.375 | τ = 27 s`
                   : `Cd = ${headlineResult.mean.toFixed(3)}`
                 : '—'}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Segmented Sub-Tab Switcher for Multi-Part Experiments (e.g. Part A vs Part B) */}
+      {hasParts && (
+        <div className="flex rounded-xl bg-slate-900/90 p-1 border border-violet-500/30 font-mono text-xs shadow-lg">
+          {experimentConfig.parts.map((part) => (
+            <button
+              key={part.id}
+              onClick={() => setActivePart(part.id)}
+              className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-center transition-all cursor-pointer ${
+                activePartId === part.id
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              {part.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Mobile Navigation Tabs (visible only on small viewports) */}
       <div className="flex lg:hidden rounded-xl bg-slate-900/80 p-1 border border-cyan-500/20 font-mono text-xs overflow-x-auto">
@@ -98,7 +135,7 @@ export function WorkspacePage({ onNavigate }) {
       {/* Split-Pane Desktop Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Left Column: Scrollable Content (Aim, Apparatus, Formulas, Table, Graph, Precautions) */}
+        {/* Left Column: Scrollable Content (Aim, Apparatus, Formulas, Table, Graph, Precautions, Viva) */}
         <div className={`lg:col-span-7 space-y-6 ${mobileTab !== 'data' && mobileTab !== 'theory' && mobileTab !== 'graph' ? 'hidden lg:block' : ''}`}>
           
           {/* Aim & Apparatus Card */}
@@ -106,20 +143,20 @@ export function WorkspacePage({ onNavigate }) {
             <div className="flex items-center gap-2">
               <FlaskConical className="w-5 h-5 text-cyan-400" />
               <h3 className="font-heading text-lg font-bold text-slate-100">
-                Aim & Apparatus
+                Aim & Apparatus — {config.short_title || config.title}
               </h3>
             </div>
 
             <div className="space-y-3 text-xs font-mono">
               <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                 <span className="text-cyan-400 font-bold uppercase tracking-wider block mb-1">AIM</span>
-                <p className="text-slate-300 font-sans leading-relaxed">{experimentConfig.aim}</p>
+                <p className="text-slate-300 font-sans leading-relaxed">{config.aim}</p>
               </div>
 
               <div>
                 <span className="text-cyan-400 font-bold uppercase tracking-wider block mb-2">APPARATUS REQUIRED</span>
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 font-sans">
-                  {(experimentConfig.apparatus || []).map((app, i) => (
+                  {(config.apparatus || experimentConfig.apparatus || []).map((app, i) => (
                     <li key={i} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
                       <span>{app}</span>
@@ -140,16 +177,16 @@ export function WorkspacePage({ onNavigate }) {
                 </h3>
               </div>
               <span className="text-xs font-mono text-cyan-400">
-                {(experimentConfig.formulas || []).length} Formulas
+                {(config.formulas || []).length} Formulas
               </span>
             </div>
 
-            <p className="text-xs text-slate-300 font-sans leading-relaxed">
-              {experimentConfig.theory}
+            <p className="text-xs text-slate-300 font-sans leading-relaxed whitespace-pre-wrap">
+              {config.theory}
             </p>
 
             <div className="space-y-3 pt-2">
-              {(experimentConfig.formulas || []).map((formula) => (
+              {(config.formulas || []).map((formula) => (
                 <FormulaCard key={formula.id} formula={formula} />
               ))}
             </div>
@@ -165,6 +202,25 @@ export function WorkspacePage({ onNavigate }) {
             <GraphPanel />
           </GlassCard>
 
+          {/* Viva Questions Section for Process Control */}
+          {config.viva_questions && config.viva_questions.length > 0 && (
+            <GlassCard className="border-l-4 border-l-violet-400 space-y-4">
+              <h3 className="font-heading text-lg font-bold text-slate-100 flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-violet-400" />
+                <span>Viva Voce / Lab Manual Review Questions</span>
+              </h3>
+
+              <div className="space-y-3 text-xs font-mono">
+                {config.viva_questions.map((vq, idx) => (
+                  <div key={idx} className="p-3.5 rounded-xl bg-slate-950/80 border border-violet-500/20 space-y-1.5">
+                    <span className="text-violet-300 font-bold block">{vq.question}</span>
+                    <p className="text-slate-300 font-sans leading-relaxed">{vq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
+
           {/* Result & Precautions Section */}
           <GlassCard className="border-l-4 border-l-amber-400 space-y-4">
             <h3 className="font-heading text-lg font-bold text-slate-100 flex items-center gap-2">
@@ -177,6 +233,10 @@ export function WorkspacePage({ onNavigate }) {
               <p className="text-sm font-semibold text-slate-100 font-sans">
                 {experimentConfig.experiment_id === 'rotameter_calibration' ? (
                   'The calibration curve for the given rotameter is generated.'
+                ) : experimentConfig.experiment_id === 'exp1-first-order-system-response' ? (
+                  activePartId === 'partA'
+                    ? 'The step response of the first-order system is studied and the graphical time constant τ (at 63.2% response) is found to be 10.0 sec.'
+                    : 'The sinusoidal response of the thermowell/thermocouple is studied; amplitude ratio AR is found to be 0.375 and time constant τ is 27 sec.'
                 ) : (
                   `The mean coefficient of discharge for ${experimentConfig.short_name} Cd is found to be ${headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.`
                 )}
@@ -188,7 +248,11 @@ export function WorkspacePage({ onNavigate }) {
                 LAB SAFETY & OPERATIONAL PRECAUTIONS
               </span>
               <ul className="space-y-1.5 text-xs text-slate-300 font-sans">
-                {(experimentConfig.precautions || []).map((prec, i) => (
+                {(config.precautions || [
+                  'Maintain constant water circulation flow through the heating bath.',
+                  'Avoid touching heater coils directly during electrical step voltage changes.',
+                  'Record stopwatch timing intervals precisely at steady state.'
+                ]).map((prec, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="text-amber-400 font-bold">•</span>
                     <span>{prec}</span>

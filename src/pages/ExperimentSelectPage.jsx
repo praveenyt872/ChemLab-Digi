@@ -5,9 +5,9 @@ import { GlassCard } from '../components/common/GlassCard';
 import { useExperimentStore } from '../store/experimentStore';
 
 export function ExperimentSelectPage({ onNavigate }) {
-  const { setExperiment } = useExperimentStore();
+  const { setExperiment, currentSubject } = useExperimentStore();
 
-  const experiments = [
+  const fluidMechanicsExps = [
     {
       id: 'rotameter_calibration',
       title: 'Calibration of Rotameter',
@@ -37,6 +37,25 @@ export function ExperimentSelectPage({ onNavigate }) {
     }
   ];
 
+  const processControlExps = [
+    {
+      id: 'exp1-first-order-system-response',
+      title: 'Response of First-Order System',
+      aim: 'To study the behavior and determine the time constant of a first-order process subjected to step and sinusoidal heat input changes.',
+      schematic: 'Thermal Heating Bath + Thermocouple / Thermowell + Cyclic Timer',
+      formulaPreview: 'τ = (m Cp)/(h A)  |  AR = 1/√(1+(ωτ)²)  |  T̄\'(t) = K(1 - e^-t/τ)',
+      calcCount: 'Part A & Part B (Step + Sinusoidal)',
+      icon: <Gauge className="w-8 h-8 text-violet-400" />
+    }
+  ];
+
+  const isProcessControl = currentSubject === 'instrumentation-process-control';
+  const experiments = isProcessControl ? processControlExps : fluidMechanicsExps;
+  const subjectTitle = isProcessControl ? 'Instrumentation & Process Control Lab' : 'Fluid Mechanics Lab';
+  const subjectDesc = isProcessControl
+    ? 'First-order thermal response dynamics, step input, sinusoidal lag, time constants, and phase shift.'
+    : 'Select an experiment to open the dynamic workspace, enter readings, and evaluate calculations.';
+
   const handleLaunch = (expId) => {
     setExperiment(expId);
     onNavigate('workspace');
@@ -47,7 +66,7 @@ export function ExperimentSelectPage({ onNavigate }) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
         <button onClick={() => onNavigate('subject')} className="hover:text-cyan-300 transition-colors">
-          Fluid Mechanics Lab
+          {subjectTitle}
         </button>
         <ChevronRight className="w-4 h-4 text-slate-600" />
         <span className="text-cyan-300 font-semibold">Select Experiment</span>
@@ -55,10 +74,10 @@ export function ExperimentSelectPage({ onNavigate }) {
 
       <div>
         <h2 className="font-heading text-3xl font-bold text-slate-100">
-          Fluid Mechanics Experiments
+          {subjectTitle} Experiments
         </h2>
         <p className="text-sm font-mono text-cyan-300/80 mt-1">
-          Select an experiment to open the dynamic workspace, enter readings, and evaluate calculations.
+          {subjectDesc}
         </p>
       </div>
 

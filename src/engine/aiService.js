@@ -106,7 +106,25 @@ Combined with continuity \\(A_1 V_1 = A_2 V_2\\), differential pressure head \\(
 This converts height of mercury in meters (m Hg) into equivalent head of water in meters (m H₂O).`;
   }
 
-  return `In the **${title}** experiment, we compare actual measured discharge against theoretical predictions derived from Bernoulli's principle. 
+  if (msg.includes('time constant') || msg.includes('tau') || msg.includes('63.2')) {
+    return `The **Time Constant (τ)** is the characteristic response time of a first-order system.
+- **Physical Meaning**: It is the time required for the response to reach **63.2%** of its total change following a step input.
+- **Formula**: \\( \\tau = \\frac{m C_p}{h A} \\)
+- **Effect**: A smaller τ means a faster, more responsive sensor/process. A larger τ indicates thermal inertia and sluggish response.`;
+  }
 
-Your current mean result is **Cd = ${avgCd}**. Feel free to ask about formula derivations, manometer differential head (H = 12.6 × h), physical precautions, or real-world industrial uses!`;
+  if (msg.includes('amplitude ratio') || msg.includes('ar') || msg.includes('sinusoidal')) {
+    return `In **Sinusoidal Testing** of a first-order system:
+- **Amplitude Ratio (AR)** = \\( \\frac{A_2}{A_1} = \\frac{1}{\\sqrt{1 + (\\omega \\tau)^2}} \\)
+- **Phase Lag (φ)** = \\( \\arctan(-\\omega \\tau) \\)
+- For a first-order lag, AR is always ≤ 1.0 (output wave is attenuated). Higher frequencies (large ω) cause greater attenuation and larger phase lag.`;
+  }
+
+  if (msg.includes('gain') || msg.includes('steady state gain') || msg.includes('k')) {
+    return `**Steady-State Gain (K)** represents the ratio of ultimate output change to input step change (\\( K = \\frac{\\Delta Y}{\\Delta X} \\)). It quantifies process sensitivity. Higher gain means the process produces a larger output shift for a given input change.`;
+  }
+
+  return `In the **${title}** experiment, we compare actual measured lab data against theoretical predictions derived from dynamic energy balance principles. 
+
+Feel free to ask about formula derivations, time constant (τ), amplitude ratio (AR), phase lag (φ), physical precautions, or viva review questions!`;
 }

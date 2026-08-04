@@ -47,12 +47,12 @@ export function SubjectSelectPage({ onNavigate }) {
       desc: 'Ball mill size reduction, screen effectiveness, froth flotation, and sedimentation clarifiers.'
     },
     {
-      id: 'instrumentation',
-      name: 'Instrumentation & Process Control',
-      icon: <Gauge className="w-8 h-8 text-slate-500" />,
-      active: false,
-      experimentsCount: 0,
-      desc: 'PID controller tuning, first-order thermal dynamics, control valve characteristics, and step response.'
+      id: 'instrumentation-process-control',
+      name: 'Instrumentation & Process Control Lab',
+      icon: <Gauge className="w-8 h-8 text-violet-400" />,
+      active: true,
+      experimentsCount: 1,
+      desc: 'Response of first-order thermal system (Step input & Sinusoidal input), time constant determination, AR, phase lag, and PID dynamics.'
     }
   ];
 
