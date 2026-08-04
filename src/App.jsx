@@ -13,6 +13,7 @@ import { DerivationModal } from './components/modals/DerivationModal';
 import { ValidationDetailModal } from './components/modals/ValidationDetailModal';
 import { ResetConfirmModal } from './components/modals/ResetConfirmModal';
 import { ReportExportModal } from './components/modals/ReportExportModal';
+import { StudentDetailsGateModal } from './components/modals/StudentDetailsGateModal';
 
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
@@ -55,6 +56,7 @@ export default function App() {
       <AIChatWidget />
 
       {/* Modals & Dialogs */}
+      <StudentDetailsGateModal />
       <OnboardingModal />
       <DerivationModal />
       <ValidationDetailModal />

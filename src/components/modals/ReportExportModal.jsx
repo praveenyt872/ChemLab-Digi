@@ -17,13 +17,26 @@ import {
   ReferenceLine
 } from 'recharts';
 
+import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
+
 export function ReportExportModal() {
-  const { isReportModalOpen, setReportModalOpen, experimentConfig, activePartConfig, calculatedRows, headlineResult } = useExperimentStore();
+  const {
+    isReportModalOpen,
+    setReportModalOpen,
+    experimentConfig,
+    activePartConfig,
+    calculatedRows,
+    headlineResult,
+    studentDetails,
+    currentSubject
+  } = useExperimentStore();
+
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const reportRef = useRef(null);
 
   if (!isReportModalOpen || !experimentConfig) return null;
 
+  const subjectInfo = SUBJECTS_CONFIG[currentSubject] || SUBJECTS_CONFIG[experimentConfig?.subject] || SUBJECTS_CONFIG.fluid_mechanics;
   const config = activePartConfig || experimentConfig;
   const isMultiPart = Array.isArray(experimentConfig?.parts) && experimentConfig.parts.length > 0;
 
@@ -332,6 +345,52 @@ export function ReportExportModal() {
           ref={reportRef}
           className="p-6 rounded-xl bg-white text-black font-sans space-y-4 printable-report-sheet shadow-xl"
         >
+          {/* Student & Course Details Reference Header Table */}
+          <div className="printable-section border border-black text-xs font-mono">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-200 border-b border-black text-black">
+                  <th className="p-1.5 font-bold border-r border-black w-1/3">Parameter</th>
+                  <th className="p-1.5 font-bold">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black">
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Field</td>
+                  <td className="p-1.5 text-black">{GLOBAL_APP_CONFIG.field}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Course Code</td>
+                  <td className="p-1.5 text-black font-bold">{subjectInfo.courseCode}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Course Title</td>
+                  <td className="p-1.5 text-black font-bold">{subjectInfo.courseTitle}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Academic Year</td>
+                  <td className="p-1.5 text-black">{studentDetails?.academicYear || '2027-2028'}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Semester</td>
+                  <td className="p-1.5 text-black">{GLOBAL_APP_CONFIG.semester}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Student Name</td>
+                  <td className="p-1.5 font-bold text-black">{studentDetails?.studentName || '—'}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Register Number</td>
+                  <td className="p-1.5 font-bold text-black">{studentDetails?.registerNumber || '—'}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Section</td>
+                  <td className="p-1.5 text-black">{GLOBAL_APP_CONFIG.section}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
           {/* Main Experiment Header Title */}
           <div className="text-center pb-1 printable-section">
             <h1 className="text-base font-bold font-heading uppercase tracking-wide text-black border-b border-black pb-1">

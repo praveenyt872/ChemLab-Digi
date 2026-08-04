@@ -1,10 +1,19 @@
 import React from 'react';
-import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight } from 'lucide-react';
+import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, Edit3 } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 
 export function Navbar({ currentPage, onNavigate }) {
-  const { experimentConfig, setReportModalOpen, setOnboardingOpen, currentSubject } = useExperimentStore();
+  const {
+    experimentConfig,
+    setReportModalOpen,
+    setOnboardingOpen,
+    currentSubject,
+    studentDetails,
+    setStudentGateOpen
+  } = useExperimentStore();
+
+  const hasStudentDetails = studentDetails?.studentName && studentDetails?.registerNumber;
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#05070d]/80 border-b border-cyan-500/10">
@@ -51,8 +60,21 @@ export function Navbar({ currentPage, onNavigate }) {
           </div>
         )}
 
-        {/* Action Controls */}
+        {/* Action Controls & Student Details Badge */}
         <div className="flex items-center gap-3">
+          {hasStudentDetails && (
+            <button
+              onClick={() => setStudentGateOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-xs font-mono text-slate-300 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all cursor-pointer group"
+              title="Edit Student Details"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="font-bold text-slate-200">{studentDetails.studentName}</span>
+              <span className="text-[10px] text-slate-400">({studentDetails.registerNumber})</span>
+              <Edit3 className="w-3 h-3 text-cyan-400 group-hover:scale-110 transition-transform ml-0.5" />
+            </button>
+          )}
+
           <button
             onClick={() => setOnboardingOpen(true)}
             className="p-2 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 transition-all cursor-pointer"

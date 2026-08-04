@@ -7,7 +7,15 @@ import { AnimatedBadge } from '../components/common/AnimatedBadge';
 import { useExperimentStore } from '../store/experimentStore';
 
 export function SubjectSelectPage({ onNavigate }) {
-  const { setSubject } = useExperimentStore();
+  const { setSubject, studentDetails, setStudentGateOpen } = useExperimentStore();
+
+  const handleSelectSubject = (subId) => {
+    setSubject(subId);
+    if (!studentDetails?.studentName || !studentDetails?.registerNumber) {
+      setStudentGateOpen(true);
+    }
+    onNavigate('experiment');
+  };
 
   const subjects = [
     {
@@ -78,8 +86,7 @@ export function SubjectSelectPage({ onNavigate }) {
             interactive={sub.active}
             onClick={() => {
               if (sub.active) {
-                setSubject(sub.id);
-                onNavigate('experiment');
+                handleSelectSubject(sub.id);
               }
             }}
             className={`flex flex-col justify-between h-[240px] relative overflow-hidden ${

@@ -5,7 +5,7 @@ import { GlassCard } from '../components/common/GlassCard';
 import { useExperimentStore } from '../store/experimentStore';
 
 export function ExperimentSelectPage({ onNavigate }) {
-  const { setExperiment, currentSubject } = useExperimentStore();
+  const { setExperiment, currentSubject, studentDetails, setStudentGateOpen } = useExperimentStore();
 
   const fluidMechanicsExps = [
     {
@@ -58,6 +58,9 @@ export function ExperimentSelectPage({ onNavigate }) {
 
   const handleLaunch = (expId) => {
     setExperiment(expId);
+    if (!studentDetails?.studentName || !studentDetails?.registerNumber) {
+      setStudentGateOpen(true);
+    }
     onNavigate('workspace');
   };
 

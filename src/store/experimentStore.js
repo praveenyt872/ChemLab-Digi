@@ -30,6 +30,27 @@ export function getActivePartConfig(experimentConfig, activePartId = 'partA') {
   };
 }
 
+const loadInitialStudentDetails = () => {
+  try {
+    const saved = localStorage.getItem('labflow_student_details');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.studentName && parsed.registerNumber) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error loading student details:', e);
+  }
+  return {
+    studentName: '',
+    registerNumber: '',
+    academicYear: '2027-2028'
+  };
+};
+
+const initialStudentDetails = loadInitialStudentDetails();
+
 export const useExperimentStore = create((set, get) => ({
   // Navigation & Active State
   currentSubject: 'fluid_mechanics',
@@ -37,6 +58,10 @@ export const useExperimentStore = create((set, get) => ({
   experimentConfig: rotameterConfig,
   activePartId: 'partA',
   activePartConfig: rotameterConfig,
+
+  // Student Identification State
+  studentDetails: initialStudentDetails,
+  isStudentGateOpen: !initialStudentDetails.studentName || !initialStudentDetails.registerNumber,
 
   // Table Data State
   observationRows: rotameterConfig.sample_data || [],
@@ -314,6 +339,20 @@ export const useExperimentStore = create((set, get) => ({
       }));
     }
   },
+
+  // Student Identification Actions
+  saveStudentDetails: (details) => {
+    try {
+      localStorage.setItem('labflow_student_details', JSON.stringify(details));
+    } catch (e) {
+      console.error('Error saving student details:', e);
+    }
+    set({
+      studentDetails: details,
+      isStudentGateOpen: false
+    });
+  },
+  setStudentGateOpen: (isOpen) => set({ isStudentGateOpen: isOpen }),
 
   // Modal Open/Close Controls
   setOnboardingOpen: (isOpen) => set({ isOnboardingOpen: isOpen }),
