@@ -4,7 +4,11 @@ import { Waves, Flame, ArrowRightLeft, Atom, Cog, Gauge, Lock, ArrowRight } from
 import { GlassCard } from '../components/common/GlassCard';
 import { AnimatedBadge } from '../components/common/AnimatedBadge';
 
+import { useExperimentStore } from '../store/experimentStore';
+
 export function SubjectSelectPage({ onNavigate }) {
+  const { setSubject } = useExperimentStore();
+
   const subjects = [
     {
       id: 'fluid_mechanics',
@@ -72,7 +76,12 @@ export function SubjectSelectPage({ onNavigate }) {
           <GlassCard
             key={sub.id}
             interactive={sub.active}
-            onClick={() => sub.active && onNavigate('experiment')}
+            onClick={() => {
+              if (sub.active) {
+                setSubject(sub.id);
+                onNavigate('experiment');
+              }
+            }}
             className={`flex flex-col justify-between h-[240px] relative overflow-hidden ${
               sub.active
                 ? 'cursor-pointer border-cyan-500/40 shadow-[0_0_25px_rgba(0,229,255,0.15)] hover:border-cyan-400'

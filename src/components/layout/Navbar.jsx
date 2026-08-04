@@ -4,7 +4,7 @@ import { useExperimentStore } from '../../store/experimentStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 
 export function Navbar({ currentPage, onNavigate }) {
-  const { experimentConfig, setReportModalOpen, setOnboardingOpen } = useExperimentStore();
+  const { experimentConfig, setReportModalOpen, setOnboardingOpen, currentSubject } = useExperimentStore();
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#05070d]/80 border-b border-cyan-500/10">
@@ -38,7 +38,7 @@ export function Navbar({ currentPage, onNavigate }) {
         {currentPage === 'workspace' && (
           <div className="hidden md:flex items-center gap-2 text-xs text-slate-400 font-mono">
             <button onClick={() => onNavigate('subject')} className="hover:text-cyan-300 transition-colors">
-              Fluid Mechanics
+              {currentSubject === 'instrumentation-process-control' ? 'Process Control' : 'Fluid Mechanics'}
             </button>
             <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
             <button onClick={() => onNavigate('experiment')} className="hover:text-cyan-300 transition-colors">
