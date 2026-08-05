@@ -14,7 +14,6 @@ import { ValidationDetailModal } from './components/modals/ValidationDetailModal
 import { ResetConfirmModal } from './components/modals/ResetConfirmModal';
 import { ReportExportModal } from './components/modals/ReportExportModal';
 import { StudentDetailsGateModal } from './components/modals/StudentDetailsGateModal';
-
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 export default function App() {
@@ -26,24 +25,22 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-[#05070d] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="relative min-h-screen flex flex-col bg-[#F7F8FA] text-slate-900 font-sans selection:bg-violet-500/20 selection:text-violet-900">
       
-      {/* Animated Flow Lines Background */}
+      {/* Light Mesh Background */}
       <FluidBackground />
 
       {/* Navigation Header */}
       <Navbar currentPage={currentPage} onNavigate={navigateTo} />
 
-      {/* Main Content View Switcher */}
+      {/* Main Content View Switcher wrapped in ErrorBoundary */}
       <main className="flex-1 relative z-10">
-        {currentPage === 'landing' && <LandingPage onNavigate={navigateTo} />}
-        {currentPage === 'subject' && <SubjectSelectPage onNavigate={navigateTo} />}
-        {currentPage === 'experiment' && <ExperimentSelectPage onNavigate={navigateTo} />}
-        {currentPage === 'workspace' && (
-          <ErrorBoundary>
-            <WorkspacePage onNavigate={navigateTo} />
-          </ErrorBoundary>
-        )}
+        <ErrorBoundary>
+          {currentPage === 'landing' && <LandingPage onNavigate={navigateTo} />}
+          {currentPage === 'subject' && <SubjectSelectPage onNavigate={navigateTo} />}
+          {currentPage === 'experiment' && <ExperimentSelectPage onNavigate={navigateTo} />}
+          {currentPage === 'workspace' && <WorkspacePage onNavigate={navigateTo} />}
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}

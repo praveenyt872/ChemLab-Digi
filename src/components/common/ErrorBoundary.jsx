@@ -23,37 +23,37 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="max-w-4xl mx-auto my-12 p-8 rounded-2xl glass-panel border border-red-500/40 bg-slate-950/90 text-slate-100 space-y-4 shadow-2xl">
-          <div className="flex items-center gap-3 text-red-400">
+        <div className="max-w-4xl mx-auto my-12 p-8 rounded-2xl bg-white border border-red-200 text-slate-900 space-y-4 shadow-xl">
+          <div className="flex items-center gap-3 text-red-600">
             <AlertTriangle className="w-8 h-8 shrink-0" />
             <div>
-              <h2 className="text-xl font-bold font-heading">Workspace Application Error</h2>
-              <p className="text-xs font-mono text-slate-400">
+              <h2 className="text-xl font-bold font-heading text-slate-900">Workspace Application Error</h2>
+              <p className="text-xs font-mono text-slate-500">
                 An uncaught calculation or rendering error occurred in the workspace component.
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900 border border-red-500/20 font-mono text-xs text-red-300 space-y-2 overflow-x-auto">
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 font-mono text-xs text-red-900 space-y-2 overflow-x-auto">
             <p className="font-bold">{this.state.error?.toString()}</p>
             {this.state.errorInfo?.componentStack && (
-              <pre className="text-[11px] text-slate-400 whitespace-pre-wrap">
+              <pre className="text-[11px] text-slate-600 whitespace-pre-wrap mt-2">
                 {this.state.errorInfo.componentStack}
               </pre>
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 pt-2">
             <button
               onClick={this.handleReset}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white font-bold text-xs hover:bg-violet-700 transition-all cursor-pointer shadow-sm"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Try Recovering Workspace</span>
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700 text-xs font-mono hover:bg-slate-700 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-mono hover:bg-slate-200 transition-all cursor-pointer"
             >
               Reload Page
             </button>
