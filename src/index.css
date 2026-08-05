@@ -2,21 +2,22 @@
 
 @layer base {
   :root {
-    --bg-mesh: radial-gradient(at 0% 0%, rgba(0, 229, 255, 0.08) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
-                radial-gradient(at 50% 100%, rgba(5, 7, 13, 1) 0px, transparent 80%);
+    --bg-main: #F7F8FA;
+    --card-bg: #FFFFFF;
+    --card-border: #EDEEF1;
+    --nav-bg: #1A1D23;
   }
 
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #05070d;
-    background-image: var(--bg-mesh);
-    background-attachment: fixed;
-    color: #e2e8f0;
+    background-color: #F7F8FA;
+    color: #1A1D23;
+    min-height: 100vh;
   }
 
   h1, h2, h3, h4, .font-heading {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Inter', 'Space Grotesk', sans-serif;
+    color: #1A1D23;
   }
 
   code, pre, .font-mono {
@@ -24,102 +25,87 @@
   }
 }
 
-/* Glassmorphism Design Tokens */
+/* Modern SaaS Light Card Design Tokens */
+.saas-card {
+  background: #FFFFFF;
+  border: 1px solid #EDEEF1;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+}
+
+.saas-card-interactive {
+  background: #FFFFFF;
+  border: 1px solid #EDEEF1;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.saas-card-interactive:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Legacy Class Aliases mapped to SaaS Light Theme */
 .glass-panel {
-  background: rgba(11, 15, 26, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 229, 255, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background: #FFFFFF;
+  border: 1px solid #EDEEF1;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
 }
 
 .glass-panel-interactive {
-  background: rgba(11, 15, 26, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 229, 255, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #FFFFFF;
+  border: 1px solid #EDEEF1;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  transition: all 0.2s ease-in-out;
 }
 
 .glass-panel-interactive:hover {
-  border-color: rgba(0, 229, 255, 0.35);
-  box-shadow: 0 12px 40px 0 rgba(0, 229, 255, 0.15), 0 0 15px rgba(0, 229, 255, 0.1);
+  border-color: #CBD5E1;
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
 }
 
 .glass-input {
-  background: rgba(5, 7, 13, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-  backdrop-filter: blur(8px);
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  color: #1A1D23;
+  border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
 }
 
 .glass-input:focus {
   outline: none;
-  border-color: rgba(0, 229, 255, 0.6);
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
-/* Flash calculation animation */
-@keyframes calc-flash {
-  0% { background-color: rgba(0, 229, 255, 0.3); color: #00e5ff; }
-  100% { background-color: transparent; }
-}
-
-.animate-calc-flash {
-  animation: calc-flash 0.8s ease-out;
-}
-
-/* Custom Scrollbar */
+/* Custom Light Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(5, 7, 13, 0.8);
+  background: #F1F5F9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.25);
+  background: #CBD5E1;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.5);
-}
-
-/* Glowing text & border utilities */
-.glow-cyan {
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-}
-
-.glow-box-cyan {
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
-}
-
-.glow-box-amber {
-  box-shadow: 0 0 20px rgba(255, 176, 32, 0.25);
-}
-
-/* Streamline & Particle grid background animations */
-@keyframes streamline-flow {
-  0% { transform: translateY(0) scaleY(1); opacity: 0.2; }
-  50% { opacity: 0.5; }
-  100% { transform: translateY(-100px) scaleY(1.1); opacity: 0.2; }
-}
-
-.animate-streamline {
-  animation: streamline-flow 12s infinite ease-in-out alternate;
+  background: #94A3B8;
 }
 
 /* ------------------------------------------------------------- */
 /* PRINT STYLES FOR CLEAN PDF EXPORT */
 /* ------------------------------------------------------------- */
 @media print {
-  /* Hide all background website elements, headers, footers, overlays, chat widgets */
   header, footer, main, nav, button, .no-print, [role="dialog"] > div:first-child {
     display: none !important;
   }
@@ -134,18 +120,14 @@
     overflow: visible !important;
   }
 
-  /* Make modal container static and unclipped */
   .report-modal-backdrop {
     position: static !important;
     background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
     padding: 0 !important;
     margin: 0 !important;
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
-    max-height: none !important;
     overflow: visible !important;
     box-shadow: none !important;
     border: none !important;
@@ -160,7 +142,6 @@
     width: 100% !important;
   }
 
-  /* Printable Report Sheet */
   .printable-report-sheet {
     background: #ffffff !important;
     color: #000000 !important;
@@ -177,18 +158,11 @@
     background: transparent !important;
     border-color: #333333 !important;
     box-shadow: none !important;
-    text-shadow: none !important;
   }
 
   .printable-report-sheet table {
     width: 100% !important;
     border-collapse: collapse !important;
-    page-break-inside: auto !important;
-  }
-
-  .printable-report-sheet tr {
-    page-break-inside: avoid !important;
-    page-break-after: auto !important;
   }
 
   .printable-report-sheet th,
@@ -200,25 +174,5 @@
   .printable-report-sheet th {
     background-color: #f1f5f9 !important;
     font-weight: bold !important;
-  }
-
-  .printable-section {
-    page-break-inside: avoid !important;
-    margin-bottom: 16px !important;
-  }
-
-  /* SVG Recharts elements in Print */
-  .recharts-scatter-symbol path {
-    fill: #0284c7 !important;
-    stroke: #0284c7 !important;
-  }
-
-  .recharts-cartesian-grid-horizontal line,
-  .recharts-cartesian-grid-vertical line {
-    stroke: #cbd5e1 !important;
-  }
-
-  .recharts-text {
-    fill: #0f172a !important;
   }
 }

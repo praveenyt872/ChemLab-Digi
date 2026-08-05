@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, Edit3 } from 'lucide-react';
+import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, Edit3, Search, Bell } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 
@@ -16,88 +16,108 @@ export function Navbar({ currentPage, onNavigate }) {
   const hasStudentDetails = studentDetails?.studentName && studentDetails?.registerNumber;
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#05070d]/80 border-b border-cyan-500/10">
+    <header className="sticky top-0 z-40 w-full bg-[#1A1D23] text-white border-b border-slate-800 shadow-sm">
       <ScrollProgress />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
-        {/* Brand & Logo */}
+        {/* Left: Brand & Logo */}
         <button
-          onClick={() => onNavigate('landing')}
-          className="flex items-center gap-3 text-left group cursor-pointer"
+          onClick={() => onNavigate('subject')}
+          className="flex items-center gap-3 text-left group cursor-pointer shrink-0"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-cyan-400/30 flex items-center justify-center group-hover:border-cyan-400/60 group-hover:shadow-[0_0_15px_rgba(0,229,255,0.3)] transition-all">
-            <FlaskConical className="w-5 h-5 text-cyan-400 group-hover:rotate-12 transition-transform" />
+          <div className="w-9 h-9 rounded-xl bg-violet-600/30 border border-violet-400/40 flex items-center justify-center group-hover:bg-violet-600/50 transition-all">
+            <FlaskConical className="w-5 h-5 text-violet-400 group-hover:rotate-12 transition-transform" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-heading text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">
-                ChemLab AI
+              <span className="font-heading text-lg font-bold text-white tracking-tight">
+                ChemLab<span className="text-violet-400">AI</span>
               </span>
-              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-mono">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                 v1.0
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 -mt-0.5 font-medium hidden sm:block">
-              Virtual Chemical Engineering Lab
-            </p>
           </div>
         </button>
 
-        {/* Breadcrumb Navigation */}
-        {currentPage === 'workspace' && (
-          <div className="hidden md:flex items-center gap-2 text-xs text-slate-400 font-mono">
-            <button onClick={() => onNavigate('subject')} className="hover:text-cyan-300 transition-colors">
-              {currentSubject === 'instrumentation-process-control' ? 'Process Control' : 'Fluid Mechanics'}
+        {/* Center: Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-1">
+          <button
+            onClick={() => onNavigate('subject')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              currentPage === 'subject' ? 'bg-slate-800 text-violet-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => onNavigate('subject')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              currentPage === 'experiment' || currentPage === 'workspace' ? 'bg-slate-800 text-violet-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            Experiments
+          </button>
+          {currentPage === 'workspace' && (
+            <button
+              onClick={() => setReportModalOpen(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition-colors cursor-pointer"
+            >
+              Lab Report
             </button>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <button onClick={() => onNavigate('experiment')} className="hover:text-cyan-300 transition-colors">
-              Experiments
-            </button>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="text-cyan-300 font-semibold truncate max-w-[200px]">
-              {experimentConfig?.short_name || 'Workspace'}
-            </span>
-          </div>
-        )}
+          )}
+        </nav>
 
-        {/* Action Controls & Student Details Badge */}
-        <div className="flex items-center gap-3">
+        {/* Center-Right: Search Input */}
+        <div className="hidden sm:flex items-center relative max-w-xs w-full">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search experiments, formulas..."
+            className="w-full pl-8 pr-3 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
+          />
+        </div>
+
+        {/* Right: Actions & Student Profile Badge */}
+        <div className="flex items-center gap-3 shrink-0">
           {hasStudentDetails && (
             <button
               onClick={() => setStudentGateOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-xs font-mono text-slate-300 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all cursor-pointer group"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs font-mono text-slate-200 transition-all cursor-pointer group"
               title="Edit Student Details"
             >
-              <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="font-bold text-slate-200">{studentDetails.studentName}</span>
-              <span className="text-[10px] text-slate-400">({studentDetails.registerNumber})</span>
-              <Edit3 className="w-3 h-3 text-cyan-400 group-hover:scale-110 transition-transform ml-0.5" />
+              <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-[10px] uppercase">
+                {studentDetails.studentName.charAt(0)}
+              </div>
+              <span className="font-semibold text-slate-200 hidden sm:inline">{studentDetails.studentName}</span>
+              <span className="text-[10px] text-slate-400 hidden md:inline">({studentDetails.registerNumber})</span>
+              <Edit3 className="w-3 h-3 text-violet-400 group-hover:scale-110 transition-transform ml-0.5" />
             </button>
           )}
 
           <button
             onClick={() => setOnboardingOpen(true)}
-            className="p-2 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 transition-all cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
             title="How it Works / Onboarding"
           >
-            <HelpCircle className="w-5 h-5" />
+            <HelpCircle className="w-4 h-4" />
           </button>
 
           {currentPage === 'workspace' ? (
             <button
               onClick={() => setReportModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-400 text-slate-950 font-semibold text-sm hover:brightness-110 shadow-[0_0_20px_rgba(0,229,255,0.4)] transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-violet-600 text-white font-semibold text-xs hover:bg-violet-700 shadow-sm transition-all cursor-pointer"
             >
-              <FileDown className="w-4 h-4" />
+              <FileDown className="w-3.5 h-3.5" />
               <span>Export Report</span>
             </button>
           ) : (
             <button
               onClick={() => onNavigate('subject')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-medium text-sm hover:bg-cyan-500/20 hover:border-cyan-500/50 shadow-[0_0_15px_rgba(0,229,255,0.2)] transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-violet-600 text-white font-semibold text-xs hover:bg-violet-700 shadow-sm transition-all cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>Enter Lab</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Select Subject</span>
             </button>
           )}
         </div>

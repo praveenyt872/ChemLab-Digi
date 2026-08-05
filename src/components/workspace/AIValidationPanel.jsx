@@ -7,30 +7,30 @@ export function AIValidationPanel() {
   const { validationFlags, applyValidationSuggestion, setValidationModal } = useExperimentStore();
 
   const flagIcons = {
-    red: <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />,
-    amber: <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />,
-    blue: <Info className="w-4 h-4 text-cyan-400 shrink-0" />,
-    grey: <Info className="w-4 h-4 text-slate-400 shrink-0" />
+    red: <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />,
+    amber: <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />,
+    blue: <Info className="w-4 h-4 text-blue-600 shrink-0" />,
+    grey: <Info className="w-4 h-4 text-slate-500 shrink-0" />
   };
 
   const flagCardStyles = {
-    red: 'bg-red-500/10 border-red-500/30 text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.15)]',
-    amber: 'bg-amber-500/10 border-amber-500/30 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.15)]',
-    blue: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-200 shadow-[0_0_15px_rgba(0,229,255,0.15)]',
-    grey: 'bg-slate-800/40 border-slate-700/50 text-slate-300'
+    red: 'bg-red-50/80 border-red-200 text-red-900',
+    amber: 'bg-amber-50/80 border-amber-200 text-amber-900',
+    blue: 'bg-blue-50/80 border-blue-200 text-blue-900',
+    grey: 'bg-slate-50 border-slate-200 text-slate-800'
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 text-slate-900">
+      <div className="flex items-center justify-between pb-2 border-b border-[#EDEEF1]">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <h3 className="font-heading text-base font-bold text-slate-100">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <h3 className="font-heading text-base font-bold text-slate-900">
             AI Physics Validation
           </h3>
         </div>
-        <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-          {validationFlags.length} Flags
+        <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+          {validationFlags.length === 0 ? 'Passed' : `${validationFlags.length} Flagged`}
         </span>
       </div>
 
@@ -39,13 +39,13 @@ export function AIValidationPanel() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-xs font-mono flex items-center gap-3"
+            className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 text-emerald-900 text-xs font-mono flex items-center gap-3"
           >
-            <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+            <Check className="w-5 h-5 text-emerald-600 shrink-0" />
             <div>
               <p className="font-bold">All Observations Verified Clean</p>
-              <p className="text-[11px] text-emerald-300/80 mt-0.5">
-                Readings conform to fluid dynamics laws and equipment parameters.
+              <p className="text-[11px] text-emerald-700 mt-0.5">
+                Readings conform to fluid dynamics laws & physical parameters.
               </p>
             </div>
           </motion.div>
@@ -54,10 +54,10 @@ export function AIValidationPanel() {
             {validationFlags.map((flag) => (
               <motion.div
                 key={flag.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className={`p-3.5 rounded-xl border backdrop-blur-md text-xs font-mono ${
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className={`p-3.5 rounded-xl border text-xs font-mono shadow-sm ${
                   flagCardStyles[flag.type] || flagCardStyles.amber
                 }`}
               >
@@ -65,20 +65,20 @@ export function AIValidationPanel() {
                   <div className="flex items-start gap-2">
                     {flagIcons[flag.type] || flagIcons.amber}
                     <div>
-                      <h4 className="font-bold font-heading text-sm text-slate-100">
+                      <h4 className="font-bold font-heading text-sm text-slate-900">
                         {flag.title}
                       </h4>
-                      <p className="mt-1 leading-relaxed text-slate-200">
+                      <p className="mt-1 leading-relaxed text-slate-700 font-sans">
                         {flag.description}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between gap-2">
                   <button
                     onClick={() => setValidationModal(flag)}
-                    className="text-[11px] text-cyan-300 hover:text-cyan-200 underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] text-violet-700 hover:text-violet-900 font-semibold underline flex items-center gap-1 cursor-pointer"
                   >
                     <HelpCircle className="w-3 h-3" />
                     <span>Why this flag?</span>
@@ -87,7 +87,7 @@ export function AIValidationPanel() {
                   {flag.suggestion && (
                     <button
                       onClick={() => applyValidationSuggestion(flag.suggestion)}
-                      className="px-2.5 py-1 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold transition-all cursor-pointer shadow-[0_0_10px_rgba(61,255,176,0.2)]"
+                      className="px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-sm transition-all cursor-pointer"
                     >
                       Apply Suggestion
                     </button>

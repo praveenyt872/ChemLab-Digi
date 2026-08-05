@@ -14,8 +14,8 @@ export function ExperimentSelectPage({ onNavigate }) {
       aim: 'To generate the calibration curve for the given rotameter by comparing observed flow rate with float position.',
       schematic: 'Rotameter Tapered Glass Tube + Float',
       formulaPreview: 'Q = V / t',
-      calcCount: '1 Formula',
-      icon: <Gauge className="w-8 h-8 text-cyan-400" />
+      calcCount: '1 Formula Step',
+      icon: <Gauge className="w-6 h-6 text-violet-600" />
     },
     {
       id: 'venturi_meter',
@@ -23,8 +23,8 @@ export function ExperimentSelectPage({ onNavigate }) {
       aim: 'To determine the coefficient of discharge (Cd) of the Venturi meter and plot Cd vs Qth.',
       schematic: 'Converging Cone + Throat + U-Tube Manometer',
       formulaPreview: 'Qth = (A1 A2 √(2gH)) / √(A1² - A2²)',
-      calcCount: '5 Derived Columns',
-      icon: <Zap className="w-8 h-8 text-violet-400" />
+      calcCount: '4 Formula Steps',
+      icon: <Zap className="w-6 h-6 text-violet-600" />
     },
     {
       id: 'orifice_meter',
@@ -32,8 +32,8 @@ export function ExperimentSelectPage({ onNavigate }) {
       aim: 'To determine the coefficient of discharge (Cd) of the Orifice meter and calibrate it by plotting Cd vs Qth.',
       schematic: 'Concentric Orifice Plate + Taps + Collecting Tank',
       formulaPreview: 'Qact = (A × h_rise) / t',
-      calcCount: '5 Derived Columns',
-      icon: <ShieldCheck className="w-8 h-8 text-emerald-400" />
+      calcCount: '4 Formula Steps',
+      icon: <ShieldCheck className="w-6 h-6 text-violet-600" />
     }
   ];
 
@@ -45,7 +45,7 @@ export function ExperimentSelectPage({ onNavigate }) {
       schematic: 'Thermal Heating Bath + Thermocouple / Thermowell + Cyclic Timer',
       formulaPreview: 'τ = (m Cp)/(h A)  |  AR = 1/√(1+(ωτ)²)  |  T̄\'(t) = K(1 - e^-t/τ)',
       calcCount: 'Part A & Part B (Step + Sinusoidal)',
-      icon: <Gauge className="w-8 h-8 text-violet-400" />
+      icon: <Gauge className="w-6 h-6 text-violet-600" />
     }
   ];
 
@@ -54,7 +54,7 @@ export function ExperimentSelectPage({ onNavigate }) {
   const subjectTitle = isProcessControl ? 'Instrumentation & Process Control Lab' : 'Fluid Mechanics Lab';
   const subjectDesc = isProcessControl
     ? 'First-order thermal response dynamics, step input, sinusoidal lag, time constants, and phase shift.'
-    : 'Select an experiment to open the dynamic workspace, enter readings, and evaluate calculations.';
+    : 'Select an experiment module to launch the interactive virtual workspace and calculation engine.';
 
   const handleLaunch = (expId) => {
     setExperiment(expId);
@@ -65,21 +65,24 @@ export function ExperimentSelectPage({ onNavigate }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-slate-900">
+      
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-        <button onClick={() => onNavigate('subject')} className="hover:text-cyan-300 transition-colors">
-          {subjectTitle}
+      <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+        <button onClick={() => onNavigate('subject')} className="hover:text-violet-600 transition-colors">
+          Subjects
         </button>
-        <ChevronRight className="w-4 h-4 text-slate-600" />
-        <span className="text-cyan-300 font-semibold">Select Experiment</span>
+        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+        <span className="text-slate-700 font-semibold">{subjectTitle}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+        <span className="text-violet-600 font-semibold">Select Experiment</span>
       </div>
 
-      <div>
-        <h2 className="font-heading text-3xl font-bold text-slate-100">
-          {subjectTitle} Experiments
-        </h2>
-        <p className="text-sm font-mono text-cyan-300/80 mt-1">
+      <div className="border-b border-[#EDEEF1] pb-6">
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          {subjectTitle} Modules
+        </h1>
+        <p className="text-sm text-slate-500 font-sans mt-1">
           {subjectDesc}
         </p>
       </div>
@@ -90,28 +93,28 @@ export function ExperimentSelectPage({ onNavigate }) {
             key={exp.id}
             interactive
             onClick={() => handleLaunch(exp.id)}
-            className="flex flex-col justify-between h-[320px] cursor-pointer group"
+            className="flex flex-col justify-between h-[320px] cursor-pointer group hover:border-violet-300"
           >
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="w-14 h-14 rounded-2xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.1)] group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center group-hover:scale-105 transition-transform">
                   {exp.icon}
                 </div>
-                <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
                   {exp.calcCount}
                 </span>
               </div>
 
               <div>
-                <h3 className="font-heading text-lg font-bold text-slate-100 group-hover:text-cyan-300 transition-colors">
+                <h3 className="font-heading text-lg font-bold text-slate-900 group-hover:text-violet-600 transition-colors">
                   {exp.title}
                 </h3>
-                <p className="text-xs text-slate-300 font-sans leading-relaxed mt-2 line-clamp-3">
+                <p className="text-xs text-slate-500 font-sans leading-relaxed mt-2 line-clamp-3">
                   {exp.aim}
                 </p>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-cyan-400/90">
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-violet-700 font-semibold">
                 Formula: {exp.formulaPreview}
               </div>
             </div>
@@ -121,10 +124,10 @@ export function ExperimentSelectPage({ onNavigate }) {
                 e.stopPropagation();
                 handleLaunch(exp.id);
               }}
-              className="w-full py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,229,255,0.3)] transition-all cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-violet-600 text-white font-bold text-xs hover:bg-violet-700 flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>Start Experiment</span>
+              <span>Launch Virtual Experiment</span>
             </button>
           </GlassCard>
         ))}

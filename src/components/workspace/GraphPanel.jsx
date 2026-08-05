@@ -10,7 +10,7 @@ import {
   ComposedChart,
   ReferenceLine
 } from 'recharts';
-import { Download, LineChart, RefreshCw, Activity } from 'lucide-react';
+import { Download, LineChart, RefreshCw } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useExperimentStore } from '../../store/experimentStore';
 import { formatScientific } from '../../engine/formulaEngine';
@@ -60,7 +60,7 @@ export function GraphPanel() {
     })
     .filter(Boolean);
 
-  // Special data transform for Part A Step Input: Normalized T'/K vs t/τ + Theoretical Overlay
+  // Special data transform for Part A Step Input
   const stepData = calculatedRows.map((r) => {
     const rawT = parseFloat(r.t);
     const rawNorm = parseFloat(r.norm_heat);
@@ -79,7 +79,7 @@ export function GraphPanel() {
     };
   });
 
-  // Special data transform for Part B Sinusoidal Input: T_in vs T_out over time
+  // Special data transform for Part B Sinusoidal Input
   const sinusoidalData = calculatedRows.map((r) => {
     const rawT = parseFloat(r.t);
     const rawIn = parseFloat(r.T_in);
@@ -91,7 +91,7 @@ export function GraphPanel() {
     };
   });
 
-  // Compute simple linear regression (trend line for standard scatter plot)
+  // Linear regression trend line
   let lineData = [];
   if (!isStepGraph && !isSinusoidalGraph && chartData.length >= 2) {
     const xs = chartData.map(d => d.x);
@@ -117,7 +117,7 @@ export function GraphPanel() {
     if (!chartRef.current) return;
     try {
       const canvas = await html2canvas(chartRef.current, {
-        backgroundColor: '#05070d',
+        backgroundColor: '#FFFFFF',
         scale: 2
       });
       const image = canvas.toDataURL('image/png');
@@ -134,15 +134,15 @@ export function GraphPanel() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="p-3 rounded-xl bg-slate-900/95 border border-cyan-500/30 backdrop-blur-md shadow-xl text-xs font-mono space-y-1">
-          {data.trial && <p className="text-cyan-300 font-bold">Trial #{data.trial}</p>}
-          {data.t !== undefined && <p className="text-cyan-300 font-bold">Time: {data.t} s</p>}
-          {data.formattedX && <p className="text-slate-300">{graphConfig.x_label}: <span className="text-cyan-400 font-bold">{data.formattedX}</span></p>}
-          {data.formattedY && <p className="text-slate-300">{graphConfig.y_label}: <span className="text-cyan-400 font-bold">{data.formattedY}</span></p>}
-          {data.T_rise !== undefined && <p className="text-emerald-400">Heating T_rise: <span className="font-bold">{data.T_rise} °C</span></p>}
-          {data.T_fall !== undefined && <p className="text-amber-400">Cooling T_fall: <span className="font-bold">{data.T_fall} °C</span></p>}
-          {data.T_in !== undefined && <p className="text-cyan-400">Input Bath T_in: <span className="font-bold">{data.T_in} °C</span></p>}
-          {data.T_out !== undefined && <p className="text-violet-400">Output Sensor T_out: <span className="font-bold">{data.T_out} °C</span></p>}
+        <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-xl text-xs font-mono space-y-1 text-slate-900">
+          {data.trial && <p className="text-violet-700 font-bold">Trial #{data.trial}</p>}
+          {data.t !== undefined && <p className="text-violet-700 font-bold">Time: {data.t} s</p>}
+          {data.formattedX && <p className="text-slate-700">{graphConfig.x_label}: <span className="text-violet-700 font-bold">{data.formattedX}</span></p>}
+          {data.formattedY && <p className="text-slate-700">{graphConfig.y_label}: <span className="text-violet-700 font-bold">{data.formattedY}</span></p>}
+          {data.T_rise !== undefined && <p className="text-emerald-700 font-semibold">Heating T_rise: <span>{data.T_rise} °C</span></p>}
+          {data.T_fall !== undefined && <p className="text-amber-700 font-semibold">Cooling T_fall: <span>{data.T_fall} °C</span></p>}
+          {data.T_in !== undefined && <p className="text-blue-700 font-semibold">Input Bath T_in: <span>{data.T_in} °C</span></p>}
+          {data.T_out !== undefined && <p className="text-violet-700 font-semibold">Output Sensor T_out: <span>{data.T_out} °C</span></p>}
         </div>
       );
     }
@@ -151,13 +151,13 @@ export function GraphPanel() {
 
   return (
     <div className="space-y-4" ref={chartRef}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-2 border-b border-[#EDEEF1]">
         <div>
-          <h3 className="font-heading text-lg font-bold text-slate-100 flex items-center gap-2">
-            <LineChart className="w-5 h-5 text-cyan-400" />
+          <h3 className="font-heading text-lg font-bold text-slate-900 flex items-center gap-2">
+            <LineChart className="w-5 h-5 text-violet-600" />
             <span>{graphConfig.title}</span>
           </h3>
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-500">
             {isStepGraph
               ? 'First-Order Step Response (63.2% time constant determination)'
               : isSinusoidalGraph
@@ -169,164 +169,66 @@ export function GraphPanel() {
         <button
           onClick={exportChartPng}
           disabled={calculatedRows.length === 0}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono font-semibold transition-all cursor-pointer shadow-sm"
         >
           <Download className="w-3.5 h-3.5" />
-          <span>Export Graph PNG</span>
+          <span>Export PNG</span>
         </button>
       </div>
 
       {calculatedRows.length === 0 ? (
-        <div className="h-[320px] rounded-xl border border-dashed border-cyan-500/20 bg-slate-950/40 flex flex-col items-center justify-center gap-3 text-slate-400 font-mono text-xs">
-          <RefreshCw className="w-8 h-8 text-cyan-400/40 animate-spin" />
+        <div className="h-[320px] rounded-xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-3 text-slate-400 font-mono text-xs">
+          <RefreshCw className="w-8 h-8 text-violet-400 animate-spin" />
           <p>Enter observation readings to generate the live plot.</p>
         </div>
       ) : isStepGraph ? (
-        /* PART A: STEP RESPONSE GRAPHS */
         <div className="space-y-4">
-          {/* Graph 1: Normalized Response T'/K vs t/τ with 0.632 Reference Line */}
-          <div className="h-[300px] w-full rounded-xl border border-cyan-500/20 bg-slate-950/80 p-4 backdrop-blur-md">
-            <div className="text-xs font-mono text-cyan-300 mb-2 flex items-center justify-between">
+          <div className="h-[300px] w-full rounded-xl border border-[#EDEEF1] bg-white p-4">
+            <div className="text-xs font-mono text-slate-700 font-bold mb-2 flex items-center justify-between">
               <span>Graph 1: Normalized Step Response T̄'(t)/K vs t/τ</span>
-              <span className="text-emerald-400 font-bold">τ = 10 s @ 63.2% Response</span>
+              <span className="text-emerald-600">τ = 10 s @ 63.2% Response</span>
             </div>
             <ResponsiveContainer width="100%" height="90%">
               <ComposedChart data={stepData} margin={{ top: 15, right: 30, bottom: 25, left: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                <XAxis
-                  dataKey="t_over_tau"
-                  type="number"
-                  tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                  stroke="rgba(0,229,255,0.2)"
-                  label={{ value: 'time / τ', position: 'insideBottom', offset: -15, fill: '#00e5ff', fontSize: 11 }}
-                />
-                <YAxis
-                  domain={[0, 1.1]}
-                  tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                  stroke="rgba(0,229,255,0.2)"
-                  label={{ value: "T̄'(t) / K", angle: -90, position: 'insideLeft', fill: '#00e5ff', fontSize: 11 }}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="t_over_tau" type="number" tick={{ fill: '#64748B', fontSize: 11 }} />
+                <YAxis domain={[0, 1.1]} tick={{ fill: '#64748B', fontSize: 11 }} />
                 <Tooltip content={<CustomTooltip />} />
-                <ReferenceLine y={0.632} stroke="#3dffb0" strokeDasharray="4 4" label={{ value: '63.2% (t = τ)', fill: '#3dffb0', fontSize: 11, position: 'right' }} />
-                <Line type="monotone" dataKey="exp_norm" name="Experimental Response" stroke="#00e5ff" strokeWidth={2.5} dot={{ r: 4, fill: '#00e5ff' }} />
-                <Line type="monotone" dataKey="theo_norm" name="Theoretical 1 - e^(-t/τ)" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="4 4" dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Graph 2: Heating vs Cooling Curves Comparison */}
-          <div className="h-[280px] w-full rounded-xl border border-violet-500/20 bg-slate-950/80 p-4 backdrop-blur-md">
-            <div className="text-xs font-mono text-violet-300 mb-2 flex items-center justify-between">
-              <span>Graph 2: Heating vs Cooling Temperature Curves (°C vs time s)</span>
-              <span className="text-slate-400">Heating: 25°C → 51°C | Cooling: 51°C → 25°C</span>
-            </div>
-            <ResponsiveContainer width="100%" height="88%">
-              <ComposedChart data={stepData} margin={{ top: 15, right: 30, bottom: 25, left: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                <XAxis
-                  dataKey="t"
-                  type="number"
-                  tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                  stroke="rgba(139,92,246,0.2)"
-                  label={{ value: 'Time (s)', position: 'insideBottom', offset: -15, fill: '#8b5cf6', fontSize: 11 }}
-                />
-                <YAxis
-                  domain={['auto', 'auto']}
-                  tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                  stroke="rgba(139,92,246,0.2)"
-                  label={{ value: 'Temperature (°C)', angle: -90, position: 'insideLeft', fill: '#8b5cf6', fontSize: 11 }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="T_rise" name="Heating Response (Oil Bath)" stroke="#00e5ff" strokeWidth={2.5} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="T_fall" name="Cooling Response (Air/Water)" stroke="#ffb020" strokeWidth={2.5} dot={{ r: 4 }} />
+                <ReferenceLine y={0.632} stroke="#10B981" strokeDasharray="4 4" label={{ value: '63.2% (t = τ)', fill: '#10B981', fontSize: 11, position: 'right' }} />
+                <Line type="monotone" dataKey="exp_norm" name="Experimental" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 4, fill: '#8B5CF6' }} />
+                <Line type="monotone" dataKey="theo_norm" name="Theoretical" stroke="#3B82F6" strokeWidth={2} strokeDasharray="4 4" dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
       ) : isSinusoidalGraph ? (
-        /* PART B: SINUSOIDAL RESPONSE OVERLAY GRAPH */
-        <div className="h-[340px] w-full rounded-xl border border-violet-500/30 bg-slate-950/80 p-4 backdrop-blur-md">
-          <div className="text-xs font-mono text-violet-300 mb-2 flex items-center justify-between">
-            <span>Sinusoidal Response: Input Bath (32–48°C) vs Output Thermowell (37–43°C)</span>
-            <span className="text-cyan-400 font-bold">AR = 3/8 = 0.375 | Period = 60s</span>
+        <div className="h-[340px] w-full rounded-xl border border-[#EDEEF1] bg-white p-4">
+          <div className="text-xs font-mono text-slate-700 font-bold mb-2 flex items-center justify-between">
+            <span>Sinusoidal Response: Input Bath vs Output Thermowell</span>
+            <span className="text-violet-600">AR = 0.375 | Period = 60s</span>
           </div>
           <ResponsiveContainer width="100%" height="90%">
             <ComposedChart data={sinusoidalData} margin={{ top: 15, right: 30, bottom: 25, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis
-                dataKey="t"
-                type="number"
-                tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                stroke="rgba(139,92,246,0.3)"
-                label={{ value: 'Time (sec)', position: 'insideBottom', offset: -15, fill: '#8b5cf6', fontSize: 11 }}
-              />
-              <YAxis
-                domain={[25, 55]}
-                tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                stroke="rgba(139,92,246,0.3)"
-                label={{ value: 'Temperature (°C)', angle: -90, position: 'insideLeft', fill: '#8b5cf6', fontSize: 11 }}
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+              <XAxis dataKey="t" type="number" tick={{ fill: '#64748B', fontSize: 11 }} />
+              <YAxis domain={[25, 55]} tick={{ fill: '#64748B', fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="T_in" name="Input Bath Temp (T_in)" stroke="#00e5ff" strokeWidth={2.5} dot={{ r: 4, fill: '#00e5ff' }} />
-              <Line type="monotone" dataKey="T_out" name="Output Sensor Temp (T_out)" stroke="#8b5cf6" strokeWidth={2.5} dot={{ r: 4, fill: '#8b5cf6' }} />
+              <Line type="monotone" dataKey="T_in" name="Input Bath T_in" stroke="#3B82F6" strokeWidth={2.5} dot={{ r: 4, fill: '#3B82F6' }} />
+              <Line type="monotone" dataKey="T_out" name="Output Sensor T_out" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 4, fill: '#8B5CF6' }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        /* STANDARD FLUID MECHANICS SCATTER PLOT */
-        <div className="h-[340px] w-full rounded-xl border border-cyan-500/20 bg-slate-950/80 p-4 backdrop-blur-md">
+        <div className="h-[340px] w-full rounded-xl border border-[#EDEEF1] bg-white p-4">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart margin={{ top: 20, right: 30, bottom: 25, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis
-                dataKey="x"
-                type="number"
-                domain={['auto', 'auto']}
-                tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                stroke="rgba(0,229,255,0.2)"
-                label={{
-                  value: graphConfig.x_label,
-                  position: 'insideBottom',
-                  offset: -15,
-                  fill: '#00e5ff',
-                  fontSize: 11,
-                  fontFamily: 'Space Grotesk'
-                }}
-              />
-              <YAxis
-                dataKey="y"
-                type="number"
-                domain={['auto', 'auto']}
-                tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                stroke="rgba(0,229,255,0.2)"
-                label={{
-                  value: graphConfig.y_label,
-                  angle: -90,
-                  position: 'insideLeft',
-                  fill: '#00e5ff',
-                  fontSize: 11,
-                  fontFamily: 'Space Grotesk'
-                }}
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+              <XAxis dataKey="x" type="number" domain={['auto', 'auto']} tick={{ fill: '#64748B', fontSize: 11 }} />
+              <YAxis dataKey="y" type="number" domain={['auto', 'auto']} tick={{ fill: '#64748B', fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Scatter
-                name="Lab Data Points"
-                data={chartData}
-                fill="#00e5ff"
-                stroke="#00e5ff"
-                strokeWidth={2}
-              />
+              <Scatter name="Lab Data Points" data={chartData} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />
               {lineData.length >= 2 && (
-                <Line
-                  data={lineData}
-                  type="monotone"
-                  dataKey="trend"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-                  activeDot={false}
-                />
+                <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} />
               )}
             </ComposedChart>
           </ResponsiveContainer>
