@@ -16,6 +16,7 @@ import { useExperimentStore } from '../store/experimentStore';
 import { formatScientific } from '../engine/formulaEngine';
 import { GlassCard } from '../components/common/GlassCard';
 import { ObservationTable } from '../components/workspace/ObservationTable';
+import { SampleCalculationPanel } from '../components/workspace/SampleCalculationPanel';
 import { LiveResultsPanel } from '../components/workspace/LiveResultsPanel';
 import { GraphPanel } from '../components/workspace/GraphPanel';
 import { FormulaCard } from '../components/workspace/FormulaCard';
@@ -195,6 +196,11 @@ export function WorkspacePage({ onNavigate }) {
           {/* Observation Table Input */}
           <GlassCard className="space-y-4">
             <ObservationTable />
+          </GlassCard>
+
+          {/* Step-by-Step Sample Calculation Panel */}
+          <GlassCard className="space-y-4">
+            <SampleCalculationPanel />
           </GlassCard>
 
           {/* Graph Panel */}

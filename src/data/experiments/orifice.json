@@ -97,6 +97,62 @@
       "practical_application": "Orifice Cd (~0.62) is essential for oil & gas metering calculations."
     }
   ],
+  "calculation_steps": [
+    {
+      "step_id": "H",
+      "step_number": 1,
+      "label": "Step 1: Equivalent Pressure Head Over Orifice (H)",
+      "formula_latex": "H = h \\times 12.6 = (h_1 - h_2) \\times 12.6",
+      "formula_expression": "(abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6",
+      "substitution_template": "H = ({h1} - {h2}) \\times 12.6",
+      "simplification_template": "H = {h_diff} \\times 12.6",
+      "depends_on": ["h1", "h2"],
+      "unit": "m H₂O",
+      "format": "decimal",
+      "decimal_precision": 3,
+      "feeds_into": "Step 3: Theoretical Discharge (Qth)"
+    },
+    {
+      "step_id": "Qact",
+      "step_number": 2,
+      "label": "Step 2: Actual Volumetric Discharge (Qact)",
+      "formula_latex": "Q_{act} = \\frac{A \\cdot h_{tank}}{t} = \\frac{L \\cdot B \\cdot h_{tank}}{t}",
+      "formula_expression": "(0.4 * 0.4 * 0.05) / t",
+      "substitution_template": "Q_{act} = \\frac{0.4 \\times 0.4 \\times 0.05}{{t}}",
+      "simplification_template": "Q_{act} = \\frac{0.008}{{t}}",
+      "depends_on": ["L", "B", "h_rise", "t"],
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 4: Coefficient of Discharge (Cd)"
+    },
+    {
+      "step_id": "Qth",
+      "step_number": 3,
+      "label": "Step 3: Theoretical Volumetric Discharge (Qth)",
+      "formula_latex": "Q_{th} = \\frac{a_1 a_2 \\sqrt{2gH}}{\\sqrt{a_1^2 - a_2^2}}",
+      "formula_expression": "(0.000346 * 0.000126 * sqrt(2 * 9.81 * H)) / sqrt(0.000346^2 - 0.000126^2)",
+      "substitution_template": "Q_{th} = \\frac{(3.46 \\times 10^{-4})(1.26 \\times 10^{-4}) \\sqrt{2(9.81)({H})}}{\\sqrt{(3.46 \\times 10^{-4})^2 - (1.26 \\times 10^{-4})^2}}",
+      "simplification_template": "Q_{th} = \\frac{{num_expr}}{3.225 \\times 10^{-4}}",
+      "depends_on": ["H", "a1", "a2", "g"],
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 4: Coefficient of Discharge (Cd)"
+    },
+    {
+      "step_id": "Cd",
+      "step_number": 4,
+      "label": "Step 4: Orifice Coefficient of Discharge (Cd)",
+      "formula_latex": "C_d = \\frac{Q_{act}}{Q_{th}}",
+      "formula_expression": "Qact / Qth",
+      "substitution_template": "C_d = \\frac{{Qact}}{{Qth}}",
+      "depends_on": ["Qact", "Qth"],
+      "unit": "dim",
+      "format": "decimal_3",
+      "decimal_precision": 3
+    }
+  ],
   "trial_inputs": [
     { "id": "h1", "label": "Upstream h1", "unit": "m", "type": "number", "placeholder": "e.g. 0.26", "tooltip": "Upstream limb mercury reading (in meters)" },
     { "id": "h2", "label": "Downstream h2", "unit": "m", "type": "number", "placeholder": "e.g. 0.16", "tooltip": "Downstream limb mercury reading (in meters)" },

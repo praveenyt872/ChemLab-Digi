@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, FileDown, Printer, Loader2, Download } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
-import { formatValue, calculateTable } from '../../engine/formulaEngine';
+import { formatValue, calculateTable, evaluateStepCalculations } from '../../engine/formulaEngine';
 import { KaTeXRenderer } from '../common/KaTeXRenderer';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -100,6 +100,10 @@ export function ReportExportModal() {
     const partTrialInputs = part.trial_inputs || [];
     const partCalcColumns = part.calculated_columns || [];
     const partRows = calculateTable(part.sample_data || [], part.calculations, part.fixed_inputs);
+    const partCalcSteps = part.calculation_steps || [];
+    const sampleTrialSteps = partRows.length > 0 && partCalcSteps.length > 0
+      ? evaluateStepCalculations(partRows[0], partCalcSteps, part.fixed_inputs)
+      : [];
 
     const isStep = part.graph?.type === 'first_order_step';
     const isSinusoidal = part.graph?.type === 'first_order_sinusoidal';
@@ -199,6 +203,44 @@ export function ReportExportModal() {
             </table>
           </div>
         </div>
+
+        {/* SAMPLE CALCULATION (Trial 1) */}
+        {sampleTrialSteps.length > 0 && (
+          <div className="space-y-1.5 printable-section pt-1">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">SAMPLE CALCULATION (Trial 1):</h3>
+            <div className="space-y-2 p-2 rounded border border-black bg-gray-50 text-xs font-mono">
+              {sampleTrialSteps.map((step, idx) => (
+                <div key={idx} className="space-y-1 pb-1.5 border-b border-gray-300 last:border-0 last:pb-0">
+                  <div className="font-bold text-black text-[11px] uppercase tracking-wide">
+                    {step.label}
+                  </div>
+                  <div className="flex items-baseline gap-2 flex-wrap text-black">
+                    <span className="text-[10px] text-gray-600 uppercase font-sans">Formula:</span>
+                    <KaTeXRenderer math={step.formula_latex} block={false} />
+                  </div>
+                  {step.substituted_latex && (
+                    <div className="flex items-baseline gap-2 flex-wrap text-black">
+                      <span className="text-[10px] text-gray-600 uppercase font-sans">Substitution:</span>
+                      <KaTeXRenderer math={step.substituted_latex} block={false} />
+                    </div>
+                  )}
+                  {step.simplification_latex && (
+                    <div className="flex items-baseline gap-2 flex-wrap text-black">
+                      <span className="text-[10px] text-gray-600 uppercase font-sans">Simplification:</span>
+                      <KaTeXRenderer math={step.simplification_latex} block={false} />
+                    </div>
+                  )}
+                  <div className="font-bold text-black pt-0.5">
+                    Result = {step.formatted_value} {step.unit !== 'dim' && step.unit !== '-' ? step.unit : ''}
+                  </div>
+                </div>
+              ))}
+              <p className="text-[10px] text-gray-600 italic font-sans pt-1">
+                Same calculation method applied to all remaining trials — see Results table for values.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* GRAPH */}
         <div className="space-y-1.5 printable-section">

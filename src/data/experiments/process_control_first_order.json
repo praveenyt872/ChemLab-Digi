@@ -52,30 +52,45 @@
             { "symbol": "A", "meaning": "Surface area", "unit": "cm²", "typical_range": "7.5" }
           ],
           "assumptions": ["Ideal lumped capacitance system"]
+        }
+      ],
+      "calculation_steps": [
+        {
+          "step_id": "dT",
+          "step_number": 1,
+          "label": "Step 1: Steady-State Temperature Span (ΔT)",
+          "formula_latex": "\\Delta T = T_{final} - T_{initial}",
+          "formula_expression": "T_final - T_initial",
+          "substitution_template": "\\Delta T = {T_final} - {T_initial}",
+          "depends_on": ["T_final", "T_initial"],
+          "unit": "°C",
+          "format": "decimal",
+          "decimal_precision": 1
         },
         {
-          "id": "laplace_tf",
-          "label": "Laplace Transfer Function",
-          "latex": "\\frac{\\bar{T}'(s)}{\\bar{T}(s)} = \\frac{1}{\\tau s + 1} = \\frac{K e^{-D s}}{\\tau s + 1}",
-          "derivation": "Transformed into s-domain using deviation variables.",
-          "purpose": "Relates output deviation temperature to input step in s-domain.",
-          "variables": [
-            { "symbol": "K", "meaning": "Steady-state gain", "unit": "dim", "typical_range": "1.0" },
-            { "symbol": "D", "meaning": "Dead time / time delay", "unit": "sec", "typical_range": "5 s" }
-          ],
-          "assumptions": ["Linear first-order system with dead time"]
+          "step_id": "tau_theo",
+          "step_number": 2,
+          "label": "Step 2: Theoretical Sensor Time Constant (τ)",
+          "formula_latex": "\\tau = \\frac{m C_p}{h A}",
+          "formula_expression": "(m * Cp) / (h * A / 3600)",
+          "substitution_template": "\\tau = \\frac{{m} \\times {Cp}}{{h} \\times {A} / 3600}",
+          "simplification_template": "\\tau = \\frac{0.25}{0.025}",
+          "depends_on": ["m", "Cp", "h", "A"],
+          "unit": "sec",
+          "format": "decimal",
+          "decimal_precision": 2
         },
         {
-          "id": "step_response",
-          "label": "Time Domain Step Response",
-          "latex": "\\bar{T}'(t) = K \\left(1 - e^{-\\frac{t-D}{\\tau}}\\right)",
-          "derivation": "Inverse Laplace transform of unit step response.",
-          "purpose": "Predicts sensor output temperature at any time t following step change.",
-          "variables": [
-            { "symbol": "T̄'(t)", "meaning": "Deviation temperature at time t", "unit": "°C", "typical_range": "0 – 26 °C" },
-            { "symbol": "t", "meaning": "Elapsed time", "unit": "sec", "typical_range": "0 – 100 s" }
-          ],
-          "assumptions": ["Pure step change in bath temperature"]
+          "step_id": "T_dev_heat",
+          "step_number": 3,
+          "label": "Step 3: Heating Temperature Deviation (T̄'(t))",
+          "formula_latex": "\\bar{T}'(t) = T_{rise} - T_{initial}",
+          "formula_expression": "T_rise - T_initial",
+          "substitution_template": "\\bar{T}'(t) = {T_rise} - {T_initial}",
+          "depends_on": ["T_rise", "T_initial"],
+          "unit": "°C",
+          "format": "decimal",
+          "decimal_precision": 1
         }
       ],
       "fixed_inputs": [
@@ -84,10 +99,7 @@
         { "id": "h", "label": "Heat transfer coeff (h)", "value": 12.0, "unit": "cal/cm²·h·°C", "description": "Heat transfer coefficient" },
         { "id": "A", "label": "Surface area (A)", "value": 7.5, "unit": "cm²", "description": "Surface area of sensor" },
         { "id": "T_initial", "label": "Room/Initial Temp (T_initial)", "value": 25.0, "unit": "°C", "description": "Initial steady temperature" },
-        { "id": "T_final", "label": "Final Steady Temp (T_final)", "value": 51.0, "unit": "°C", "description": "Final steady temperature" },
-        { "id": "D", "label": "Time delay (D)", "value": 5.0, "unit": "sec", "description": "Dead time / lag" },
-        { "id": "V", "label": "Input Voltage (V)", "value": 6.0, "unit": "% of 230V @ 5A", "description": "Heater step voltage percentage" },
-        { "id": "sensor_type", "label": "Sensor Type", "value": "Mercury Thermometer", "unit": "-", "description": "Dropdown selection: Mercury Thermometer / Thermocouple / RTD" }
+        { "id": "T_final", "label": "Final Steady Temp (T_final)", "value": 51.0, "unit": "°C", "description": "Final steady temperature" }
       ],
       "trial_inputs": [
         { "id": "t", "label": "Time (t)", "unit": "s", "type": "number", "placeholder": "e.g. 10", "tooltip": "Elapsed time in seconds" },
@@ -167,8 +179,7 @@
             { "symbol": "max Bath Temp", "meaning": "Maximum recorded input bath temperature", "unit": "°C", "typical_range": "48 °C" },
             { "symbol": "min Bath Temp", "meaning": "Minimum recorded input bath temperature", "unit": "°C", "typical_range": "28 °C" },
             { "symbol": "I/p Amplitude", "meaning": "Input sinusoidal wave amplitude A₁", "unit": "°C", "typical_range": "10 °C" }
-          ],
-          "assumptions": ["Symmetric cyclic heating bath temperature oscillation"]
+          ]
         },
         {
           "id": "op_amplitude",
@@ -180,65 +191,116 @@
             { "symbol": "max Thermowell", "meaning": "Maximum recorded output sensor temperature", "unit": "°C", "typical_range": "43 °C" },
             { "symbol": "min Thermowell", "meaning": "Minimum recorded output sensor temperature", "unit": "°C", "typical_range": "37 °C" },
             { "symbol": "O/p Amplitude", "meaning": "Output sinusoidal wave amplitude A₂", "unit": "°C", "typical_range": "3 °C" }
-          ],
-          "assumptions": ["Steady-state harmonic sensor response"]
+          ]
         },
         {
           "id": "amplitude_ratio",
           "label": "iii) Amplitude Ratio (AR)",
           "latex": "\\text{Amplitude Ratio (AR)} = \\frac{\\text{O/p Amplitude}}{\\text{I/p Amplitude}} = \\frac{A_2}{A_1}",
           "derivation": "Ratio of output wave amplitude to input wave amplitude.",
-          "purpose": "Measures attenuation of signal (AR ≤ 1.0 for first-order lag).",
-          "variables": [
-            { "symbol": "AR", "meaning": "Amplitude ratio A₂/A₁", "unit": "dim", "typical_range": "0.3" }
-          ],
-          "assumptions": ["Passive first-order system attenuation"]
+          "purpose": "Measures attenuation of signal (AR ≤ 1.0 for first-order lag)."
         },
         {
           "id": "freq_oscillation",
           "label": "iv) Frequency of Oscillation (ω)",
           "latex": "\\text{Freq of Oscillation } (\\omega) = \\frac{2\\pi}{60}",
           "derivation": "Circular frequency for period T = 60 seconds.",
-          "purpose": "Calculates input cycle frequency in rad/s.",
-          "variables": [
-            { "symbol": "ω", "meaning": "Circular frequency 2π/60", "unit": "rad/s", "typical_range": "0.105 rad/s" }
-          ],
-          "assumptions": ["Constant period of 60 seconds"]
+          "purpose": "Calculates input cycle frequency in rad/s."
         },
         {
           "id": "time_constant_ar_exact",
           "label": "v) Time Constant (τ)",
           "latex": "\\tau = \\frac{\\sqrt{1 - AR^2}}{AR \\cdot \\text{Freq}}",
           "derivation": "Solved by rearranging AR = 1 / √(1 + (ωτ)²).",
-          "purpose": "Calculates first-order system time constant from amplitude ratio and frequency.",
-          "variables": [
-            { "symbol": "τ", "meaning": "Time constant", "unit": "sec", "typical_range": "30.36 s" },
-            { "symbol": "AR", "meaning": "Amplitude ratio", "unit": "dim", "typical_range": "0.3" },
-            { "symbol": "Freq", "meaning": "Frequency of oscillation ω", "unit": "rad/s", "typical_range": "0.105 rad/s" }
-          ],
-          "assumptions": ["First-order thermal lag model"]
+          "purpose": "Calculates first-order system time constant from amplitude ratio and frequency."
         },
         {
           "id": "phase_lag_exact",
           "label": "vi) Phase Lag (φ)",
           "latex": "\\text{Phase Lag } (\\phi) = \\frac{\\text{observed phase lag} \\times 360}{60}",
           "derivation": "Converts observed peak time delay in seconds into angular degrees.",
-          "purpose": "Calculates phase lag angle in degrees.",
-          "variables": [
-            { "symbol": "φ", "meaning": "Phase lag angle", "unit": "degrees (°)", "typical_range": "60°" }
-          ],
-          "assumptions": ["Full 360° corresponds to 60 sec period"]
+          "purpose": "Calculates phase lag angle in degrees."
+        }
+      ],
+      "calculation_steps": [
+        {
+          "step_id": "ip_amp",
+          "step_number": 1,
+          "label": "Step 1: Input Bath Temperature Amplitude (A1)",
+          "formula_latex": "A_1 = \\frac{\\text{max Bath} - \\text{min Bath}}{2}",
+          "formula_expression": "(input_max - input_min) / 2",
+          "substitution_template": "A_1 = \\frac{{input_max} - {input_min}}{2}",
+          "simplification_template": "A_1 = \\frac{20.0}{2}",
+          "depends_on": ["input_max", "input_min"],
+          "unit": "°C",
+          "format": "decimal",
+          "decimal_precision": 1,
+          "feeds_into": "Step 3: Amplitude Ratio (AR)"
         },
         {
-          "id": "theta_over_a",
-          "label": "vii) Normalized Output Deviation (θ/A)",
-          "latex": "\\frac{\\theta}{A} = 0.1365",
-          "derivation": "Ratio of indicated temperature deviation to input amplitude.",
-          "purpose": "Measures normalized output amplitude factor.",
-          "variables": [
-            { "symbol": "θ/A", "meaning": "Normalized deviation ratio", "unit": "dim", "typical_range": "0.1365" }
-          ],
-          "assumptions": ["First-order steady harmonic response"]
+          "step_id": "op_amp",
+          "step_number": 2,
+          "label": "Step 2: Output Sensor Temperature Amplitude (A2)",
+          "formula_latex": "A_2 = \\frac{\\text{max Thermowell} - \\text{min Thermowell}}{2}",
+          "formula_expression": "(op_max - op_min) / 2",
+          "substitution_template": "A_2 = \\frac{{op_max} - {op_min}}{2}",
+          "simplification_template": "A_2 = \\frac{6.0}{2}",
+          "depends_on": ["op_max", "op_min"],
+          "unit": "°C",
+          "format": "decimal",
+          "decimal_precision": 1,
+          "feeds_into": "Step 3: Amplitude Ratio (AR)"
+        },
+        {
+          "step_id": "AR",
+          "step_number": 3,
+          "label": "Step 3: Amplitude Ratio (AR)",
+          "formula_latex": "AR = \\frac{A_2}{A_1}",
+          "formula_expression": "((op_max - op_min) / 2) / ((input_max - input_min) / 2)",
+          "substitution_template": "AR = \\frac{{op_amp}}{{ip_amp}}",
+          "depends_on": ["op_amp", "ip_amp"],
+          "unit": "dim",
+          "format": "decimal",
+          "decimal_precision": 3,
+          "feeds_into": "Step 5: Time Constant (τ)"
+        },
+        {
+          "step_id": "freq",
+          "step_number": 4,
+          "label": "Step 4: Circular Frequency of Oscillation (ω)",
+          "formula_latex": "\\omega = \\frac{2\\pi}{T}",
+          "formula_expression": "2 * 3.14159265 / period",
+          "substitution_template": "\\omega = \\frac{2\\pi}{{period}}",
+          "depends_on": ["period"],
+          "unit": "rad/s",
+          "format": "decimal",
+          "decimal_precision": 3,
+          "feeds_into": "Step 5: Time Constant (τ)"
+        },
+        {
+          "step_id": "tau",
+          "step_number": 5,
+          "label": "Step 5: System Time Constant from AR (τ)",
+          "formula_latex": "\\tau = \\frac{\\sqrt{1 - AR^2}}{AR \\cdot \\omega}",
+          "formula_expression": "sqrt(1 - (((op_max - op_min) / 2) / ((input_max - input_min) / 2))^2) / ((((op_max - op_min) / 2) / ((input_max - input_min) / 2)) * (2 * 3.14159265 / period))",
+          "substitution_template": "\\tau = \\frac{\\sqrt{1 - ({AR})^2}}{{AR} \\times {freq}}",
+          "simplification_template": "\\tau = \\frac{0.9539}{0.03142}",
+          "depends_on": ["AR", "freq"],
+          "unit": "sec",
+          "format": "decimal",
+          "decimal_precision": 2
+        },
+        {
+          "step_id": "phase_lag",
+          "step_number": 6,
+          "label": "Step 6: Phase Lag Angle (φ)",
+          "formula_latex": "\\phi = \\frac{\\text{obs phase lag} \\times 360}{T}",
+          "formula_expression": "(obs_phase_lag * 360) / period",
+          "substitution_template": "\\phi = \\frac{{obs_phase_lag} \\times 360}{{period}}",
+          "depends_on": ["obs_phase_lag", "period"],
+          "unit": "°",
+          "format": "decimal",
+          "decimal_precision": 1
         }
       ],
       "fixed_inputs": [

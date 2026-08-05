@@ -95,6 +95,61 @@
       "practical_application": "Cd is the primary design rating parameter supplied by valve & meter manufacturers."
     }
   ],
+  "calculation_steps": [
+    {
+      "step_id": "H",
+      "step_number": 1,
+      "label": "Step 1: Equivalent Pressure Head of Water (H)",
+      "formula_latex": "H = h \\times 12.6 = (h_1 - h_2) \\times 12.6",
+      "formula_expression": "(abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6",
+      "substitution_template": "H = ({h1} - {h2}) \\times 12.6",
+      "simplification_template": "H = {h_diff} \\times 12.6",
+      "depends_on": ["h1", "h2"],
+      "unit": "m H₂O",
+      "format": "decimal",
+      "decimal_precision": 3,
+      "feeds_into": "Step 2: Theoretical Discharge (Qth)"
+    },
+    {
+      "step_id": "Qth",
+      "step_number": 2,
+      "label": "Step 2: Theoretical Volumetric Discharge (Qth)",
+      "formula_latex": "Q_{th} = \\frac{A_1 A_2 \\sqrt{2gH}}{\\sqrt{A_1^2 - A_2^2}}",
+      "formula_expression": "(0.000346 * 0.000126 * sqrt(2 * 9.81 * H)) / sqrt(0.000346^2 - 0.000126^2)",
+      "substitution_template": "Q_{th} = \\frac{(3.46 \\times 10^{-4})(1.26 \\times 10^{-4}) \\sqrt{2(9.81)({H})}}{\\sqrt{(3.46 \\times 10^{-4})^2 - (1.26 \\times 10^{-4})^2}}",
+      "simplification_template": "Q_{th} = \\frac{{num_expr}}{3.225 \\times 10^{-4}}",
+      "depends_on": ["H", "A1", "A2", "g"],
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 4: Coefficient of Discharge (Cd)"
+    },
+    {
+      "step_id": "Qa",
+      "step_number": 3,
+      "label": "Step 3: Actual Volumetric Discharge (Qa)",
+      "formula_latex": "Q_a = \\frac{V}{t}",
+      "formula_expression": "0.01 / t",
+      "substitution_template": "Q_a = \\frac{0.010}{{t}}",
+      "depends_on": ["V", "t"],
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 4: Coefficient of Discharge (Cd)"
+    },
+    {
+      "step_id": "Cd",
+      "step_number": 4,
+      "label": "Step 4: Venturi Coefficient of Discharge (Cd)",
+      "formula_latex": "C_d = \\frac{Q_a}{Q_{th}}",
+      "formula_expression": "Qa / Qth",
+      "substitution_template": "C_d = \\frac{{Qa}}{{Qth}}",
+      "depends_on": ["Qa", "Qth"],
+      "unit": "dim",
+      "format": "decimal_3",
+      "decimal_precision": 3
+    }
+  ],
   "trial_inputs": [
     { "id": "h1", "label": "Left Limb h1", "unit": "m", "type": "number", "placeholder": "e.g. 0.28", "tooltip": "Mercury height in left manometer tube (in meters)" },
     { "id": "h2", "label": "Right Limb h2", "unit": "m", "type": "number", "placeholder": "e.g. 0.12", "tooltip": "Mercury height in right manometer tube (in meters)" },

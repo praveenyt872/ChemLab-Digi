@@ -36,6 +36,20 @@
       "practical_application": "Rotameters are widely used in chemical plants, gas metering, and water treatment facilities for visual, direct-reading flow monitoring."
     }
   ],
+  "calculation_steps": [
+    {
+      "step_id": "Q",
+      "step_number": 1,
+      "label": "Step 1: Observed / Actual Flow Rate (Q)",
+      "formula_latex": "Q = \\frac{V}{t}",
+      "formula_expression": "V / t",
+      "substitution_template": "Q = \\frac{{V}}{{t}}",
+      "depends_on": ["V", "t"],
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4
+    }
+  ],
   "trial_inputs": [
     { "id": "R", "label": "Rotameter Reading", "unit": "mm", "type": "number", "placeholder": "e.g. 50", "tooltip": "Position of float top edge on scale" },
     { "id": "V", "label": "Volume Collected", "unit": "m³", "type": "number", "placeholder": "e.g. 0.002", "tooltip": "Volume of water collected in measuring jar" },
