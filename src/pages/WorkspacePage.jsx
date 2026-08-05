@@ -47,7 +47,7 @@ export function WorkspacePage({ onNavigate }) {
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-violet-700">
             <span className="uppercase tracking-wider">
-              {isProcessControl ? 'Instrumentation & Process Control Lab' : 'Fluid Mechanics Lab'}
+              {isProcessControl ? 'Process Control Lab' : 'Fluid Mechanics Lab'}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span>REC ChemEngg 2026 Lab</span>

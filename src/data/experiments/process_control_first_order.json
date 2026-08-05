@@ -1,7 +1,7 @@
 {
   "experiment_id": "exp1-first-order-system-response",
   "subject": "instrumentation-process-control",
-  "subject_name": "Instrumentation & Process Control Lab",
+  "subject_name": "Process Control Lab",
   "title": "Response of First-Order System",
   "short_name": "First-Order System",
   "aim": "To study the behavior and determine the time constant of a first-order process subjected to step and sinusoidal heat input changes.",
@@ -145,21 +145,7 @@
         "x_label": "Time / τ",
         "y_label": "T̄'(t) / K",
         "title": "First-Order Step Response (Experimental vs Theoretical 63.2% Curve)"
-      },
-      "viva_questions": [
-        {
-          "question": "1. What is the time constant? How does it affect the response of a system?",
-          "answer": "Time constant (τ) is the time required for the system response to reach 63.2% of its ultimate final steady-state value following a step change. A smaller time constant indicates a fast, responsive system, whereas a larger time constant indicates a slow, sluggish system."
-        },
-        {
-          "question": "2. Do the size of the bulb and the amount of mercury affect the response of the thermometer?",
-          "answer": "Yes. The time constant τ = (m Cp) / (h A) depends directly on the mass of mercury (m) and surface area (A). A larger bulb contains more mercury (higher mass m), which increases heat capacity and lengthens the time constant, making response slower unless surface area A increases proportionally."
-        },
-        {
-          "question": "3. What is the physical significance of steady-state gain?",
-          "answer": "Steady-state gain (K) is the ratio of ultimate output change to input step change (ΔY / ΔX). Higher process gain means the system produces a larger output change for a given input change, making the process highly sensitive and requiring less aggressive controller action."
-        }
-      ]
+      }
     },
     {
       "id": "partB",
@@ -358,21 +344,7 @@
         "x_label": "Time (sec)",
         "y_label": "Temperature (°C)",
         "title": "Sinusoidal Response of Thermal Bath (Input vs Output Temperature Overlay)"
-      },
-      "viva_questions": [
-        {
-          "question": "1. What is the formula for Amplitude Ratio (AR)?",
-          "answer": "Amplitude ratio AR = (Output Amplitude) / (Input Amplitude) = (max Thermowell - min Thermowell) / (max Bath temp - min Bath temp) = 3 / 10 = 0.3."
-        },
-        {
-          "question": "2. How is time constant calculated from Amplitude Ratio?",
-          "answer": "Time constant τ = sqrt(1 - AR^2) / (AR × Freq of oscillation) = sqrt(1 - 0.3^2) / (0.3 × 0.105) = 30.36 sec."
-        },
-        {
-          "question": "3. How is phase lag calculated in degrees?",
-          "answer": "Phase lag = (observed phase lag × 360) / 60 = (10 × 360) / 60 = 60°."
-        }
-      ]
+      }
     }
   ]
 }

@@ -22,7 +22,7 @@ export function buildSystemPrompt(context = {}) {
   } = context;
 
   const config = activePartConfig || experimentConfig || {};
-  const subjectName = config.subject_name || (currentSubject === 'instrumentation-process-control' ? 'Instrumentation & Process Control Lab' : 'Fluid Mechanics Lab');
+  const subjectName = config.subject_name || (currentSubject === 'instrumentation-process-control' ? 'Process Control Lab' : 'Fluid Mechanics Lab');
   const expTitle = experimentConfig?.title || config.title || 'Chemical Engineering Lab';
   const partTitle = config.title || (activePartId === 'partA' ? 'Step Input Response' : 'Sinusoidal Input Response');
 

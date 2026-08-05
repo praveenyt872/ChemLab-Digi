@@ -10,7 +10,7 @@ export const SUBJECTS_CONFIG = {
   },
   'instrumentation-process-control': {
     id: 'instrumentation-process-control',
-    name: 'Instrumentation & Process Control Lab',
+    name: 'Process Control Lab',
     courseCode: 'CH23722',
     courseTitle: 'Process Control Lab',
     field: 'Chemical Engineering',

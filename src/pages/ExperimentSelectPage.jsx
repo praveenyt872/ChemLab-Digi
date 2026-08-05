@@ -51,7 +51,7 @@ export function ExperimentSelectPage({ onNavigate }) {
 
   const isProcessControl = currentSubject === 'instrumentation-process-control';
   const experiments = isProcessControl ? processControlExps : fluidMechanicsExps;
-  const subjectTitle = isProcessControl ? 'Instrumentation & Process Control Lab' : 'Fluid Mechanics Lab';
+  const subjectTitle = isProcessControl ? 'Process Control Lab' : 'Fluid Mechanics Lab';
   const subjectDesc = isProcessControl
     ? 'First-order thermal response dynamics, step input, sinusoidal lag, time constants, and phase shift.'
     : 'Select an experiment module to launch the interactive virtual workspace and calculation engine.';
