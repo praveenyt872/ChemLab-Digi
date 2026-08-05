@@ -18,6 +18,7 @@ export function SubjectSelectPage({ onNavigate }) {
   };
 
   const studentName = studentDetails?.studentName || 'Student';
+  const hasStudentDetails = Boolean(studentDetails?.studentName && studentDetails?.registerNumber);
 
   const subjects = [
     {
