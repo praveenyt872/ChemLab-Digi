@@ -455,7 +455,7 @@ export function ReportExportModal() {
                 : 'Chemical Engineering | CH23331'}
             </span>
             <span className="font-bold text-black">
-              Created by PRAVEEN R
+              Created by Zynix
             </span>
           </div>
 
