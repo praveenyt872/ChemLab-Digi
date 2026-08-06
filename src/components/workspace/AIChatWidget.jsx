@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Sparkles, Loader2, WifiOff } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
+import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { OfflineAIMessage } from '../pwa/OfflineAIMessage';
 
 export function AIChatWidget() {
   const { isChatOpen, setChatOpen, chatMessages, sendChatMessage, isAiThinking, experimentConfig, activePartConfig, activePartId, currentSubject } = useExperimentStore();
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
+  const isOnline = useOnlineStatus();
 
   const config = activePartConfig || experimentConfig;
   const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
@@ -34,7 +37,7 @@ export function AIChatWidget() {
 
   const handleSend = (textToSend) => {
     const query = textToSend || inputText;
-    if (!query.trim()) return;
+    if (!query.trim() || !isOnline) return;
     sendChatMessage(query);
     setInputText('');
   };
@@ -50,10 +53,20 @@ export function AIChatWidget() {
         onClick={() => setChatOpen(!isChatOpen)}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-violet-600 hover:bg-violet-700 text-white flex items-center justify-center shadow-xl border border-violet-500 cursor-pointer"
-        title="Open AI Lab Assistant"
+        className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-xl border cursor-pointer ${
+          isOnline
+            ? 'bg-violet-600 hover:bg-violet-700 text-white border-violet-500'
+            : 'bg-slate-700 hover:bg-slate-800 text-slate-300 border-slate-600'
+        }`}
+        title={isOnline ? "Open AI Lab Assistant" : "AI Assistant (Offline)"}
       >
-        {isChatOpen ? <X className="w-6 h-6 text-white" /> : <Bot className="w-7 h-7 text-white" />}
+        {isChatOpen ? (
+          <X className="w-6 h-6 text-white" />
+        ) : isOnline ? (
+          <Bot className="w-7 h-7 text-white" />
+        ) : (
+          <WifiOff className="w-6 h-6 text-amber-300" />
+        )}
       </motion.button>
 
       {/* Chat Panel Popup (Clean White SaaS Layout) */}
@@ -75,7 +88,13 @@ export function AIChatWidget() {
                 <div>
                   <h4 className="font-heading font-bold text-sm text-white flex items-center gap-1.5">
                     <span>AI Lab Assistant</span>
-                    <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                    {isOnline ? (
+                      <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                    ) : (
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Offline Mode
+                      </span>
+                    )}
                   </h4>
                   <p className="text-[11px] text-slate-400 font-mono">
                     Grounded in: {experimentConfig?.short_name || 'Lab'}
@@ -93,6 +112,12 @@ export function AIChatWidget() {
 
             {/* Chat Conversation Scroll Area */}
             <div className="flex-1 p-4 overflow-y-auto space-y-3 font-sans text-xs bg-slate-50">
+              {!isOnline && (
+                <div className="mb-3">
+                  <OfflineAIMessage featureName="AI Assistant" />
+                </div>
+              )}
+
               {chatMessages.map((msg) => (
                 <div
                   key={msg.id}
@@ -135,17 +160,19 @@ export function AIChatWidget() {
             </div>
 
             {/* Quick Prompt Chips */}
-            <div className="px-4 py-2 bg-slate-100 border-t border-slate-200 flex items-center gap-2 overflow-x-auto no-scrollbar">
-              {quickChips.map((chip, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(chip)}
-                  className="px-2.5 py-1 rounded-full bg-white hover:bg-violet-50 border border-slate-200 hover:border-violet-300 text-slate-700 hover:text-violet-700 text-[10px] font-mono whitespace-nowrap shrink-0 transition-all cursor-pointer shadow-sm"
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
+            {isOnline && (
+              <div className="px-4 py-2 bg-slate-100 border-t border-slate-200 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                {quickChips.map((chip, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSend(chip)}
+                    className="px-2.5 py-1 rounded-full bg-white hover:bg-violet-50 border border-slate-200 hover:border-violet-300 text-slate-700 hover:text-violet-700 text-[10px] font-mono whitespace-nowrap shrink-0 transition-all cursor-pointer shadow-sm"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Input Box */}
             <div className="p-3 border-t border-[#EDEEF1] bg-white">
@@ -159,13 +186,14 @@ export function AIChatWidget() {
                 <input
                   type="text"
                   value={inputText}
+                  disabled={!isOnline}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Ask formula, Cd error, or Bernoulli theory..."
-                  className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:border-violet-500"
+                  placeholder={isOnline ? "Ask formula, Cd error, or Bernoulli theory..." : "AI Chat paused offline — reconnect to chat"}
+                  className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:border-violet-500 disabled:opacity-50 disabled:bg-slate-100"
                 />
                 <button
                   type="submit"
-                  disabled={!inputText.trim() || isAiThinking}
+                  disabled={!inputText.trim() || isAiThinking || !isOnline}
                   className="p-2 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
                 >
                   <Send className="w-4 h-4" />

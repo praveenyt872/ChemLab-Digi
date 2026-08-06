@@ -2,6 +2,7 @@ import React from 'react';
 import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, Edit3, Search, Bell } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { ScrollProgress } from '../common/ScrollProgress';
+import { OfflineBadge } from '../pwa/OfflineBadge';
 
 export function Navbar({ currentPage, onNavigate }) {
   const {
@@ -36,6 +37,7 @@ export function Navbar({ currentPage, onNavigate }) {
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                 v1.0
               </span>
+              <OfflineBadge />
             </div>
           </div>
         </button>

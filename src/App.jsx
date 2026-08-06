@@ -15,6 +15,7 @@ import { ResetConfirmModal } from './components/modals/ResetConfirmModal';
 import { ReportExportModal } from './components/modals/ReportExportModal';
 import { StudentDetailsGateModal } from './components/modals/StudentDetailsGateModal';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { InstallBanner } from './components/pwa/InstallBanner';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
@@ -51,6 +52,9 @@ export default function App() {
 
       {/* Persistent Floating AI Assistant Widget */}
       <AIChatWidget />
+
+      {/* PWA Install Banner */}
+      <InstallBanner />
 
       {/* Modals & Dialogs */}
       <StudentDetailsGateModal />

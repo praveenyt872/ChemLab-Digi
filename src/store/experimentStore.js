@@ -6,6 +6,7 @@ import processControlConfig from '../data/experiments/process_control_first_orde
 import { calculateTable, calculateSummary } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
+import { saveSessionToDb, loadSessionFromDb } from '../utils/indexedDbStore';
 
 const EXPERIMENT_CONFIGS = {
   rotameter_calibration: rotameterConfig,
@@ -184,6 +185,12 @@ export const useExperimentStore = create((set, get) => ({
     const flags = validateObservationData(activePartConfig, updatedRows, computedRows);
     const primaryKey = currentExperimentId === 'rotameter_calibration' ? 'Q' : currentExperimentId === 'exp1-first-order-system-response' ? (activePartId === 'partA' ? 'T_dev_heat' : 'T_out') : 'Cd';
     const summary = calculateSummary(computedRows, primaryKey);
+
+    saveSessionToDb(currentExperimentId, {
+      activePartId,
+      observationRows: updatedRows,
+      calculatedRows: computedRows
+    });
 
     set({
       observationRows: updatedRows,
