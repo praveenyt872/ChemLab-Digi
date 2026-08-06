@@ -25,6 +25,7 @@ export function ReportExportModal() {
     setReportModalOpen,
     experimentConfig,
     activePartConfig,
+    observationRows,
     calculatedRows,
     headlineResult,
     studentDetails,
@@ -99,7 +100,14 @@ export function ReportExportModal() {
   const renderPartSection = (part, isSub = false) => {
     const partTrialInputs = part.trial_inputs || [];
     const partCalcColumns = part.calculated_columns || [];
-    const partRows = calculateTable(part.sample_data || [], part.calculations, part.fixed_inputs);
+    
+    const rowsToUse = isSub
+      ? calculateTable(part.sample_data || [], part.calculations, part.fixed_inputs)
+      : (calculatedRows && calculatedRows.length > 0
+          ? calculatedRows
+          : calculateTable(part.sample_data || [], part.calculations, part.fixed_inputs));
+
+    const partRows = rowsToUse;
     const partCalcSteps = part.calculation_steps || [];
     const sampleTrialSteps = partRows.length > 0 && partCalcSteps.length > 0
       ? evaluateStepCalculations(partRows[0], partCalcSteps, part.fixed_inputs)
@@ -126,6 +134,70 @@ export function ReportExportModal() {
       T_in: parseFloat(r.T_in || 0),
       T_out: parseFloat(r.T_out || 0)
     }));
+
+    // Standard scatter plot data
+    const chartData = partRows
+      .map((r, idx) => {
+        const rawX = r[part.graph?.x];
+        const rawY = r[part.graph?.y];
+        const xVal = typeof rawX === 'number' ? rawX : parseFloat(rawX);
+        const yVal = typeof rawY === 'number' ? rawY : parseFloat(rawY);
+
+        if (
+          xVal !== null &&
+          yVal !== null &&
+          !isNaN(xVal) &&
+          !isNaN(yVal) &&
+          isFinite(xVal) &&
+          isFinite(yVal)
+        ) {
+          return {
+            trial: idx + 1,
+            x: xVal,
+            y: yVal
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    // Linear regression trendline data
+    let lineData = [];
+    if (!isStep && !isSinusoidal && chartData.length >= 2) {
+      const xs = chartData.map(d => d.x);
+      const ys = chartData.map(d => d.y);
+      const n = xs.length;
+      const sumX = xs.reduce((a, b) => a + b, 0);
+      const sumY = ys.reduce((a, b) => a + b, 0);
+      const sumXY = xs.reduce((sum, x, i) => sum + x * ys[i], 0);
+      const sumXX = xs.reduce((sum, x) => sum + x * x, 0);
+
+      const denom = n * sumXX - sumX * sumX;
+      if (denom !== 0) {
+        const slope = (n * sumXY - sumX * sumY) / denom;
+        const intercept = (sumY - slope * sumX) / n;
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+
+        lineData = [
+          { x: minX, trend: slope * minX + intercept },
+          { x: maxX, trend: slope * maxX + intercept }
+        ];
+      }
+    }
+
+    const formatTickX = (val) => {
+      if (val === 0 || val === '0') return '0';
+      const num = typeof val === 'number' ? val : parseFloat(val);
+      if (isNaN(num)) return val;
+      if (Math.abs(num) < 0.001) {
+        return num.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+      }
+      if (Math.abs(num) < 1) {
+        return num.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+      }
+      return num.toFixed(2);
+    };
 
     return (
       <div key={part.id || 'single'} className="space-y-4 pt-2 border-t border-gray-200 first:border-0 first:pt-0">
@@ -253,31 +325,50 @@ export function ReportExportModal() {
               : `Draw graph between ${part.graph?.y_label} on Y-axis and ${part.graph?.x_label} on X-axis.`}
           </p>
 
-          <div className="h-[210px] w-full rounded border border-black bg-white p-2 space-y-1">
-            <ResponsiveContainer width="100%" height="90%">
+          <div className="h-[220px] w-full rounded border border-black bg-white p-2">
+            <ResponsiveContainer width="100%" height="100%">
               {isStep ? (
-                <ComposedChart data={stepData} margin={{ top: 8, right: 15, bottom: 15, left: 5 }}>
+                <ComposedChart data={stepData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
                   <XAxis dataKey="t_over_tau" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'time / τ', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
                   <YAxis domain={[0, 1.1]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: "T̄'(t) / K", angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
-                  <ReferenceLine y={0.632} stroke="#059669" strokeDasharray="3 3" />
-                  <Line type="monotone" dataKey="exp_norm" stroke="#0284c7" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="theo_norm" stroke="#7c3aed" strokeWidth={1.5} strokeDasharray="3 3" dot={false} />
+                  <ReferenceLine y={0.632} stroke="#10B981" strokeDasharray="3 3" />
+                  <Line type="monotone" dataKey="exp_norm" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
+                  <Line type="monotone" dataKey="theo_norm" stroke="#3B82F6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
                 </ComposedChart>
               ) : isSinusoidal ? (
-                <ComposedChart data={sinusoidalData} margin={{ top: 8, right: 15, bottom: 15, left: 5 }}>
+                <ComposedChart data={sinusoidalData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
                   <XAxis dataKey="t" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Time (s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
                   <YAxis domain={[25, 55]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Temp (°C)', angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
-                  <Line type="monotone" dataKey="T_in" stroke="#0284c7" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="T_out" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="T_in" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3.5, fill: '#3B82F6' }} />
+                  <Line type="monotone" dataKey="T_out" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
                 </ComposedChart>
               ) : (
-                <ComposedChart margin={{ top: 8, right: 15, bottom: 15, left: 5 }}>
+                <ComposedChart margin={{ top: 12, right: 20, bottom: 25, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                  <XAxis dataKey="x" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: part.graph?.x_label, position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
-                  <YAxis dataKey="y" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: part.graph?.y_label, angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
-                  <Scatter name="Data" data={partRows.map(r => ({ x: r[part.graph?.x], y: r[part.graph?.y] }))} fill="#0284c7" />
+                  <XAxis
+                    dataKey="x"
+                    type="number"
+                    domain={['auto', 'auto']}
+                    tick={{ fill: '#0f172a', fontSize: 9 }}
+                    stroke="#000"
+                    tickFormatter={formatTickX}
+                    label={{ value: part.graph?.x_label, position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }}
+                  />
+                  <YAxis
+                    dataKey="y"
+                    type="number"
+                    domain={['auto', 'auto']}
+                    width={40}
+                    tick={{ fill: '#0f172a', fontSize: 9 }}
+                    stroke="#000"
+                    label={{ value: part.graph?.y_label, angle: -90, position: 'insideLeft', offset: 10, fill: '#000', fontSize: 9 }}
+                  />
+                  <Scatter name="Data" data={chartData} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />
+                  {lineData.length >= 2 && (
+                    <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} />
+                  )}
                 </ComposedChart>
               )}
             </ResponsiveContainer>
