@@ -50,7 +50,10 @@ export function WorkspacePage({ onNavigate }) {
               {isProcessControl ? 'Process Control Lab' : 'Fluid Mechanics Lab'}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span>REC ChemEngg 2026 Lab</span>
+            <div className="flex items-center gap-1.5">
+              <img src="./rec-logo.png" alt="REC Logo" className="w-4 h-4 object-contain shrink-0" />
+              <span>Rajalakshmi Engineering College</span>
+            </div>
           </div>
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
             {experimentConfig.title}

@@ -12,7 +12,10 @@ export function Footer({ onNavigate }) {
           </div>
           <div>
             <span className="font-heading font-bold text-slate-900">ChemLab AI</span>
-            <p className="text-xs text-slate-500 font-sans">REC ChemEngg 2026 Virtual Lab System</p>
+            <p className="text-xs text-slate-500 font-sans flex items-center gap-1.5 mt-0.5">
+              <img src="./rec-logo.png" alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
+              <span>Rajalakshmi Engineering College</span>
+            </p>
           </div>
         </div>
 

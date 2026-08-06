@@ -61,9 +61,9 @@ export function LandingPage({ onNavigate }) {
           transition={{ duration: 0.4 }}
           className="mb-6"
         >
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 text-xs font-mono font-bold tracking-tight shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>REC ChemEngg 2026 Lab Manual Aligned</span>
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-violet-900 border border-violet-200 text-xs font-mono font-bold tracking-tight shadow-sm">
+            <img src="./rec-logo.png" alt="REC Logo" className="w-5 h-5 object-contain shrink-0" />
+            <span>Rajalakshmi Engineering College</span>
           </span>
         </motion.div>
 

@@ -440,8 +440,9 @@ export function ReportExportModal() {
               <h3 className="font-heading text-base font-bold text-slate-100">
                 Official Experiment Report Export
               </h3>
-              <p className="text-[11px] font-mono text-slate-400">
-                REC Chemical Engineering 2026 Manual Standard Format
+              <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <img src="./rec-logo.png" alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
+                <span>Rajalakshmi Engineering College — Manual Standard Format</span>
               </p>
             </div>
           </div>
