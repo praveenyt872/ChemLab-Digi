@@ -123,34 +123,35 @@ export function evaluateStepCalculations(trialRow = {}, calculationSteps = [], f
     if (scope.h1 !== undefined && scope.h2 !== undefined) {
       scope.h_diff = Math.abs(scope.h1 - scope.h2).toFixed(3);
     }
-    if (scope.H !== undefined && scope.g !== undefined) {
-      scope.num_expr = formatScientific(3.46e-4 * 1.26e-4 * Math.sqrt(2 * scope.g * scope.H), 3);
+    if (scope.H !== undefined) {
+      const gVal = scope.g || 9.81;
+      const numVal = 3.46e-4 * 1.26e-4 * Math.sqrt(2 * gVal * (scope.H || 0));
+      scope.num_expr = formatScientific(numVal, 3);
     }
 
-    if (substitution_template) {
-      let subStr = substitution_template;
-      subStr = subStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, varName) => {
+    const replaceVariablesInTemplate = (templateStr) => {
+      if (!templateStr) return '';
+      return templateStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, varName) => {
         const val = scope[varName];
-        if (val === undefined || val === null || isNaN(val)) return `\\text{${varName}}`;
-        if (Math.abs(val) < 0.001 && val !== 0) {
-          return formatScientific(val, 3);
+        if (val === undefined || val === null) return `\\text{${varName.replace(/_/g, '\\_')}}`;
+        if (typeof val === 'string') return val;
+        if (typeof val === 'number') {
+          if (isNaN(val)) return `\\text{${varName.replace(/_/g, '\\_')}}`;
+          if (Math.abs(val) < 0.001 && val !== 0) {
+            return formatScientific(val, 3);
+          }
+          return Number.isInteger(val) ? val.toString() : val.toFixed(decimal_precision);
         }
-        return typeof val === 'number' ? (Number.isInteger(val) ? val.toString() : val.toFixed(decimal_precision)) : val;
+        return String(val);
       });
-      substitutedLatex = subStr;
+    };
+
+    if (substitution_template) {
+      substitutedLatex = replaceVariablesInTemplate(substitution_template);
     }
 
     if (simplification_template) {
-      let simpStr = simplification_template;
-      simpStr = simpStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, varName) => {
-        const val = scope[varName];
-        if (val === undefined || val === null || isNaN(val)) return `\\text{${varName}}`;
-        if (Math.abs(val) < 0.001 && val !== 0) {
-          return formatScientific(val, 3);
-        }
-        return typeof val === 'number' ? (Number.isInteger(val) ? val.toString() : val.toFixed(decimal_precision)) : val;
-      });
-      simplificationLatex = simpStr;
+      simplificationLatex = replaceVariablesInTemplate(simplification_template);
     }
 
     const formattedVal = formatValue(stepValue, format || 'decimal');
