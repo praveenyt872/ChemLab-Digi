@@ -128,7 +128,7 @@ export function SampleCalculationPanel() {
                       {/* 2. Numeric Substitution Step */}
                       <div className="p-2.5 rounded-xl bg-violet-50/60 border border-violet-200 space-y-1">
                         <span className="text-[10px] text-violet-700 font-bold uppercase tracking-wider block">b) Numeric Substitution (Trial #{selectedTrialIndex + 1}):</span>
-                        <div className="text-slate-900 font-bold overflow-x-auto">
+                        <div className="text-violet-950 font-bold overflow-x-auto">
                           <KaTeXRenderer math={step.substituted_latex || step.formula_latex} block={false} />
                         </div>
                       </div>
@@ -137,7 +137,7 @@ export function SampleCalculationPanel() {
                       {step.simplification_latex && (
                         <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-200 space-y-1">
                           <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wider block">c) Intermediate Simplification:</span>
-                          <div className="text-slate-900 font-bold overflow-x-auto">
+                          <div className="text-blue-950 font-bold overflow-x-auto">
                             <KaTeXRenderer math={step.simplification_latex} block={false} />
                           </div>
                         </div>

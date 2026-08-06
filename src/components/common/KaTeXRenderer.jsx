@@ -18,7 +18,7 @@ export function KaTeXRenderer({ math, block = false, className = '' }) {
 
   return (
     <span
-      className={`inline-block text-slate-900 print:text-black ${block ? 'my-1 text-center w-full overflow-x-auto text-xs sm:text-sm font-normal' : 'text-xs'} ${className}`}
+      className={`inline-block ${block ? 'my-1 text-center w-full overflow-x-auto text-xs sm:text-sm text-cyan-400 print:text-black font-normal' : 'text-xs text-cyan-400 print:text-black'} ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
