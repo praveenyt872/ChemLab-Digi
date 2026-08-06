@@ -183,6 +183,39 @@
     "y_label": "Coefficient of Discharge (Cd)",
     "title": "Venturi Meter Calibration (Cd vs Qth)"
   },
+  "graph_config": {
+    "x_axis": { "label": "Theoretical Flow Rate Qth (m³/s)", "variable_ref": "Qth" },
+    "y_axis": { "label": "Coefficient of Discharge (Cd)", "variable_ref": "Cd" },
+    "series": [
+      {
+        "id": "actual",
+        "label": "Observed Data",
+        "type": "scatter+line",
+        "style": "solid",
+        "color_index": 0,
+        "source": "trial_inputs_calculated"
+      },
+      {
+        "id": "theoretical",
+        "label": "Theoretical Line",
+        "type": "line",
+        "style": "dashed",
+        "color_index": 1,
+        "source": "computed_theoretical_curve",
+        "computation": { "method": "linear_fit" }
+      }
+    ]
+  },
+  "reference_code": {
+    "python": {
+      "label": "Python (NumPy / SciPy) Reference",
+      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Venturi Meter Constants\nA1 = 3.46e-4  # m^2\nA2 = 1.26e-4  # m^2\ng = 9.81      # m/s^2\nV = 0.01      # 10 Liters in m^3\n\ndef calculate_venturi(h1, h2, t):\n    h = np.abs(h1 - h2)\n    H = h * 12.6  # Equivalent water head in m H2O\n    Q_a = V / t   # Actual flow rate (m^3/s)\n    Q_th = (A1 * A2 * np.sqrt(2 * g * H)) / np.sqrt(A1**2 - A2**2)\n    Cd = Q_a / Q_th\n    return Q_th, Cd\n\n# Trial observations\nh1 = np.array([0.28, 0.25, 0.22, 0.19, 0.17]) # m\nh2 = np.array([0.12, 0.13, 0.14, 0.14, 0.14]) # m\nt  = np.array([22.0, 25.0, 30.0, 36.0, 45.0]) # s\n\nQ_th, Cd = calculate_venturi(h1, h2, t)\n\n# Linear regression theoretical line\nslope, intercept = np.polyfit(Q_th, Cd, 1)\nQ_line = np.linspace(min(Q_th), max(Q_th), 50)\nCd_line = slope * Q_line + intercept\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(Q_th, Cd, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(Q_line, Cd_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')\nplt.xlabel('Theoretical Flow Rate Qth (m³/s)')\nplt.ylabel('Coefficient of Discharge (Cd)')\nplt.title('Venturi Meter Calibration (Cd vs Qth)')\nplt.ylim([0.85, 1.05])\nplt.grid(True)\nplt.legend()\nplt.show()"
+    },
+    "matlab": {
+      "label": "MATLAB Plot Script Reference",
+      "code": "% MATLAB Reference Script for Venturi Meter Cd Determination\n\n% Constant parameters\nA1 = 3.46e-4; % Inlet area (m^2)\nA2 = 1.26e-4; % Throat area (m^2)\ng = 9.81;     % Gravity (m/s^2)\nV = 0.01;     % Volume (m^3)\n\n% Observed trial data\nh1 = [0.28, 0.25, 0.22, 0.19, 0.17]; % m\nh2 = [0.12, 0.13, 0.14, 0.14, 0.14]; % m\nt  = [22.0, 25.0, 30.0, 36.0, 45.0]; % s\n\n% Dynamic calculations\nh = abs(h1 - h2);\nH = h .* 12.6;\nQa = V ./ t;\nQth = (A1 * A2 .* sqrt(2 * g .* H)) ./ sqrt(A1^2 - A2^2);\nCd = Qa ./ Qth;\n\n% Linear regression fit\np = polyfit(Qth, Cd, 1);\nQ_fit = linspace(min(Qth), max(Qth), 100);\nCd_fit = polyval(p, Q_fit);\n\n% Plotting with MATLAB default aesthetic\nfigure;\nplot(Qth, Cd, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(Q_fit, Cd_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nbox on; grid on;\nxlabel('Theoretical Flow Rate Qth (m^3/s)');\nylabel('Coefficient of Discharge (Cd)');\ntitle('Venturi Meter Calibration (Cd vs Qth)');\nylim([0.85 1.05]);\nlegend('Location', 'northeast');"
+    }
+  },
   "validation_ranges": {
     "h1": { "min": 0.01, "max": 0.9, "label": "Left Limb h1 (m)" },
     "h2": { "min": 0.0, "max": 0.9, "label": "Right Limb h2 (m)" },

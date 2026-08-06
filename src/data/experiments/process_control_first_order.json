@@ -145,6 +145,39 @@
         "x_label": "Time / τ",
         "y_label": "T̄'(t) / K",
         "title": "First-Order Step Response (Experimental vs Theoretical 63.2% Curve)"
+      },
+      "graph_config": {
+        "x_axis": { "label": "Time t (sec)", "variable_ref": "t" },
+        "y_axis": { "label": "Temperature deviation T̄'(t) (°C)", "variable_ref": "T_dev_heat" },
+        "series": [
+          {
+            "id": "actual",
+            "label": "Observed Step Response",
+            "type": "scatter+line",
+            "style": "solid",
+            "color_index": 0,
+            "source": "trial_inputs_calculated"
+          },
+          {
+            "id": "theoretical",
+            "label": "Theoretical 1st Order Line (τ = 10s)",
+            "type": "line",
+            "style": "dashed",
+            "color_index": 1,
+            "source": "computed_theoretical_curve",
+            "computation": { "method": "linear_fit" }
+          }
+        ]
+      },
+      "reference_code": {
+        "python": {
+          "label": "Python (NumPy / SciPy) Reference",
+          "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# System Parameters\nm = 1.0     # g\nCp = 0.25   # cal/g·°C\nh = 12.0    # cal/cm²·h·°C\nA = 7.5     # cm²\n\n# Theoretical time constant tau = (m * Cp) / (h * A / 3600)\ntau = (m * Cp) / (h * A / 3600.0)  # ~10 seconds\n\n# Step response equation: T_dev = Delta_T * (1 - exp(-t / tau))\nT_initial = 25.0  # °C\nT_final = 51.0    # °C\nDelta_T = T_final - T_initial\n\nt = np.array([0, 5, 10, 15, 20, 25, 30, 100])\nT_obs = np.array([25, 35, 41.4, 45.2, 47.5, 48.9, 49.7, 50.99])\n\nt_curve = np.linspace(0, 100, 200)\nT_theo = T_initial + Delta_T * (1 - np.exp(-t_curve / tau))\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(t, T_obs, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(t_curve, T_theo, '--', color='#D95319', linewidth=1.5, label='Theoretical Line (τ = 10s)')\nplt.axhline(y=T_initial + 0.632 * Delta_T, color='#77AC30', linestyle=':', label='63.2% Response')\nplt.xlabel('Time t (seconds)')\nplt.ylabel('Temperature T (°C)')\nplt.title('First-Order Step Response')\nplt.grid(True)\nplt.legend()\nplt.show()"
+        },
+        "matlab": {
+          "label": "MATLAB Plot Script Reference",
+          "code": "% MATLAB Reference Script for Step Response Analysis\n\n% Physical properties\nm = 1.0; Cp = 0.25; h = 12.0; A = 7.5;\ntau = (m * Cp) / (h * A / 3600);\n\nT_initial = 25.0; T_final = 51.0;\nDelta_T = T_final - T_initial;\n\nt = [0, 5, 10, 15, 20, 25, 30, 100];\nT_obs = [25, 35, 41.4, 45.2, 47.5, 48.9, 49.7, 50.99];\n\nt_fine = linspace(0, 100, 200);\nT_theo = T_initial + Delta_T * (1 - exp(-t_fine / tau));\n\nfigure;\nplot(t, T_obs, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(t_fine, T_theo, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nyline(T_initial + 0.632*Delta_T, ':', 'Color', [0.466 0.674 0.188], 'DisplayName', '63.2% Target');\nbox on; grid on;\nxlabel('Time (sec)');\nylabel('Temperature (°C)');\ntitle('First-Order Step Response');\nlegend('Location', 'southeast');"
+        }
       }
     },
     {
@@ -344,6 +377,38 @@
         "x_label": "Time (sec)",
         "y_label": "Temperature (°C)",
         "title": "Sinusoidal Response of Thermal Bath (Input vs Output Temperature Overlay)"
+      },
+      "graph_config": {
+        "x_axis": { "label": "Time t (sec)", "variable_ref": "t" },
+        "y_axis": { "label": "Temperature (°C)", "variable_ref": "T_out" },
+        "series": [
+          {
+            "id": "actual",
+            "label": "Output Sensor Temp (T_out)",
+            "type": "scatter+line",
+            "style": "solid",
+            "color_index": 0,
+            "source": "trial_inputs_calculated"
+          },
+          {
+            "id": "theoretical",
+            "label": "Input Bath Temp (T_in)",
+            "type": "line",
+            "style": "dashed",
+            "color_index": 1,
+            "source": "trial_inputs_calculated"
+          }
+        ]
+      },
+      "reference_code": {
+        "python": {
+          "label": "Python (NumPy / SciPy) Reference",
+          "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Sinusoidal Input Parameters\nT_bath_max = 48.0 # °C\nT_bath_min = 28.0 # °C\nA1 = (T_bath_max - T_bath_min) / 2.0  # 10 °C input amplitude\nperiod = 60.0    # seconds\nomega = 2 * np.pi / period  # 0.1047 rad/s\n\n# Output Thermowell Sensor Parameters\nT_well_max = 43.0\nT_well_min = 37.0\nA2 = (T_well_max - T_well_min) / 2.0  # 3 °C output amplitude\nAR = A2 / A1                          # 0.3 amplitude ratio\ntau = np.sqrt(1 - AR**2) / (AR * omega) # 30.36 s time constant\n\nt = np.linspace(0, 210, 300)\nT_in_wave = 38.0 + A1 * np.sin(omega * t)\nT_out_wave = 40.0 + A2 * np.sin(omega * t - np.arctan(omega * tau))\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(t, T_out_wave, '-', color='#0072BD', linewidth=1.5, label='Output Sensor Temp (T_out)')\nplt.plot(t, T_in_wave, '--', color='#D95319', linewidth=1.5, label='Input Bath Temp (T_in)')\nplt.xlabel('Time t (sec)')\nplt.ylabel('Temperature (°C)')\nplt.title('Sinusoidal Response of Thermal Bath')\nplt.grid(True)\nplt.legend()\nplt.show()"
+        },
+        "matlab": {
+          "label": "MATLAB Plot Script Reference",
+          "code": "% MATLAB Reference Script for Sinusoidal Response Analysis\n\nperiod = 60.0; omega = 2 * pi / period;\nA1 = (48 - 28) / 2; % Input amplitude 10 °C\nA2 = (43 - 37) / 2; % Output amplitude 3 °C\nAR = A2 / A1;\ntau = sqrt(1 - AR^2) / (AR * omega);\n\nt = linspace(0, 210, 300);\nT_in  = 38.0 + A1 * sin(omega * t);\nT_out = 40.0 + A2 * sin(omega * t - atan(omega * tau));\n\nfigure;\nplot(t, T_out, '-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Output Sensor Temp');\nhold on;\nplot(t, T_in, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Input Bath Temp');\nbox on; grid on;\nxlabel('Time (sec)');\nylabel('Temperature (°C)');\ntitle('Sinusoidal Response of Thermal Bath');\nlegend('Location', 'northeast');"
+        }
       }
     }
   ]

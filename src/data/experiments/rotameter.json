@@ -70,6 +70,39 @@
     "y_label": "Rotameter Reading R (mm)",
     "title": "Rotameter Calibration Curve (R vs Q)"
   },
+  "graph_config": {
+    "x_axis": { "label": "Observed Flow Rate Q (m³/s)", "variable_ref": "Q" },
+    "y_axis": { "label": "Rotameter Reading R (mm)", "variable_ref": "R" },
+    "series": [
+      {
+        "id": "actual",
+        "label": "Observed Data",
+        "type": "scatter+line",
+        "style": "solid",
+        "color_index": 0,
+        "source": "trial_inputs_calculated"
+      },
+      {
+        "id": "theoretical",
+        "label": "Theoretical Line",
+        "type": "line",
+        "style": "dashed",
+        "color_index": 1,
+        "source": "computed_theoretical_curve",
+        "computation": { "method": "linear_fit" }
+      }
+    ]
+  },
+  "reference_code": {
+    "python": {
+      "label": "Python (NumPy / SciPy) Reference",
+      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Formula Q = V / t\ndef calculate_Q(V, t):\n    return V / t  # m^3/s\n\n# Trial observations\nV = np.array([0.001, 0.002, 0.003, 0.004, 0.005, 0.006]) # m^3\nt = np.array([45.0, 42.0, 38.0, 35.0, 31.0, 28.0])       # s\nR = np.array([20, 40, 60, 80, 100, 120])                  # mm\n\n# Calculate observed flow rate\nQ_obs = calculate_Q(V, t)\n\n# Linear regression theoretical calibration line\nslope, intercept = np.polyfit(Q_obs, R, 1)\nQ_line = np.linspace(min(Q_obs), max(Q_obs), 50)\nR_line = slope * Q_line + intercept\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(Q_obs, R, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(Q_line, R_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')\nplt.xlabel('Observed Flow Rate Q (m³/s)')\nplt.ylabel('Rotameter Reading R (mm)')\nplt.title('Rotameter Calibration Curve (R vs Q)')\nplt.grid(True)\nplt.legend()\nplt.show()"
+    },
+    "matlab": {
+      "label": "MATLAB Plot Script Reference",
+      "code": "% MATLAB Reference Script for Rotameter Calibration\n\n% Observed trial data\nV = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006]; % m^3\nt = [45.0, 42.0, 38.0, 35.0, 31.0, 28.0];       % sec\nR = [20, 40, 60, 80, 100, 120];                  % mm\n\n% Flow rate calculation\nQ_obs = V ./ t; % m^3/s\n\n% Linear regression theoretical fit\np = polyfit(Q_obs, R, 1);\nQ_fit = linspace(min(Q_obs), max(Q_obs), 100);\nR_fit = polyval(p, Q_fit);\n\n% Plotting with MATLAB default aesthetic\nfigure;\nplot(Q_obs, R, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(Q_fit, R_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nbox on; grid on;\nxlabel('Observed Flow Rate Q (m^3/s)');\nylabel('Rotameter Reading R (mm)');\ntitle('Rotameter Calibration Curve (R vs Q)');\nlegend('Location', 'northeast');"
+    }
+  },
   "validation_ranges": {
     "R": { "min": 5, "max": 300, "label": "Rotameter Reading" },
     "V": { "min": 0.0001, "max": 0.05, "label": "Volume (m³)" },

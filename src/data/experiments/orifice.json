@@ -188,6 +188,39 @@
     "y_label": "Coefficient of Discharge (Cd)",
     "title": "Orifice Meter Calibration (Cd vs Qth)"
   },
+  "graph_config": {
+    "x_axis": { "label": "Theoretical Flow Rate Qth (m³/s)", "variable_ref": "Qth" },
+    "y_axis": { "label": "Coefficient of Discharge (Cd)", "variable_ref": "Cd" },
+    "series": [
+      {
+        "id": "actual",
+        "label": "Observed Data",
+        "type": "scatter+line",
+        "style": "solid",
+        "color_index": 0,
+        "source": "trial_inputs_calculated"
+      },
+      {
+        "id": "theoretical",
+        "label": "Theoretical Line",
+        "type": "line",
+        "style": "dashed",
+        "color_index": 1,
+        "source": "computed_theoretical_curve",
+        "computation": { "method": "linear_fit" }
+      }
+    ]
+  },
+  "reference_code": {
+    "python": {
+      "label": "Python (NumPy / SciPy) Reference",
+      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Orifice Meter Constants\na1 = 3.46e-4  # Pipe Area (m^2)\na2 = 1.26e-4  # Orifice Area (m^2)\ng  = 9.81      # Gravity (m/s^2)\nA_tank = 0.4 * 0.4  # Collecting tank area 0.16 m^2\nh_rise = 0.05       # 5 cm rise = 0.05 m\n\ndef calculate_orifice(h1, h2, t):\n    h = np.abs(h1 - h2)\n    H = h * 12.6  # Equivalent head in m H2O\n    Q_act = (A_tank * h_rise) / t  # Actual flow (m^3/s)\n    Q_th = (a1 * a2 * np.sqrt(2 * g * H)) / np.sqrt(a1**2 - a2**2)\n    Cd = Q_act / Q_th\n    return Q_th, Cd\n\n# Trial observations\nh1 = np.array([0.26, 0.23, 0.20, 0.17, 0.15]) # m\nh2 = np.array([0.16, 0.15, 0.14, 0.13, 0.13]) # m\nt  = np.array([19.0, 22.0, 25.0, 30.0, 39.0]) # s\n\nQ_th, Cd = calculate_orifice(h1, h2, t)\n\n# Linear regression theoretical line\nslope, intercept = np.polyfit(Q_th, Cd, 1)\nQ_line = np.linspace(min(Q_th), max(Q_th), 50)\nCd_line = slope * Q_line + intercept\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(Q_th, Cd, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(Q_line, Cd_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')\nplt.xlabel('Theoretical Flow Rate Qth (m³/s)')\nplt.ylabel('Coefficient of Discharge (Cd)')\nplt.title('Orifice Meter Calibration (Cd vs Qth)')\nplt.ylim([0.55, 0.75])\nplt.grid(True)\nplt.legend()\nplt.show()"
+    },
+    "matlab": {
+      "label": "MATLAB Plot Script Reference",
+      "code": "% MATLAB Reference Script for Orifice Meter Cd Determination\n\n% Meter constants\na1 = 3.46e-4; % Pipe area (m^2)\na2 = 1.26e-4; % Orifice area (m^2)\ng  = 9.81;     % Gravity (m/s^2)\nA_tank = 0.16; % Tank area (0.4 * 0.4 m^2)\nh_rise = 0.05; % Water rise (m)\n\n% Observed trial data\nh1 = [0.26, 0.23, 0.20, 0.17, 0.15]; % m\nh2 = [0.16, 0.15, 0.14, 0.13, 0.13]; % m\nt  = [19.0, 22.0, 25.0, 30.0, 39.0]; % s\n\n% Calculations\nh = abs(h1 - h2);\nH = h .* 12.6;\nQact = (A_tank * h_rise) ./ t;\nQth = (a1 * a2 .* sqrt(2 * g .* H)) ./ sqrt(a1^2 - a2^2);\nCd = Qact ./ Qth;\n\n% Linear fit for theoretical trendline\np = polyfit(Qth, Cd, 1);\nQ_fit = linspace(min(Qth), max(Qth), 100);\nCd_fit = polyval(p, Q_fit);\n\n% Plotting with MATLAB default aesthetic\nfigure;\nplot(Qth, Cd, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(Q_fit, Cd_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nbox on; grid on;\nxlabel('Theoretical Flow Rate Qth (m^3/s)');\nylabel('Coefficient of Discharge (Cd)');\ntitle('Orifice Meter Calibration (Cd vs Qth)');\nylim([0.55 0.75]);\nlegend('Location', 'northeast');"
+    }
+  },
   "validation_ranges": {
     "h1": { "min": 0.01, "max": 0.9, "label": "Upstream h1 (m)" },
     "h2": { "min": 0.0, "max": 0.9, "label": "Downstream h2 (m)" },
