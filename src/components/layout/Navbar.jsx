@@ -3,6 +3,7 @@ import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, 
 import { useExperimentStore } from '../../store/experimentStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 import { OfflineBadge } from '../pwa/OfflineBadge';
+import recLogo from '../../assets/rec-logo.png';
 
 export function Navbar({ currentPage, onNavigate }) {
   const {
@@ -26,8 +27,8 @@ export function Navbar({ currentPage, onNavigate }) {
           onClick={() => onNavigate('subject')}
           className="flex items-center gap-3 text-left group cursor-pointer shrink-0"
         >
-          <div className="w-9 h-9 rounded-xl bg-violet-600/30 border border-violet-400/40 flex items-center justify-center group-hover:bg-violet-600/50 transition-all">
-            <FlaskConical className="w-5 h-5 text-violet-400 group-hover:rotate-12 transition-transform" />
+          <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 p-1.5 flex items-center justify-center group-hover:border-violet-500 transition-all">
+            <img src={recLogo} alt="Rajalakshmi Engineering College Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-2">
