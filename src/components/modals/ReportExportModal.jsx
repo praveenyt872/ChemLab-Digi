@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
+import recLogo from '../../assets/rec-logo.png';
 
 export function ReportExportModal() {
   const {
@@ -441,7 +442,7 @@ export function ReportExportModal() {
                 Official Experiment Report Export
               </h3>
               <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 mt-0.5">
-                <img src="./rec-logo.png" alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
+                <img src={recLogo} alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
                 <span>Rajalakshmi Engineering College — Manual Standard Format</span>
               </p>
             </div>

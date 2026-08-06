@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
+import recLogo from '../assets/rec-logo.png';
 
 export function LandingPage({ onNavigate }) {
   const features = [
