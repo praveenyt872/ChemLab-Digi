@@ -32,13 +32,13 @@ export function LandingPage({ onNavigate }) {
     },
     {
       icon: <Bot className="w-6 h-6 text-emerald-600" />,
-      title: 'AI Virtual Lab Assistant',
-      desc: 'Ask questions about Bernoulli derivations, formula variables, or experimental errors directly grounded in your live lab data.'
+      title: 'Grounded AI Virtual Assistant',
+      desc: 'Ask formulas, derivations, viva questions, and physical parameter error troubleshooting.'
     },
     {
       icon: <FileCheck className="w-6 h-6 text-blue-600" />,
-      title: 'Official Report Export',
-      desc: 'Compile aim, apparatus, observation grid, graph snapshot, and result into a college record PDF format with 1 click.'
+      title: 'Official Lab Report Export',
+      desc: 'Generate complete formatted PDF records with calculations, tables, and graphs in 1-click.'
     }
   ];
 
@@ -61,9 +61,9 @@ export function LandingPage({ onNavigate }) {
           transition={{ duration: 0.4 }}
           className="mb-6"
         >
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-violet-900 border border-violet-200 text-xs font-mono font-bold tracking-tight shadow-sm">
-            <img src="./rec-logo.png" alt="REC Logo" className="w-5 h-5 object-contain shrink-0" />
-            <span>Rajalakshmi Engineering College</span>
+          <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white text-slate-900 border border-[#EDEEF1] text-xs font-mono font-bold tracking-tight shadow-md hover:border-violet-300 transition-all">
+            <img src={recLogo} alt="Rajalakshmi Engineering College Logo" className="w-6 h-6 object-contain shrink-0" />
+            <span className="text-slate-900 font-extrabold text-sm">Rajalakshmi Engineering College</span>
           </span>
         </motion.div>
 

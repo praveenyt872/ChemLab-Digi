@@ -21,6 +21,7 @@ import { LiveResultsPanel } from '../components/workspace/LiveResultsPanel';
 import { GraphPanel } from '../components/workspace/GraphPanel';
 import { FormulaCard } from '../components/workspace/FormulaCard';
 import { AIValidationPanel } from '../components/workspace/AIValidationPanel';
+import recLogo from '../assets/rec-logo.png';
 
 export function WorkspacePage({ onNavigate }) {
   const {
@@ -51,7 +52,7 @@ export function WorkspacePage({ onNavigate }) {
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <div className="flex items-center gap-1.5">
-              <img src="./rec-logo.png" alt="REC Logo" className="w-4 h-4 object-contain shrink-0" />
+              <img src={recLogo} alt="REC Logo" className="w-4 h-4 object-contain shrink-0" />
               <span>Rajalakshmi Engineering College</span>
             </div>
           </div>
