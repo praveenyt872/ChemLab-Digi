@@ -61,9 +61,9 @@ export function LandingPage({ onNavigate }) {
           transition={{ duration: 0.4 }}
           className="mb-6"
         >
-          <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white text-slate-900 border border-[#EDEEF1] text-xs font-mono font-bold tracking-tight shadow-md hover:border-violet-300 transition-all">
-            <img src={recLogo} alt="Rajalakshmi Engineering College Logo" className="w-6 h-6 object-contain shrink-0" />
-            <span className="text-slate-900 font-extrabold text-sm">Rajalakshmi Engineering College</span>
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 text-xs font-mono font-bold tracking-tight shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+            <span>Department of Chemical Engineering • AI Virtual Lab</span>
           </span>
         </motion.div>
 
@@ -71,10 +71,13 @@ export function LandingPage({ onNavigate }) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold max-w-4xl tracking-tight leading-tight text-slate-900"
+          className="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold max-w-5xl tracking-tight leading-tight text-slate-900"
         >
-          Your AI-Powered Virtual{' '}
-          <span className="text-violet-600">
+          <span className="inline-flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+            <img src={recLogo} alt="Rajalakshmi Engineering College Logo" className="w-10 h-10 sm:w-16 sm:h-16 lg:w-20 lg:h-20 object-contain shrink-0 align-middle inline-block" />
+            <span>Rajalakshmi Engineering College</span>
+          </span>{' '}
+          <span className="text-violet-600 block sm:inline">
             Chemical Engineering Lab
           </span>
         </motion.h1>
