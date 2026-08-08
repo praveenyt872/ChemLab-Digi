@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { FluidBackground } from './components/layout/FluidBackground';
 import { Footer } from './components/layout/Footer';
@@ -17,8 +17,29 @@ import { StudentDetailsGateModal } from './components/modals/StudentDetailsGateM
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { InstallBanner } from './components/pwa/InstallBanner';
 
+// Auth Components
+import { useAuthStore } from './store/authStore';
+import { RoleSelector } from './components/auth/RoleSelector';
+import { GoogleSignIn } from './components/auth/GoogleSignIn';
+import { TeacherLogin } from './components/auth/TeacherLogin';
+import { TeacherDashboard } from './components/auth/TeacherDashboard';
+import { StudentGate } from './components/auth/StudentGate';
+import { Loader2 } from 'lucide-react';
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
+  const {
+    user,
+    role,
+    activeRoleTab,
+    setRoleTab,
+    initAuth,
+    authLoading
+  } = useAuthStore();
+
+  useEffect(() => {
+    initAuth();
+  }, []);
 
   const navigateTo = (page) => {
     setCurrentPage(page);
@@ -37,10 +58,51 @@ export default function App() {
       {/* Main Content View Switcher wrapped in ErrorBoundary */}
       <main className="flex-1 relative z-10">
         <ErrorBoundary>
-          {currentPage === 'landing' && <LandingPage onNavigate={navigateTo} />}
-          {currentPage === 'subject' && <SubjectSelectPage onNavigate={navigateTo} />}
-          {currentPage === 'experiment' && <ExperimentSelectPage onNavigate={navigateTo} />}
-          {currentPage === 'workspace' && <WorkspacePage onNavigate={navigateTo} />}
+
+          {/* Loading Indicator */}
+          {authLoading ? (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
+              <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Authenticating Session...
+              </span>
+            </div>
+          ) : !user ? (
+            /* NOT LOGGED IN: Show Role Selector & Auth Card */
+            <div className="max-w-7xl mx-auto px-4 py-12 space-y-8">
+              <RoleSelector
+                selectedRole={activeRoleTab}
+                onSelectRole={(tab) => setRoleTab(tab)}
+              />
+
+              {activeRoleTab === 'student' ? (
+                <GoogleSignIn />
+              ) : (
+                <TeacherLogin />
+              )}
+            </div>
+          ) : role === 'teacher' ? (
+            /* LOGGED IN AS TEACHER */
+            currentPage === 'teacher-dashboard' ? (
+              <TeacherDashboard onEnterLab={() => navigateTo('landing')} />
+            ) : (
+              <>
+                {currentPage === 'landing' && <LandingPage onNavigate={navigateTo} />}
+                {currentPage === 'subject' && <SubjectSelectPage onNavigate={navigateTo} />}
+                {currentPage === 'experiment' && <ExperimentSelectPage onNavigate={navigateTo} />}
+                {currentPage === 'workspace' && <WorkspacePage onNavigate={navigateTo} />}
+              </>
+            )
+          ) : (
+            /* LOGGED IN AS STUDENT (Gated by 6-Digit Access Code) */
+            <StudentGate>
+              {currentPage === 'landing' && <LandingPage onNavigate={navigateTo} />}
+              {currentPage === 'subject' && <SubjectSelectPage onNavigate={navigateTo} />}
+              {currentPage === 'experiment' && <ExperimentSelectPage onNavigate={navigateTo} />}
+              {currentPage === 'workspace' && <WorkspacePage onNavigate={navigateTo} />}
+            </StudentGate>
+          )}
+
         </ErrorBoundary>
       </main>
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, Edit3, Search, Bell } from 'lucide-react';
+import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, Edit3, Search, Bell, ShieldCheck, LogOut } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
+import { useAuthStore } from '../../store/authStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 import { OfflineBadge } from '../pwa/OfflineBadge';
 import recLogo from '../../assets/rec-logo.png';
@@ -14,6 +15,8 @@ export function Navbar({ currentPage, onNavigate }) {
     studentDetails,
     setStudentGateOpen
   } = useExperimentStore();
+
+  const { user, role, logout } = useAuthStore();
 
   const hasStudentDetails = studentDetails?.studentName && studentDetails?.registerNumber;
 
@@ -83,6 +86,36 @@ export function Navbar({ currentPage, onNavigate }) {
 
         {/* Right: Actions & Student Profile Badge */}
         <div className="flex items-center gap-3 shrink-0">
+          {user && (
+            <div className="flex items-center gap-2">
+              <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider ${
+                role === 'teacher'
+                  ? 'bg-violet-500/20 text-violet-300 border-violet-500/40'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+              }`}>
+                {role === 'teacher' ? 'Faculty' : 'Student'}
+              </span>
+
+              {role === 'teacher' && (
+                <button
+                  onClick={() => onNavigate('teacher-dashboard')}
+                  className="px-3 py-1.5 rounded-lg bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/40 text-violet-200 text-xs font-semibold transition-all cursor-pointer hidden sm:flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
+                  Faculty Console
+                </button>
+              )}
+
+              <button
+                onClick={logout}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-300 hover:bg-slate-800 transition-all cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {hasStudentDetails && (
             <button
               onClick={() => setStudentGateOpen(true)}
