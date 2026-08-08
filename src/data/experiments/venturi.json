@@ -5,30 +5,29 @@
   "short_name": "Venturi Meter",
   "aim": "To determine the coefficient of discharge of Venturi meter.",
   "apparatus": [
-    "Venturi meter",
+    "Venturi meter (d1 = 20 mm, d2 = 15 mm)",
     "Sump tank",
-    "Measuring tank",
-    "Manometer",
+    "Measuring tank (0.4 m × 0.4 m)",
+    "U-tube mercury manometer",
     "Globe valve",
     "Stop watch",
-    "Collector"
+    "Piezometer scale"
   ],
-  "theory": "These Flow Meters are based on the general energy conservation equation. Because pressure drop is measured after introducing the meter. This pressure head is converted into downstream velocity (measured at minimum cross-sectional area) which is in turn converted into volumetric flow rate by multiplying it by throat cross-sectional area.\n\nBernoulli Equation:\n(P1 / ρ) + (V1² / 2) + g Z1 = (P2 / ρ) + (V2² / 2) + g Z2\nFor horizontal pipe (Z1 = Z2):\n(P1 / ρ) - (P2 / ρ) = (V2² / 2) - (V1² / 2)\n\nTheoretical Flow Rate:\nQth = (a1 a2 √(2 g H)) / √(a1² - a2²)\n\nActual Discharge:\nQa = Volume / time\n\nCoefficient of Discharge:\nCd = Qa / Qth",
+  "theory": "Flow meters like Venturi meters are based on the general energy conservation (Bernoulli) equation. The pressure drop created between the inlet pipe and the constricted throat is converted into fluid velocity, which is multiplied by the throat area to give volumetric flow rate.\n\nBernoulli Equation:\n(P1 / ρ) + (V1² / 2) + g Z1 = (P2 / ρ) + (V2² / 2) + g Z2\nFor horizontal pipe (Z1 = Z2):\n(P1 / ρ) - (P2 / ρ) = (V2² / 2) - (V1² / 2)\n\nEquivalent Water Head:\nH = manometer difference × (S.G. of Hg / S.G. of H2O - 1) = Δh × 12.6 / 100\n\nActual Discharge:\nQact = Volume / time = (A_tank × rise_m) / t = (0.4 × 0.4 × 0.1) / t = 0.016 / t\n\nTheoretical Flow Rate:\nQth = (a1 a2 √(2 g H)) / √(a1² - a2²)\n\nCoefficient of Discharge:\nCd = Qact / Qth",
   "procedure": [
-    "Measure and input apparatus dimensions (Pipe diameter d1, Throat diameter d2, Collecting tank length, width, and water level rise).",
-    "Check all the clamps for tightness.",
-    "Open the gate valve and start the flow.",
-    "Open the outlet valve of the venturimeter and close valve of orificemeter.",
-    "Remove all air bubbles from manometer cocks.",
-    "Close the drain valve of measuring tank and measure the time taken for specified water level rise and also the manometer difference.",
-    "Repeat the procedure by changing the flow rate and calculate Cd."
+    "Verify apparatus specifications (Inlet diameter d1 = 20 mm, Throat diameter d2 = 15 mm, Collecting tank = 0.4 m × 0.4 m, Water rise = 10 cm).",
+    "Open the gate valve to establish water flow through the Venturi meter.",
+    "Purge air bubbles completely from the manometer lines.",
+    "Record manometer readings in left limb (h1) and right limb (h2).",
+    "Close the drain valve of the measuring tank and note the stopwatch time (t) for a 10 cm water level rise.",
+    "Repeat the trial for different flow rates and calculate Cd."
   ],
   "formulas": [
     {
       "id": "h",
       "label": "Manometer Differential Head (Δh)",
       "latex": "\\Delta h = |h_1 - h_2|",
-      "derivation": "Direct measurement of mercury level difference in left limb (h1) and right limb (h2) of U-tube manometer.",
+      "derivation": "Direct measurement of mercury level difference between left limb (h1) and right limb (h2) of U-tube manometer.",
       "purpose": "Measures differential pressure across inlet and throat in cm of mercury (cm of Hg).",
       "variables": [
         { "symbol": "h1", "meaning": "Left limb mercury level", "unit": "cm", "typical_range": "5 – 50 cm" },
@@ -41,8 +40,8 @@
     {
       "id": "H",
       "label": "Equivalent Water Head (H)",
-      "latex": "H = \\frac{\\Delta h \\times (S_{Hg} - S_w)}{100} = \\frac{\\Delta h \\times 12.6}{100}",
-      "derivation": "Converts mercury column height difference Δh into equivalent head of flowing fluid (water):\n\nH = (Δh/100) × (ρ_Hg / ρ_w - 1) = (Δh/100) × (13.6 - 1) = 12.6 × Δh / 100",
+      "latex": "H = \\frac{\\Delta h \\times (S_{Hg} - S_{H_2O})}{100} = \\frac{\\Delta h \\times 12.6}{100}",
+      "derivation": "Converts mercury column height difference Δh into equivalent head of flowing water:\n\nH = (Δh/100) × (13.6 - 1) = 12.6 × Δh / 100",
       "purpose": "Converts manometer mercury reading into equivalent water head in meters of water (m H₂O).",
       "variables": [
         { "symbol": "\\Delta h", "meaning": "Manometer difference in cm of Hg", "unit": "cm", "typical_range": "1 – 30 cm" },
@@ -53,15 +52,14 @@
     },
     {
       "id": "Qa",
-      "label": "Actual Discharge (Qa)",
-      "latex": "Q_a = \\frac{A_{tank} \\cdot rise_{m}}{t} = \\frac{L \\cdot W \\cdot (rise/100)}{t}",
-      "derivation": "Actual volumetric flow rate Qa determined by collecting water in measuring tank over time t.",
+      "label": "Actual Discharge (Qact)",
+      "latex": "Q_{act} = \\frac{\\text{Volume}}{t} = \\frac{A_{tank} \\cdot rise_{m}}{t} = \\frac{0.4 \\times 0.4 \\times 0.1}{t} = \\frac{0.016}{t}",
+      "derivation": "Actual volumetric flow rate Qact determined by collecting 10 cm rise of water in 0.4 m × 0.4 m tank (Volume = 0.016 m³) over time t.",
       "purpose": "Determines actual real-world flow rate passed by the pipe network.",
       "variables": [
-        { "symbol": "A_tank", "meaning": "Tank plan area (L × W)", "unit": "m²", "typical_range": "0.16 m²" },
-        { "symbol": "rise_m", "meaning": "Water level rise in tank", "unit": "m", "typical_range": "0.05 m" },
-        { "symbol": "t", "meaning": "Time for water collection", "unit": "sec", "typical_range": "15 – 90 s" },
-        { "symbol": "Qa", "meaning": "Actual Volumetric Discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 7×10⁻⁴ m³/s" }
+        { "symbol": "Volume", "meaning": "Volume collected (0.4×0.4×0.1 = 0.016 m³)", "unit": "m³", "typical_range": "0.016 m³" },
+        { "symbol": "t", "meaning": "Time for 10 cm water rise", "unit": "sec", "typical_range": "15 – 90 s" },
+        { "symbol": "Qact", "meaning": "Actual Volumetric Discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 8×10⁻⁴ m³/s" }
       ],
       "assumptions": ["Accurate tank volume calibration", "Steady flow during timing period"],
       "practical_application": "Direct volumetric tank measurements are the gold standard for calibrating industrial flowmeters."
@@ -70,14 +68,14 @@
       "id": "Qth",
       "label": "Theoretical Discharge (Qth)",
       "latex": "Q_{th} = \\frac{a_1 a_2 \\sqrt{2 g H}}{\\sqrt{a_1^2 - a_2^2}}",
-      "derivation": "Derived from frictionless 1D Bernoulli equation combined with continuity equation a1 V1 = a2 V2 across pipe area a1 (π/4 × d1²) and throat area a2 (π/4 × d2²).\n\nQth = (a1 a2 √(2gH)) / √(a1² - a2²)",
+      "derivation": "Derived from frictionless 1D Bernoulli equation across pipe area a1 = π/4 × (0.02)² = 3.1416×10⁻⁴ m² and throat area a2 = π/4 × (0.015)² = 1.7671×10⁻⁴ m².\n\nQth = (a1 a2 √(2gH)) / √(a1² - a2²)",
       "purpose": "Calculates ideal zero-friction flow rate theoretically predicted by fluid dynamics laws.",
       "variables": [
-        { "symbol": "a1", "meaning": "Inlet pipe cross-sectional area", "unit": "m²", "typical_range": "4.91×10⁻⁴ m²" },
-        { "symbol": "a2", "meaning": "Throat cross-sectional area", "unit": "m²", "typical_range": "1.25×10⁻⁴ m²" },
+        { "symbol": "a1", "meaning": "Inlet pipe area (d1 = 20 mm)", "unit": "m²", "typical_range": "3.142×10⁻⁴ m²" },
+        { "symbol": "a2", "meaning": "Throat area (d2 = 15 mm)", "unit": "m²", "typical_range": "1.767×10⁻⁴ m²" },
         { "symbol": "g", "meaning": "Acceleration due to gravity", "unit": "m/s²", "typical_range": "9.81 m/s²" },
         { "symbol": "H", "meaning": "Equivalent pressure head", "unit": "m", "typical_range": "0.12 – 3.8 m" },
-        { "symbol": "Qth", "meaning": "Theoretical Discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 8×10⁻⁴ m³/s" }
+        { "symbol": "Qth", "meaning": "Theoretical Discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 1.5×10⁻³ m³/s" }
       ],
       "assumptions": ["Incompressible ideal fluid flow", "Uniform velocity profiles at inlet and throat"],
       "practical_application": "Forms the theoretical basis for differential flowmeter designs worldwide."
@@ -85,13 +83,13 @@
     {
       "id": "Cd",
       "label": "Coefficient of Discharge (Cd)",
-      "latex": "C_d = \\frac{Q_a}{Q_{th}}",
-      "derivation": "The dimensionless ratio of actual flow rate Qa to theoretical flow rate Qth.",
+      "latex": "C_d = \\frac{Q_{act}}{Q_{th}}",
+      "derivation": "The dimensionless ratio of actual flow rate Qact to theoretical flow rate Qth.",
       "purpose": "Quantifies hydraulic efficiency and accounts for boundary layer friction and turbulence energy losses.",
       "variables": [
-        { "symbol": "Qa", "meaning": "Actual discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 7×10⁻⁴ m³/s" },
-        { "symbol": "Qth", "meaning": "Theoretical discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 8×10⁻⁴ m³/s" },
-        { "symbol": "Cd", "meaning": "Venturi Coefficient of Discharge", "unit": "dimensionless", "typical_range": "0.95 – 0.99" }
+        { "symbol": "Qact", "meaning": "Actual discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 8×10⁻⁴ m³/s" },
+        { "symbol": "Qth", "meaning": "Theoretical discharge", "unit": "m³/s", "typical_range": "1×10⁻⁴ – 1.5×10⁻³ m³/s" },
+        { "symbol": "Cd", "meaning": "Venturi Coefficient of Discharge", "unit": "dimensionless", "typical_range": "0.55 – 0.99" }
       ],
       "assumptions": ["Fully developed turbulent flow", "Smooth internal surface finishes"],
       "practical_application": "Cd is the primary design rating parameter supplied by valve & meter manufacturers."
@@ -128,9 +126,9 @@
       "step_id": "Qa",
       "step_number": 3,
       "label": "Step 3: Actual Volumetric Discharge (Qa)",
-      "formula_latex": "Q_a = \\frac{A_{tank} \\cdot rise_{m}}{t} = \\frac{L \\cdot W \\cdot (rise/100)}{t}",
+      "formula_latex": "Q_{act} = \\frac{A_{tank} \\cdot rise_{m}}{t} = \\frac{L \\cdot W \\cdot (rise/100)}{t}",
       "formula_expression": "(tank_length * tank_width * (rise / 100)) / t",
-      "substitution_template": "Q_a = \\frac{{tank_area} \\times {rise_m}}{{t}}",
+      "substitution_template": "Q_{act} = \\frac{{tank_area} \\times {rise_m}}{{t}}",
       "depends_on": ["tank_length", "tank_width", "rise", "t"],
       "unit": "m³/s",
       "format": "scientific",
@@ -141,7 +139,7 @@
       "step_id": "Cd",
       "step_number": 4,
       "label": "Step 4: Venturi Coefficient of Discharge (Cd)",
-      "formula_latex": "C_d = \\frac{Q_a}{Q_{th}}",
+      "formula_latex": "C_d = \\frac{Q_{act}}{Q_{th}}",
       "formula_expression": "Qa / Qth",
       "substitution_template": "C_d = \\frac{{Qa}}{{Qth}}",
       "depends_on": ["Qa", "Qth"],
@@ -151,16 +149,16 @@
     }
   ],
   "trial_inputs": [
-    { "id": "h1", "label": "Left Limb h1", "unit": "cm", "type": "number", "placeholder": "e.g. 18", "tooltip": "Mercury height in left manometer tube (in cm)" },
-    { "id": "h2", "label": "Right Limb h2", "unit": "cm", "type": "number", "placeholder": "e.g. 14", "tooltip": "Mercury height in right manometer tube (in cm)" },
-    { "id": "t", "label": "Time for Water Rise", "unit": "sec", "type": "number", "placeholder": "e.g. 21", "tooltip": "Stopwatch time for collecting specified water rise (sec)" }
+    { "id": "h1", "label": "Left Limb h1", "unit": "cm", "type": "number", "placeholder": "e.g. 18.5", "tooltip": "Mercury height in left manometer tube (in cm)" },
+    { "id": "h2", "label": "Right Limb h2", "unit": "cm", "type": "number", "placeholder": "e.g. 7.0", "tooltip": "Mercury height in right manometer tube (in cm)" },
+    { "id": "t", "label": "Time for Water Rise", "unit": "sec", "type": "number", "placeholder": "e.g. 24", "tooltip": "Stopwatch time for 10 cm water rise (sec)" }
   ],
   "fixed_inputs": [
-    { "id": "d1", "label": "Pipe Diameter (d1)", "value": 25, "unit": "mm", "description": "Inner diameter of inlet pipe (mm)" },
-    { "id": "d2", "label": "Throat Diameter (d2)", "value": 12.6, "unit": "mm", "description": "Inner diameter of Venturi throat (mm)" },
+    { "id": "d1", "label": "Pipe Diameter (d1)", "value": 20, "unit": "mm", "description": "Inner diameter of inlet pipe (mm)" },
+    { "id": "d2", "label": "Throat Diameter (d2)", "value": 15, "unit": "mm", "description": "Inner diameter of Venturi throat (mm)" },
     { "id": "tank_length", "label": "Tank Length", "value": 0.4, "unit": "m", "description": "Collecting tank length (m)" },
     { "id": "tank_width", "label": "Tank Width", "value": 0.4, "unit": "m", "description": "Collecting tank width (m)" },
-    { "id": "rise", "label": "Water Rise (rise)", "value": 5, "unit": "cm", "description": "Fixed rise of water level per trial (cm)" },
+    { "id": "rise", "label": "Water Rise (rise)", "value": 10, "unit": "cm", "description": "Fixed rise of water level per trial (cm)" },
     { "id": "g", "label": "Gravity Acceleration (g)", "value": 9.81, "unit": "m/s²", "description": "Standard gravitational acceleration" }
   ],
   "calculations": {
@@ -180,7 +178,7 @@
   "calculated_columns": [
     { "id": "h", "label": "Diff. Head (h)", "unit": "m", "format": "decimal" },
     { "id": "H", "label": "Water Head (H)", "unit": "m", "format": "decimal" },
-    { "id": "Qa", "label": "Actual Flow (Qa)", "unit": "m³/s", "format": "scientific" },
+    { "id": "Qa", "label": "Actual Flow (Qact)", "unit": "m³/s", "format": "scientific" },
     { "id": "Qth", "label": "Theoretical Flow (Qth)", "unit": "m³/s", "format": "scientific" },
     { "id": "Cd", "label": "Coeff. of Discharge (Cd)", "unit": "-", "format": "decimal_3" }
   ],
@@ -218,25 +216,25 @@
   "reference_code": {
     "python": {
       "label": "Python (NumPy / SciPy) Reference",
-      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Student-entered apparatus parameters\nd1 = 25.0          # Inlet pipe diameter (mm)\nd2 = 12.6          # Throat diameter (mm)\ntank_length = 0.4  # Collecting tank length (m)\ntank_width = 0.4   # Collecting tank width (m)\nrise = 5.0         # Water level rise (cm)\ng = 9.81           # Gravity acceleration (m/s^2)\n\n# Derived apparatus dimensions\nd1_m = d1 / 1000.0\nd2_m = d2 / 1000.0\na1 = (np.pi / 4.0) * (d1_m ** 2)\na2 = (np.pi / 4.0) * (d2_m ** 2)\ntank_area = tank_length * tank_width\nvol = tank_area * (rise / 100.0)\n\ndef calculate_venturi(h1, h2, t):\n    h = np.abs(h1 - h2)\n    h_m = np.where(h > 1.5, h / 100.0, h)\n    H = h_m * 12.6  # Equivalent water head in m H2O\n    Q_a = vol / t   # Actual flow rate (m^3/s)\n    Q_th = (a1 * a2 * np.sqrt(2 * g * H)) / np.sqrt(a1**2 - a2**2)\n    Cd = Q_a / Q_th\n    return Q_th, Cd\n\n# Trial observations (cm and sec)\nh1 = np.array([18.0, 17.0, 16.0, 15.5, 15.3]) # cm\nh2 = np.array([14.0, 14.0, 14.0, 14.0, 14.0]) # cm\nt  = np.array([21.0, 23.0, 28.0, 33.0, 37.0]) # s\n\nQ_th, Cd = calculate_venturi(h1, h2, t)\n\n# Linear regression theoretical line\nslope, intercept = np.polyfit(Q_th, Cd, 1)\nQ_line = np.linspace(min(Q_th), max(Q_th), 50)\nCd_line = slope * Q_line + intercept\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(Q_th, Cd, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(Q_line, Cd_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')\nplt.xlabel('Theoretical Flow Rate Qth (m³/s)')\nplt.ylabel('Coefficient of Discharge (Cd)')\nplt.title('Venturi Meter Calibration (Cd vs Qth)')\nplt.ylim([0.85, 1.05])\nplt.grid(True)\nplt.legend()\nplt.show()"
+      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Student-entered apparatus parameters\nd1 = 20.0          # Inlet pipe diameter (mm)\nd2 = 15.0          # Throat diameter (mm)\ntank_length = 0.4  # Collecting tank length (m)\ntank_width = 0.4   # Collecting tank width (m)\nrise = 10.0        # Water level rise (cm)\ng = 9.81           # Gravity acceleration (m/s^2)\n\n# Derived apparatus dimensions\nd1_m = d1 / 1000.0\nd2_m = d2 / 1000.0\na1 = (np.pi / 4.0) * (d1_m ** 2)  # 3.1416e-4 m^2\na2 = (np.pi / 4.0) * (d2_m ** 2)  # 1.7671e-4 m^2\ntank_area = tank_length * tank_width  # 0.16 m^2\nvol = tank_area * (rise / 100.0)      # 0.016 m^3\n\ndef calculate_venturi(h1, h2, t):\n    h = np.abs(h1 - h2)\n    h_m = np.where(h > 1.5, h / 100.0, h)\n    H = h_m * 12.6  # Equivalent water head in m H2O\n    Q_act = vol / t  # Actual flow rate (m^3/s)\n    Q_th = (a1 * a2 * np.sqrt(2 * g * H)) / np.sqrt(a1**2 - a2**2)\n    Cd = Q_act / Q_th\n    return Q_th, Cd\n\n# Trial observations (cm and sec)\nh1 = np.array([18.5, 17.0, 16.0, 15.0, 14.0]) # cm\nh2 = np.array([7.0,  8.0,  9.0,  10.0, 11.0]) # cm\nt  = np.array([24.0, 27.0, 30.0, 35.0, 45.0]) # s\n\nQ_th, Cd = calculate_venturi(h1, h2, t)\n\n# Linear regression theoretical line\nslope, intercept = np.polyfit(Q_th, Cd, 1)\nQ_line = np.linspace(min(Q_th), max(Q_th), 50)\nCd_line = slope * Q_line + intercept\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(Q_th, Cd, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(Q_line, Cd_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')\nplt.xlabel('Theoretical Flow Rate Qth (m³/s)')\nplt.ylabel('Coefficient of Discharge (Cd)')\nplt.title('Venturi Meter Calibration (Cd vs Qth)')\nplt.ylim([0.50, 0.70])\nplt.grid(True)\nplt.legend()\nplt.show()"
     },
     "matlab": {
       "label": "MATLAB Plot Script Reference",
-      "code": "% MATLAB Reference Script for Venturi Meter Cd Determination\n\n% Student-entered apparatus parameters\nd1 = 25.0; % Inlet pipe diameter (mm)\nd2 = 12.6; % Throat diameter (mm)\ntank_length = 0.4; % Tank length (m)\ntank_width = 0.4;  % Tank width (m)\nrise = 5.0;        % Water level rise (cm)\ng = 9.81;          % Gravity (m/s^2)\n\n% Derived apparatus dimensions\nd1_m = d1 / 1000;\nd2_m = d2 / 1000;\na1 = (pi / 4) * d1_m^2;\na2 = (pi / 4) * d2_m^2;\ntank_area = tank_length * tank_width;\nvol = tank_area * (rise / 100);\n\n% Observed trial data\nh1 = [18.0, 17.0, 16.0, 15.5, 15.3]; % cm\nh2 = [14.0, 14.0, 14.0, 14.0, 14.0]; % cm\nt  = [21.0, 23.0, 28.0, 33.0, 37.0]; % s\n\n% Dynamic calculations\ndel_h = abs(h1 - h2);\nh_m = del_h / 100; % Convert cm to m\nH = h_m .* 12.6;\nQa = vol ./ t;\nQth = (a1 * a2 .* sqrt(2 * g .* H)) ./ sqrt(a1^2 - a2^2);\nCd = Qa ./ Qth;\n\n% Linear regression fit\np = polyfit(Qth, Cd, 1);\nQ_fit = linspace(min(Qth), max(Qth), 100);\nCd_fit = polyval(p, Q_fit);\n\n% Plotting with MATLAB default aesthetic\nfigure;\nplot(Qth, Cd, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(Q_fit, Cd_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nbox on; grid on;\nxlabel('Theoretical Flow Rate Qth (m^3/s)');\nylabel('Coefficient of Discharge (Cd)');\ntitle('Venturi Meter Calibration (Cd vs Qth)');\nylim([0.85 1.05]);\nlegend('Location', 'northeast');"
+      "code": "% MATLAB Reference Script for Venturi Meter Cd Determination\n\n% Student-entered apparatus parameters\nd1 = 20.0; % Inlet pipe diameter (mm)\nd2 = 15.0; % Throat diameter (mm)\ntank_length = 0.4; % Tank length (m)\ntank_width = 0.4;  % Tank width (m)\nrise = 10.0;       % Water level rise (cm)\ng = 9.81;          % Gravity (m/s^2)\n\n% Derived apparatus dimensions\nd1_m = d1 / 1000;\nd2_m = d2 / 1000;\na1 = (pi / 4) * d1_m^2; % 3.1416e-4 m^2\na2 = (pi / 4) * d2_m^2; % 1.7671e-4 m^2\ntank_area = tank_length * tank_width; % 0.16 m^2\nvol = tank_area * (rise / 100);     % 0.016 m^3\n\n% Observed trial data\nh1 = [18.5, 17.0, 16.0, 15.0, 14.0]; % cm\nh2 = [7.0,  8.0,  9.0,  10.0, 11.0]; % cm\nt  = [24.0, 27.0, 30.0, 35.0, 45.0]; % s\n\n% Dynamic calculations\ndel_h = abs(h1 - h2);\nh_m = del_h / 100; % Convert cm to m\nH = h_m .* 12.6;\nQact = vol ./ t;\nQth = (a1 * a2 .* sqrt(2 * g .* H)) ./ sqrt(a1^2 - a2^2);\nCd = Qact ./ Qth;\n\n% Linear regression fit\np = polyfit(Qth, Cd, 1);\nQ_fit = linspace(min(Qth), max(Qth), 100);\nCd_fit = polyval(p, Q_fit);\n\n% Plotting with MATLAB default aesthetic\nfigure;\nplot(Qth, Cd, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(Q_fit, Cd_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nbox on; grid on;\nxlabel('Theoretical Flow Rate Qth (m^3/s)');\nylabel('Coefficient of Discharge (Cd)');\ntitle('Venturi Meter Calibration (Cd vs Qth)');\nylim([0.50 0.70]);\nlegend('Location', 'northeast');"
     }
   },
   "validation_ranges": {
     "h1": { "min": 0.1, "max": 90, "label": "Left Limb h1 (cm)" },
     "h2": { "min": 0.0, "max": 90, "label": "Right Limb h2 (cm)" },
     "t": { "min": 5, "max": 180, "label": "Time for rise (sec)" },
-    "Cd": { "min": 0.90, "max": 1.00, "label": "Coefficient of Discharge (Cd)" }
+    "Cd": { "min": 0.50, "max": 1.00, "label": "Coefficient of Discharge (Cd)" }
   },
   "sample_data": [
-    { "h1": 18, "h2": 14, "t": 21 },
-    { "h1": 17, "h2": 14, "t": 23 },
-    { "h1": 16, "h2": 14, "t": 28 },
-    { "h1": 15.5, "h2": 14, "t": 33 },
-    { "h1": 15.3, "h2": 14, "t": 37 }
+    { "h1": 18.5, "h2": 7.0, "t": 24 },
+    { "h1": 17.0, "h2": 8.0, "t": 27 },
+    { "h1": 16.0, "h2": 9.0, "t": 30 },
+    { "h1": 15.0, "h2": 10.0, "t": 35 },
+    { "h1": 14.0, "h2": 11.0, "t": 45 }
   ],
   "result_template": "The coefficient of discharge for venturi meter or venturi coefficient is {avg_Cd}.",
   "precautions": [
