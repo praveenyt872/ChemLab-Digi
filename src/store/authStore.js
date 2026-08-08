@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { supabase } from '../utils/supabaseClient';
+import bcrypt from 'bcryptjs';
+
+const normEmail = (email) => (email || '').trim().toLowerCase();
 
 export const useAuthStore = create((set, get) => ({
-  // State
   user: null,
   role: null, // 'teacher' | 'student' | null
-  activeRoleTab: 'student', // Initial default role selection view
+  activeRoleTab: 'student',
   isVerifiedStudent: false,
   generatedCode: null,
   generatedCodeTime: null,
@@ -13,28 +15,39 @@ export const useAuthStore = create((set, get) => ({
   authLoading: true,
   authError: null,
 
-  // Listeners setup
   setOfflineStatus: (offline) => set({ isOffline: offline }),
-
   setRoleTab: (tab) => set({ activeRoleTab: tab, authError: null }),
-
   setAuthError: (error) => set({ authError: error }),
-
   clearAuthError: () => set({ authError: null }),
 
-  // Initialize Auth
   initAuth: async () => {
     set({ authLoading: true });
-    
-    // Setup online/offline window listeners
+
     const handleOnline = () => set({ isOffline: false });
     const handleOffline = () => set({ isOffline: true });
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // 1. Check saved teacher session in localStorage
     try {
-      // 1. Try checking backend API /api/whoami
+      const savedTeacher = localStorage.getItem('chemlab_teacher_session');
+      if (savedTeacher) {
+        const teacherObj = JSON.parse(savedTeacher);
+        if (teacherObj && teacherObj.email) {
+          set({
+            user: { email: teacherObj.email, role: 'teacher' },
+            role: 'teacher',
+            isVerifiedStudent: true,
+            authLoading: false
+          });
+          get().checkActiveCodeStatus();
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Check Express backend /api/whoami if running
+    try {
       const res = await fetch('/api/whoami', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
@@ -45,103 +58,198 @@ export const useAuthStore = create((set, get) => ({
             isVerifiedStudent: data.role === 'teacher' || !!data.verified,
             authLoading: false
           });
-
-          // Check for active code if teacher
-          if (data.role === 'teacher') {
-            get().checkActiveCodeStatus();
-          }
+          if (data.role === 'teacher') get().checkActiveCodeStatus();
           return;
         }
       }
-    } catch (e) {
-      console.warn('Backend API whoami check unavailable, checking Supabase session...');
-    }
+    } catch (e) {}
 
-    // 2. Check Supabase OAuth session directly for students
+    // 3. Check Supabase Auth session for Google OAuth (Student)
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         const studentEmail = session.user.email;
-        // Check local storage for verified student session
-        const savedCodeSession = localStorage.getItem(`chemlab_student_verified_${studentEmail}`);
-        const isVerified = !!savedCodeSession;
+        const savedVerified = localStorage.getItem(`chemlab_student_verified_${studentEmail}`);
 
         set({
           user: { email: studentEmail, role: 'student' },
           role: 'student',
-          isVerifiedStudent: isVerified,
+          isVerifiedStudent: !!savedVerified,
           authLoading: false
         });
         return;
       }
-    } catch (sbErr) {
-      console.error('Supabase session check error:', sbErr);
-    }
+    } catch (e) {}
 
     set({ user: null, role: null, isVerifiedStudent: false, authLoading: false });
   },
 
-  // Check active access code status for teacher dashboard
   checkActiveCodeStatus: async () => {
     try {
-      const res = await fetch('/api/access-code/active-status', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        if (!data.hasActiveCode) {
-          set({ generatedCode: null, generatedCodeTime: null });
-        }
+      const { data: activeCode } = await supabase
+        .from('access_code')
+        .select('id, created_at')
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!activeCode) {
+        set({ generatedCode: null, generatedCodeTime: null });
       }
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   },
 
-  // 1. Teacher Setup (First-Time Password & Security Question)
+  // Teacher First-Time Setup
   teacherSetup: async ({ email, password, securityQuestion, securityAnswer }) => {
     set({ authLoading: true, authError: null });
+    const cleanEmail = normEmail(email);
+
+    if (!cleanEmail || !password || !securityQuestion || !securityAnswer) {
+      const err = 'All fields are required.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
+    if (password.length < 6) {
+      const err = 'Password must be at least 6 characters long.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
+    // Try Express backend first if available
     try {
       const res = await fetch('/api/teacher/set-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, securityQuestion, securityAnswer })
+        body: JSON.stringify({ email: cleanEmail, password, securityQuestion, securityAnswer })
       });
-      const data = await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          set({ authLoading: false });
+          return { success: true, message: data.message };
+        } else if (data.error) {
+          set({ authError: data.error, authLoading: false });
+          return { success: false, error: data.error };
+        }
+      }
+    } catch (e) {}
 
-      if (!res.ok || !data.success) {
-        set({ authError: data.error || 'Failed to set password.', authLoading: false });
-        return { success: false, error: data.error };
+    // Direct Supabase Client fallback for static hosting (GitHub Pages)
+    try {
+      const { data: teacher, error: fetchErr } = await supabase
+        .from('teacher_whitelist')
+        .select('*')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (fetchErr || !teacher) {
+        const err = 'Email is not whitelisted for faculty access. Please contact administrator.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+
+      if (teacher.password_hash) {
+        const err = 'Account setup already completed. Please log in instead.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      const answerHash = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 10);
+
+      const { error: updateErr } = await supabase
+        .from('teacher_whitelist')
+        .update({
+          password_hash: passwordHash,
+          security_question: securityQuestion,
+          security_answer_hash: answerHash
+        })
+        .eq('email', cleanEmail);
+
+      if (updateErr) {
+        console.error('Update teacher error:', updateErr);
+        const err = 'Failed to save credentials. ' + updateErr.message;
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
       }
 
       set({ authLoading: false });
-      return { success: true, message: data.message };
+      return { success: true, message: 'Account setup complete! You can now log in with your password.' };
     } catch (err) {
-      const msg = !navigator.onLine 
-        ? 'You need an active internet connection to complete account setup.' 
-        : 'Network error. Please try again.';
+      console.error('Setup error:', err);
+      const msg = !navigator.onLine ? 'You need an active internet connection to set up your account.' : (err.message || 'Setup error.');
       set({ authError: msg, authLoading: false });
       return { success: false, error: msg };
     }
   },
 
-  // 2. Teacher Login
+  // Teacher Login
   teacherLogin: async ({ email, password }) => {
     set({ authLoading: true, authError: null });
+    const cleanEmail = normEmail(email);
+
+    if (!cleanEmail || !password) {
+      const err = 'Email and password are required.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
+    // Try Express backend first if available
     try {
       const res = await fetch('/api/teacher/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: cleanEmail, password })
       });
-      const data = await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('chemlab_teacher_session', JSON.stringify(data.user));
+          set({ user: data.user, role: 'teacher', isVerifiedStudent: true, authLoading: false });
+          get().checkActiveCodeStatus();
+          return { success: true };
+        } else if (data.error) {
+          set({ authError: data.error, authLoading: false });
+          return { success: false, error: data.error };
+        }
+      }
+    } catch (e) {}
 
-      if (!res.ok || !data.success) {
-        set({ authError: data.error || 'Invalid login credentials.', authLoading: false });
-        return { success: false, error: data.error };
+    // Direct Supabase Client fallback for static hosting (GitHub Pages)
+    try {
+      const { data: teacher, error: fetchErr } = await supabase
+        .from('teacher_whitelist')
+        .select('*')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (fetchErr || !teacher) {
+        const err = 'Invalid credentials or email not whitelisted.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
       }
 
+      if (!teacher.password_hash) {
+        const err = 'First-time setup required. Please click "First-time setup? Set password" below.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+
+      const isMatch = await bcrypt.compare(password, teacher.password_hash);
+      if (!isMatch) {
+        const err = 'Invalid password. Please try again.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+
+      const teacherUser = { email: teacher.email, role: 'teacher' };
+      localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
+
       set({
-        user: data.user,
+        user: teacherUser,
         role: 'teacher',
         isVerifiedStudent: true,
         authLoading: false,
@@ -151,144 +259,187 @@ export const useAuthStore = create((set, get) => ({
       get().checkActiveCodeStatus();
       return { success: true };
     } catch (err) {
-      const msg = !navigator.onLine 
-        ? 'You need an active internet connection to log in.' 
-        : 'Network error during login. Please try again.';
+      console.error('Login error:', err);
+      const msg = !navigator.onLine ? 'You need an active internet connection to log in.' : (err.message || 'Error logging in.');
       set({ authError: msg, authLoading: false });
       return { success: false, error: msg };
     }
   },
 
-  // 3. Forgot Password: Get Question
+  // Forgot Password: Get Question
   fetchSecurityQuestion: async (email) => {
     set({ authLoading: true, authError: null });
-    try {
-      const res = await fetch('/api/teacher/forgot-password/question', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json();
+    const cleanEmail = normEmail(email);
 
-      if (!res.ok || !data.success) {
-        set({ authError: data.error || 'Unable to process request.', authLoading: false });
-        return { success: false, error: data.error };
+    try {
+      const { data: teacher } = await supabase
+        .from('teacher_whitelist')
+        .select('security_question')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (!teacher || !teacher.security_question) {
+        const err = 'Unable to process password recovery for this email.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
       }
 
       set({ authLoading: false });
-      return { success: true, question: data.question };
+      return { success: true, question: teacher.security_question };
     } catch (err) {
-      const msg = !navigator.onLine 
-        ? 'You need an internet connection to recover your password.' 
-        : 'Network error. Please try again.';
-      set({ authError: msg, authLoading: false });
-      return { success: false, error: msg };
+      const errStr = 'Unable to fetch security question.';
+      set({ authError: errStr, authLoading: false });
+      return { success: false, error: errStr };
     }
   },
 
-  // 4. Forgot Password: Reset
+  // Forgot Password: Reset
   resetTeacherPassword: async ({ email, answer, newPassword }) => {
     set({ authLoading: true, authError: null });
-    try {
-      const res = await fetch('/api/teacher/forgot-password/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, answer, newPassword })
-      });
-      const data = await res.json();
+    const cleanEmail = normEmail(email);
 
-      if (!res.ok || !data.success) {
-        set({ authError: data.error || 'Incorrect security answer.', authLoading: false });
-        return { success: false, error: data.error };
+    try {
+      const { data: teacher } = await supabase
+        .from('teacher_whitelist')
+        .select('*')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (!teacher || !teacher.security_answer_hash) {
+        const err = 'Incorrect answer or request could not be processed.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+
+      const cleanAnswer = answer.trim().toLowerCase();
+      const isAnswerCorrect = await bcrypt.compare(cleanAnswer, teacher.security_answer_hash);
+      if (!isAnswerCorrect) {
+        const err = 'Incorrect security answer.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+
+      const newPasswordHash = await bcrypt.hash(newPassword, 10);
+      const { error: updateErr } = await supabase
+        .from('teacher_whitelist')
+        .update({ password_hash: newPasswordHash })
+        .eq('email', cleanEmail);
+
+      if (updateErr) {
+        set({ authError: 'Failed to update password.', authLoading: false });
+        return { success: false, error: 'Failed to update password.' };
       }
 
       set({ authLoading: false });
-      return { success: true, message: data.message };
+      return { success: true, message: 'Password reset successfully! You can now log in with your new password.' };
     } catch (err) {
-      const msg = !navigator.onLine 
-        ? 'You need an internet connection to reset your password.' 
-        : 'Network error. Please try again.';
-      set({ authError: msg, authLoading: false });
-      return { success: false, error: msg };
+      const errStr = 'Error resetting password.';
+      set({ authError: errStr, authLoading: false });
+      return { success: false, error: errStr };
     }
   },
 
-  // 5. Teacher Action: Generate 6-digit Access Code
+  // Generate 6-digit access code
   generateAccessCode: async () => {
     set({ authLoading: true, authError: null });
-    try {
-      const res = await fetch('/api/generate-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
-      const data = await res.json();
+    const teacherEmail = get().user?.email || 'teacher@rajalakshmi.edu.in';
 
-      if (!res.ok || !data.success) {
-        set({ authError: data.error || 'Failed to generate code.', authLoading: false });
-        return { success: false, error: data.error };
-      }
+    try {
+      const rawCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const codeHash = await bcrypt.hash(rawCode, 10);
+
+      // Deactivate previous codes
+      await supabase
+        .from('access_code')
+        .update({ active: false })
+        .eq('active', true);
+
+      // Insert new code
+      const { data: newCode, error: insertErr } = await supabase
+        .from('access_code')
+        .insert({
+          code_hash: codeHash,
+          generated_by: teacherEmail,
+          active: true
+        })
+        .select()
+        .single();
 
       set({
-        generatedCode: data.code,
+        generatedCode: rawCode,
         generatedCodeTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         authLoading: false
       });
-      return { success: true, code: data.code };
+      return { success: true, code: rawCode };
     } catch (err) {
-      set({ authError: 'Network error generating code.', authLoading: false });
-      return { success: false, error: 'Network error generating code.' };
+      console.error('Generate code error:', err);
+      set({ authError: 'Failed to generate code.', authLoading: false });
+      return { success: false, error: 'Failed to generate code.' };
     }
   },
 
-  // 6. Teacher Action: End Code
+  // End Access Code
   endAccessCode: async () => {
     set({ authLoading: true, authError: null });
     try {
-      const res = await fetch('/api/end-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
-      const data = await res.json();
+      await supabase
+        .from('access_code')
+        .update({ active: false })
+        .eq('active', true);
 
-      if (!res.ok || !data.success) {
-        set({ authError: data.error || 'Failed to deactivate code.', authLoading: false });
-        return { success: false, error: data.error };
-      }
-
-      set({
-        generatedCode: null,
-        generatedCodeTime: null,
-        authLoading: false
-      });
+      set({ generatedCode: null, generatedCodeTime: null, authLoading: false });
       return { success: true };
     } catch (err) {
-      set({ authError: 'Network error deactivating code.', authLoading: false });
-      return { success: false, error: 'Network error.' };
+      set({ authError: 'Failed to end code.', authLoading: false });
+      return { success: false, error: 'Failed to end code.' };
     }
   },
 
-  // 7. Student Action: Verify 6-digit Access Code
+  // Student verify code
   verifyStudentCode: async (code) => {
     set({ authLoading: true, authError: null });
-    const currentEmail = get().user?.email || 'student@guest.com';
+    const cleanCode = (code || '').toString().trim();
+    const studentEmail = get().user?.email || 'student@guest.com';
 
     try {
-      const res = await fetch('/api/verify-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ code, email: currentEmail })
-      });
-      const data = await res.json();
+      const { data: activeCodes, error: fetchErr } = await supabase
+        .from('access_code')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
 
-      if (!res.ok || !data.success) {
-        set({ authError: data.error || 'Incorrect access code.', authLoading: false });
-        return { success: false, error: data.error };
+      if (fetchErr || !activeCodes || activeCodes.length === 0) {
+        const err = 'No active class session right now. Ask your teacher to generate a code.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
       }
 
-      localStorage.setItem(`chemlab_student_verified_${currentEmail}`, 'true');
+      let matchedCode = null;
+      for (const ac of activeCodes) {
+        const isMatch = await bcrypt.compare(cleanCode, ac.code_hash);
+        if (isMatch) {
+          matchedCode = ac;
+          break;
+        }
+      }
+
+      if (!matchedCode) {
+        const err = 'Incorrect 6-digit access code. Please check with your teacher.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+
+      // Record student session
+      try {
+        await supabase
+          .from('student_sessions')
+          .insert({
+            student_email: studentEmail,
+            code_id: matchedCode.id
+          });
+      } catch (e) {}
+
+      localStorage.setItem(`chemlab_student_verified_${studentEmail}`, 'true');
 
       set({
         isVerifiedStudent: true,
@@ -298,22 +449,21 @@ export const useAuthStore = create((set, get) => ({
 
       return { success: true };
     } catch (err) {
-      const msg = !navigator.onLine 
-        ? 'You need an internet connection to verify access code.' 
-        : 'Network error verifying code. Please try again.';
+      console.error('Verify error:', err);
+      const msg = !navigator.onLine ? 'You need an active internet connection to verify access code.' : 'Error verifying code.';
       set({ authError: msg, authLoading: false });
       return { success: false, error: msg };
     }
   },
 
-  // 8. Student Google Login
+  // Student Google Login
   studentGoogleLogin: async () => {
     set({ authLoading: true, authError: null });
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: window.location.href
         }
       });
       if (error) {
@@ -321,26 +471,24 @@ export const useAuthStore = create((set, get) => ({
         return { success: false, error: error.message };
       }
     } catch (err) {
-      const msg = !navigator.onLine 
-        ? 'You need an internet connection to log in with Google.' 
-        : 'Error launching Google sign-in.';
+      const msg = !navigator.onLine ? 'You need an active internet connection to sign in with Google.' : 'Google sign in error.';
       set({ authError: msg, authLoading: false });
       return { success: false, error: msg };
     }
   },
 
-  // 9. Logout
+  // Logout
   logout: async () => {
-    try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      await supabase.auth.signOut();
-    } catch (e) {
-      // Ignore
-    }
+    localStorage.removeItem('chemlab_teacher_session');
     const currentEmail = get().user?.email;
     if (currentEmail) {
       localStorage.removeItem(`chemlab_student_verified_${currentEmail}`);
     }
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      await supabase.auth.signOut();
+    } catch (e) {}
+
     set({
       user: null,
       role: null,
