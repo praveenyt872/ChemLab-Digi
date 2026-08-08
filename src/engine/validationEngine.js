@@ -80,20 +80,20 @@ export function validateObservationData(experimentConfig, observationRows = [], 
       });
     }
 
-    // Venturi / Orifice manometer pressure check (h1 vs h2)
+    // Venturi / Orifice manometer differential head check (h1 vs h2)
     if (row.h1 !== undefined && row.h2 !== undefined && row.h1 !== '' && row.h2 !== '') {
       const h1Val = parseFloat(row.h1);
       const h2Val = parseFloat(row.h2);
 
-      if (h1Val < h2Val) {
+      if (h1Val === h2Val) {
         flags.push({
-          id: `manometer_inverted_row_${rowNum}`,
+          id: `manometer_zero_diff_row_${rowNum}`,
           type: 'amber',
           severity: 'warning',
-          title: `Inverted Manometer Levels in Trial ${rowNum}`,
-          description: `Upstream reading h1 (${h1Val} m) is smaller than downstream reading h2 (${h2Val} m).`,
-          why: 'In forward pipe flow, static pressure drops at the throat due to acceleration. Thus h1 should exceed h2 under standard manometer line connections.',
-          suggestion: { rowIdx: idx, field: 'h1', val: h2Val + 0.10 },
+          title: `Zero Differential Head in Trial ${rowNum}`,
+          description: `Upstream reading h1 (${h1Val}) equals downstream reading h2 (${h2Val}).`,
+          why: 'Flow through an orifice or venturi meter requires a non-zero differential pressure head across the taps.',
+          suggestion: null,
           rowIndex: rowNum,
           field: 'h1'
         });
