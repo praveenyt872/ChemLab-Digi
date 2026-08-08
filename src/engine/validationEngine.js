@@ -116,14 +116,14 @@ export function validateObservationData(experimentConfig, observationRows = [], 
           rowIndex: rowNum,
           field: 't'
         });
-      } else if (expId === 'venturi_meter' && (cdVal < 0.90 || cdVal > 0.99)) {
+      } else if (expId === 'venturi_meter' && (cdVal < 0.90 || cdVal > 1.00)) {
         flags.push({
           id: `venturi_cd_range_row_${rowNum}`,
           type: 'amber',
           severity: 'warning',
           title: `Unusual Venturi Cd in Trial ${rowNum}`,
-          description: `Cd (${cdVal.toFixed(3)}) is outside expected Venturi range (~0.94–0.98).`,
-          why: 'Venturi meters have streamlined, gradual converging and diverging cones that yield high hydraulic efficiency (Cd ≈ 0.95–0.98). Lower values indicate valve throttling or air trapped in manometer lines.',
+          description: `Cd (${cdVal.toFixed(3)}) is outside expected Venturi range (~0.95–0.99).`,
+          why: 'Venturi meters have streamlined, gradual converging and diverging cones that yield high hydraulic efficiency (Cd ≈ 0.95–0.99). Lower values indicate valve throttling, air trapped in manometer lines, or incorrect diameter entries.',
           suggestion: null,
           rowIndex: rowNum,
           field: null
