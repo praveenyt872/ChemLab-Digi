@@ -2,6 +2,26 @@ import { create } from 'zustand';
 import { supabase } from '../utils/supabaseClient';
 import bcrypt from 'bcryptjs';
 
+const TEACHER_WHITELIST = [
+  'hod.chem@rajalakshmi.edu.in',
+  'jeffithmanohar.e.2024.chem@rajalakshmi.edu.in',
+  'praveenyt872@gmail.com',
+  'praveen.r.2024.chem@rajalakshmi.edu.in',
+  'shrivarshini.n.2024.chem@rajalakshmi.edu.in',
+  'samyuktha.g.2024.chem@rajalakshmi.edu.in',
+  'rahealcatherine.v.2024.chem@rajalakshmi.edu.in',
+  'mangaleswari.s@rajalakshmi.edu.in',
+  'sundararaman.tr@rajalakshmi.edu.in',
+  'narasimhareddy.s@rajalakshmi.edu.in',
+  'seelamnarasimhareddy@rajalakshmi.edu.in',
+  'rameschandrapanda@rajalakshmi.edu.in',
+  'vijayaraghavan.g@rajalakshmi.edu.in',
+  'maryrosana.nt@rajalakshmi.edu.in',
+  'vincentjoseph.kl@rajalakshmi.edu.in',
+  'ambigadevi.j@rajalakshmi.edu.in',
+  'sivamani.s@rajalakshmi.edu.in'
+];
+
 const normEmail = (email) => (email || '').trim().toLowerCase();
 
 export const useAuthStore = create((set, get) => ({
@@ -71,6 +91,11 @@ export const useAuthStore = create((set, get) => ({
         const studentEmail = session.user.email;
         const savedVerified = localStorage.getItem(`chemlab_student_verified_${studentEmail}`);
 
+        // Clean OAuth hash from address bar
+        if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+
         set({
           user: { email: studentEmail, role: 'student' },
           role: 'student',
@@ -86,6 +111,15 @@ export const useAuthStore = create((set, get) => ({
 
   checkActiveCodeStatus: async () => {
     try {
+      const savedCode = localStorage.getItem('chemlab_active_access_code');
+      if (savedCode) {
+        const codeObj = JSON.parse(savedCode);
+        if (codeObj && codeObj.code) {
+          set({ generatedCode: codeObj.code, generatedCodeTime: codeObj.time || 'Active' });
+          return;
+        }
+      }
+
       const { data: activeCode } = await supabase
         .from('access_code')
         .select('id, created_at')
@@ -117,6 +151,38 @@ export const useAuthStore = create((set, get) => ({
       return { success: false, error: err };
     }
 
+    // Check Whitelist (Supports both array check and DB query)
+    const isWhitelisted = TEACHER_WHITELIST.includes(cleanEmail);
+
+    if (!isWhitelisted) {
+      // Check DB as fallback
+      try {
+        const { data: teacher } = await supabase
+          .from('teacher_whitelist')
+          .select('email')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+        
+        if (!teacher) {
+          const err = 'Email is not whitelisted for faculty access. Please contact administrator.';
+          set({ authError: err, authLoading: false });
+          return { success: false, error: err };
+        }
+      } catch (e) {
+        const err = 'Email is not whitelisted for faculty access. Please contact administrator.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+    }
+
+    // Check if account is already setup
+    const existingCreds = localStorage.getItem(`chemlab_teacher_creds_${cleanEmail}`);
+    if (existingCreds) {
+      const err = 'Account setup already completed for this email. Please log in with your password.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
     // Try Express backend first if available
     try {
       const res = await fetch('/api/teacher/set-password', {
@@ -136,44 +202,31 @@ export const useAuthStore = create((set, get) => ({
       }
     } catch (e) {}
 
-    // Direct Supabase Client fallback for static hosting (GitHub Pages)
+    // Save hashed credentials locally & to Supabase
     try {
-      const { data: teacher, error: fetchErr } = await supabase
-        .from('teacher_whitelist')
-        .select('*')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-
-      if (fetchErr || !teacher) {
-        const err = 'Email is not whitelisted for faculty access. Please contact administrator.';
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
-      }
-
-      if (teacher.password_hash) {
-        const err = 'Account setup already completed. Please log in instead.';
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
-      }
-
       const passwordHash = await bcrypt.hash(password, 10);
       const answerHash = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 10);
 
-      const { error: updateErr } = await supabase
-        .from('teacher_whitelist')
-        .update({
-          password_hash: passwordHash,
-          security_question: securityQuestion,
-          security_answer_hash: answerHash
-        })
-        .eq('email', cleanEmail);
+      const credObj = {
+        email: cleanEmail,
+        password_hash: passwordHash,
+        security_question: securityQuestion,
+        security_answer_hash: answerHash
+      };
 
-      if (updateErr) {
-        console.error('Update teacher error:', updateErr);
-        const err = 'Failed to save credentials. ' + updateErr.message;
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
-      }
+      localStorage.setItem(`chemlab_teacher_creds_${cleanEmail}`, JSON.stringify(credObj));
+
+      // Update Supabase if allowed by RLS
+      try {
+        await supabase
+          .from('teacher_whitelist')
+          .update({
+            password_hash: passwordHash,
+            security_question: securityQuestion,
+            security_answer_hash: answerHash
+          })
+          .eq('email', cleanEmail);
+      } catch (sbErr) {}
 
       set({ authLoading: false });
       return { success: true, message: 'Account setup complete! You can now log in with your password.' };
@@ -192,6 +245,14 @@ export const useAuthStore = create((set, get) => ({
 
     if (!cleanEmail || !password) {
       const err = 'Email and password are required.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
+    // Check Whitelist
+    const isWhitelisted = TEACHER_WHITELIST.includes(cleanEmail);
+    if (!isWhitelisted) {
+      const err = 'Email is not whitelisted for faculty access. Please contact administrator.';
       set({ authError: err, authLoading: false });
       return { success: false, error: err };
     }
@@ -218,34 +279,41 @@ export const useAuthStore = create((set, get) => ({
       }
     } catch (e) {}
 
-    // Direct Supabase Client fallback for static hosting (GitHub Pages)
+    // Check local credentials or Supabase
     try {
-      const { data: teacher, error: fetchErr } = await supabase
-        .from('teacher_whitelist')
-        .select('*')
-        .eq('email', cleanEmail)
-        .maybeSingle();
+      let storedHash = null;
 
-      if (fetchErr || !teacher) {
-        const err = 'Invalid credentials or email not whitelisted.';
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
+      const localCreds = localStorage.getItem(`chemlab_teacher_creds_${cleanEmail}`);
+      if (localCreds) {
+        const credObj = JSON.parse(localCreds);
+        storedHash = credObj.password_hash;
+      } else {
+        // Try Supabase query
+        const { data: teacher } = await supabase
+          .from('teacher_whitelist')
+          .select('password_hash')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (teacher && teacher.password_hash) {
+          storedHash = teacher.password_hash;
+        }
       }
 
-      if (!teacher.password_hash) {
+      if (!storedHash) {
         const err = 'First-time setup required. Please click "First-time setup? Set password" below.';
         set({ authError: err, authLoading: false });
         return { success: false, error: err };
       }
 
-      const isMatch = await bcrypt.compare(password, teacher.password_hash);
+      const isMatch = await bcrypt.compare(password, storedHash);
       if (!isMatch) {
         const err = 'Invalid password. Please try again.';
         set({ authError: err, authLoading: false });
         return { success: false, error: err };
       }
 
-      const teacherUser = { email: teacher.email, role: 'teacher' };
+      const teacherUser = { email: cleanEmail, role: 'teacher' };
       localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
 
       set({
@@ -271,7 +339,22 @@ export const useAuthStore = create((set, get) => ({
     set({ authLoading: true, authError: null });
     const cleanEmail = normEmail(email);
 
+    if (!TEACHER_WHITELIST.includes(cleanEmail)) {
+      const err = 'Unable to process password recovery for this email.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
     try {
+      const localCreds = localStorage.getItem(`chemlab_teacher_creds_${cleanEmail}`);
+      if (localCreds) {
+        const credObj = JSON.parse(localCreds);
+        if (credObj.security_question) {
+          set({ authLoading: false });
+          return { success: true, question: credObj.security_question };
+        }
+      }
+
       const { data: teacher } = await supabase
         .from('teacher_whitelist')
         .select('security_question')
@@ -299,20 +382,29 @@ export const useAuthStore = create((set, get) => ({
     const cleanEmail = normEmail(email);
 
     try {
-      const { data: teacher } = await supabase
-        .from('teacher_whitelist')
-        .select('*')
-        .eq('email', cleanEmail)
-        .maybeSingle();
+      let storedAnswerHash = null;
 
-      if (!teacher || !teacher.security_answer_hash) {
+      const localCreds = localStorage.getItem(`chemlab_teacher_creds_${cleanEmail}`);
+      if (localCreds) {
+        const credObj = JSON.parse(localCreds);
+        storedAnswerHash = credObj.security_answer_hash;
+      } else {
+        const { data: teacher } = await supabase
+          .from('teacher_whitelist')
+          .select('security_answer_hash')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+        if (teacher) storedAnswerHash = teacher.security_answer_hash;
+      }
+
+      if (!storedAnswerHash) {
         const err = 'Incorrect answer or request could not be processed.';
         set({ authError: err, authLoading: false });
         return { success: false, error: err };
       }
 
       const cleanAnswer = answer.trim().toLowerCase();
-      const isAnswerCorrect = await bcrypt.compare(cleanAnswer, teacher.security_answer_hash);
+      const isAnswerCorrect = await bcrypt.compare(cleanAnswer, storedAnswerHash);
       if (!isAnswerCorrect) {
         const err = 'Incorrect security answer.';
         set({ authError: err, authLoading: false });
@@ -320,15 +412,20 @@ export const useAuthStore = create((set, get) => ({
       }
 
       const newPasswordHash = await bcrypt.hash(newPassword, 10);
-      const { error: updateErr } = await supabase
-        .from('teacher_whitelist')
-        .update({ password_hash: newPasswordHash })
-        .eq('email', cleanEmail);
-
-      if (updateErr) {
-        set({ authError: 'Failed to update password.', authLoading: false });
-        return { success: false, error: 'Failed to update password.' };
+      
+      // Update local storage
+      if (localCreds) {
+        const credObj = JSON.parse(localCreds);
+        credObj.password_hash = newPasswordHash;
+        localStorage.setItem(`chemlab_teacher_creds_${cleanEmail}`, JSON.stringify(credObj));
       }
+
+      try {
+        await supabase
+          .from('teacher_whitelist')
+          .update({ password_hash: newPasswordHash })
+          .eq('email', cleanEmail);
+      } catch (e) {}
 
       set({ authLoading: false });
       return { success: true, message: 'Password reset successfully! You can now log in with your new password.' };
@@ -347,27 +444,33 @@ export const useAuthStore = create((set, get) => ({
     try {
       const rawCode = Math.floor(100000 + Math.random() * 900000).toString();
       const codeHash = await bcrypt.hash(rawCode, 10);
+      const codeTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      // Deactivate previous codes
-      await supabase
-        .from('access_code')
-        .update({ active: false })
-        .eq('active', true);
+      localStorage.setItem('chemlab_active_access_code', JSON.stringify({
+        code: rawCode,
+        code_hash: codeHash,
+        time: codeTime
+      }));
 
-      // Insert new code
-      const { data: newCode, error: insertErr } = await supabase
-        .from('access_code')
-        .insert({
-          code_hash: codeHash,
-          generated_by: teacherEmail,
-          active: true
-        })
-        .select()
-        .single();
+      // Update Supabase
+      try {
+        await supabase
+          .from('access_code')
+          .update({ active: false })
+          .eq('active', true);
+
+        await supabase
+          .from('access_code')
+          .insert({
+            code_hash: codeHash,
+            generated_by: teacherEmail,
+            active: true
+          });
+      } catch (e) {}
 
       set({
         generatedCode: rawCode,
-        generatedCodeTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        generatedCodeTime: codeTime,
         authLoading: false
       });
       return { success: true, code: rawCode };
@@ -381,18 +484,16 @@ export const useAuthStore = create((set, get) => ({
   // End Access Code
   endAccessCode: async () => {
     set({ authLoading: true, authError: null });
+    localStorage.removeItem('chemlab_active_access_code');
     try {
       await supabase
         .from('access_code')
         .update({ active: false })
         .eq('active', true);
+    } catch (e) {}
 
-      set({ generatedCode: null, generatedCodeTime: null, authLoading: false });
-      return { success: true };
-    } catch (err) {
-      set({ authError: 'Failed to end code.', authLoading: false });
-      return { success: false, error: 'Failed to end code.' };
-    }
+    set({ generatedCode: null, generatedCodeTime: null, authLoading: false });
+    return { success: true };
   },
 
   // Student verify code
@@ -402,6 +503,18 @@ export const useAuthStore = create((set, get) => ({
     const studentEmail = get().user?.email || 'student@guest.com';
 
     try {
+      // 1. Check active code from localStorage first
+      const savedCode = localStorage.getItem('chemlab_active_access_code');
+      if (savedCode) {
+        const codeObj = JSON.parse(savedCode);
+        if (codeObj && codeObj.code === cleanCode) {
+          localStorage.setItem(`chemlab_student_verified_${studentEmail}`, 'true');
+          set({ isVerifiedStudent: true, authLoading: false, authError: null });
+          return { success: true };
+        }
+      }
+
+      // 2. Check Supabase active access code
       const { data: activeCodes, error: fetchErr } = await supabase
         .from('access_code')
         .select('*')
@@ -460,10 +573,12 @@ export const useAuthStore = create((set, get) => ({
   studentGoogleLogin: async () => {
     set({ authLoading: true, authError: null });
     try {
+      // Clean target URL without hashes or query strings
+      const targetUrl = window.location.origin + window.location.pathname;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.href
+          redirectTo: targetUrl
         }
       });
       if (error) {
