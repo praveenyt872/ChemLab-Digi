@@ -128,14 +128,14 @@ export function validateObservationData(experimentConfig, observationRows = [], 
           rowIndex: rowNum,
           field: null
         });
-      } else if (expId === 'orifice_meter' && (cdVal < 0.55 || cdVal > 0.70)) {
+      } else if (expId === 'orifice_meter' && (cdVal < 0.40 || cdVal > 0.70)) {
         flags.push({
           id: `orifice_cd_range_row_${rowNum}`,
           type: 'amber',
           severity: 'warning',
           title: `Unusual Orifice Cd in Trial ${rowNum}`,
-          description: `Cd (${cdVal.toFixed(3)}) is outside expected Orifice range (~0.60–0.65).`,
-          why: 'Orifice plates produce a pronounced jet contraction (vena contracta) and severe eddy recirculation, leading to typical Cd values of 0.60–0.65.',
+          description: `Cd (${cdVal.toFixed(3)}) is outside expected Orifice range (~0.45–0.65).`,
+          why: 'Orifice plates produce a pronounced jet contraction (vena contracta) and severe eddy recirculation. Values outside 0.45–0.65 indicate valve throttling, air trapped in manometer lines, or incorrect diameter entries.',
           suggestion: null,
           rowIndex: rowNum,
           field: null
