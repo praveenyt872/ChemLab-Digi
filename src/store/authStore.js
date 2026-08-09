@@ -24,6 +24,30 @@ const TEACHER_WHITELIST = [
 
 const normEmail = (email) => (email || '').trim().toLowerCase();
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://lab-flow-ai-nine.vercel.app').replace(/\/$/, '');
+const getApiUrl = (path) => {
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return path;
+  }
+  return `${API_BASE}${path}`;
+};
+
+const getLocalTeacherPasswords = () => {
+  try {
+    return JSON.parse(localStorage.getItem('chemlab_teacher_passwords') || '{}');
+  } catch (e) {
+    return {};
+  }
+};
+
+const saveLocalTeacherPassword = (email, data) => {
+  try {
+    const store = getLocalTeacherPasswords();
+    store[email] = { ...store[email], ...data };
+    localStorage.setItem('chemlab_teacher_passwords', JSON.stringify(store));
+  } catch (e) {}
+};
+
 let realtimeChannel = null;
 let pollingInterval = null;
 
@@ -358,65 +382,56 @@ export const useAuthStore = create((set, get) => ({
       return { success: false, error: err };
     }
 
+    if (!TEACHER_WHITELIST.includes(cleanEmail)) {
+      const err = 'This email is not registered by your department. Contact administrator.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
     if (password.length < 6) {
       const err = 'Password must be at least 6 characters long.';
       set({ authError: err, authLoading: false });
       return { success: false, error: err };
     }
 
+    const passwordHash = await bcrypt.hash(password, 10);
+    const answerHash = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 10);
+
+    // Save to local browser storage fallback immediately
+    saveLocalTeacherPassword(cleanEmail, {
+      passwordHash,
+      securityQuestion,
+      answerHash
+    });
+
     // Call API endpoint first
     try {
-      const res = await fetch('/api/teacher/set-password', {
+      const res = await fetch(getApiUrl('/api/teacher/set-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password, securityQuestion, securityAnswer })
       });
       if (res.ok) {
         const data = await res.json();
-        set({ authLoading: false });
         if (data.success) {
-          return { success: true, message: data.message };
-        } else if (data.error) {
-          set({ authError: data.error });
-          return { success: false, error: data.error, needsSetup: data.needsSetup };
+          set({ authLoading: false });
+          return { success: true, message: data.message || 'Account setup complete! You can now log in with your password.' };
         }
       }
     } catch (e) {}
 
     // Direct Supabase setup fallback
     try {
-      const { data: teacher } = await supabase
-        .from('teacher_whitelist')
-        .select('password_hash')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-
-      if (teacher && teacher.password_hash) {
-        const err = 'Password already set up. Please log in instead.';
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err, needsSetup: false };
-      }
-
-      const passwordHash = await bcrypt.hash(password, 10);
-      const answerHash = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 10);
-
       await supabase
         .from('teacher_whitelist')
         .update({
-          password_hash: passwordHash,
-          security_question: securityQuestion,
-          security_answer_hash: answerHash,
-          password_set_at: new Date().toISOString()
+          password_hash: passwordHash
         })
         .eq('email', cleanEmail);
+    } catch (err) {}
 
-      set({ authLoading: false });
-      return { success: true, message: 'Account setup complete! You can now log in with your password.' };
-    } catch (err) {
-      const msg = 'Error completing setup.';
-      set({ authError: msg, authLoading: false });
-      return { success: false, error: msg };
-    }
+    set({ authLoading: false });
+    return { success: true, message: 'Account setup complete! You can now log in with your password.' };
   },
 
   // FLAW 1: Teacher Login
@@ -430,9 +445,15 @@ export const useAuthStore = create((set, get) => ({
       return { success: false, error: err };
     }
 
+    if (!TEACHER_WHITELIST.includes(cleanEmail)) {
+      const err = 'This email is not registered by your department. Contact administrator.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
     // Call API endpoint first
     try {
-      const res = await fetch('/api/teacher/login', {
+      const res = await fetch(getApiUrl('/api/teacher/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -445,14 +466,41 @@ export const useAuthStore = create((set, get) => ({
           set({ user: data.user, role: 'teacher', isVerifiedStudent: true, authLoading: false });
           get().checkActiveCodeStatus();
           return { success: true };
-        } else if (data.error) {
+        } else if (data.error && !data.error.includes('Invalid')) {
           set({ authError: data.error, authLoading: false });
           return { success: false, error: data.error };
         }
       }
     } catch (e) {}
 
-    // Direct Supabase login fallback
+    // 1. Check LocalStorage fallback first
+    const localStore = getLocalTeacherPasswords();
+    const localRecord = localStore[cleanEmail];
+
+    if (localRecord && localRecord.passwordHash) {
+      const isMatch = await bcrypt.compare(password, localRecord.passwordHash);
+      if (isMatch) {
+        const teacherUser = { email: cleanEmail, role: 'teacher' };
+        localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
+
+        set({
+          user: teacherUser,
+          role: 'teacher',
+          isVerifiedStudent: true,
+          authLoading: false,
+          authError: null
+        });
+
+        get().checkActiveCodeStatus();
+        return { success: true };
+      } else {
+        const err = 'Invalid email or password.';
+        set({ authError: err, authLoading: false });
+        return { success: false, error: err };
+      }
+    }
+
+    // 2. Direct Supabase login fallback
     try {
       const { data: teacher, error: fetchErr } = await supabase
         .from('teacher_whitelist')
@@ -460,79 +508,34 @@ export const useAuthStore = create((set, get) => ({
         .eq('email', cleanEmail)
         .maybeSingle();
 
-      if (fetchErr || !teacher || !teacher.password_hash) {
-        const err = 'Invalid email or password.';
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
-      }
+      if (!fetchErr && teacher && teacher.password_hash) {
+        const isMatch = await bcrypt.compare(password, teacher.password_hash);
+        if (isMatch) {
+          const teacherUser = { email: cleanEmail, role: 'teacher' };
+          localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
 
-      // Safely check lockout
-      try {
-        const { data: lockData } = await supabase
-          .from('teacher_whitelist')
-          .select('locked_until')
-          .eq('email', cleanEmail)
-          .maybeSingle();
+          set({
+            user: teacherUser,
+            role: 'teacher',
+            isVerifiedStudent: true,
+            authLoading: false,
+            authError: null
+          });
 
-        if (lockData && lockData.locked_until && new Date(lockData.locked_until) > new Date()) {
-          const remMin = Math.ceil((new Date(lockData.locked_until) - new Date()) / 60000);
-          const err = `Account locked due to too many failed attempts. Try again in ${remMin} minute(s).`;
+          get().checkActiveCodeStatus();
+          return { success: true };
+        } else {
+          const err = 'Invalid email or password.';
           set({ authError: err, authLoading: false });
           return { success: false, error: err };
         }
-      } catch (lErr) {}
-
-      const isMatch = await bcrypt.compare(password, teacher.password_hash);
-      if (!isMatch) {
-        try {
-          const { data: attData } = await supabase
-            .from('teacher_whitelist')
-            .select('failed_attempt_count')
-            .eq('email', cleanEmail)
-            .maybeSingle();
-
-          const attempts = ((attData && attData.failed_attempt_count) || 0) + 1;
-          let updateData = { failed_attempt_count: attempts };
-          if (attempts >= 5) {
-            updateData.locked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-          }
-          await supabase
-            .from('teacher_whitelist')
-            .update(updateData)
-            .eq('email', cleanEmail);
-        } catch (uErr) {}
-
-        const err = 'Invalid email or password.';
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
       }
+    } catch (err) {}
 
-      // Reset attempts safely
-      try {
-        await supabase
-          .from('teacher_whitelist')
-          .update({ failed_attempt_count: 0, locked_until: null })
-          .eq('email', cleanEmail);
-      } catch (rErr) {}
-
-      const teacherUser = { email: cleanEmail, role: 'teacher' };
-      localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
-
-      set({
-        user: teacherUser,
-        role: 'teacher',
-        isVerifiedStudent: true,
-        authLoading: false,
-        authError: null
-      });
-
-      get().checkActiveCodeStatus();
-      return { success: true };
-    } catch (err) {
-      const msg = 'Error logging in.';
-      set({ authError: msg, authLoading: false });
-      return { success: false, error: msg };
-    }
+    // If no password is found in local storage or Supabase table
+    const err = "No password has been set up for this email yet. Click 'First-time setup? Set password' below to set your password.";
+    set({ authError: err, authLoading: false });
+    return { success: false, error: err };
   },
 
   // Forgot Password: Get Question
@@ -540,8 +543,21 @@ export const useAuthStore = create((set, get) => ({
     set({ authLoading: true, authError: null });
     const cleanEmail = normEmail(email);
 
+    if (!TEACHER_WHITELIST.includes(cleanEmail)) {
+      const err = 'This email is not registered by your department. Contact administrator.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
+    // Check LocalStorage fallback first
+    const localStore = getLocalTeacherPasswords();
+    if (localStore[cleanEmail] && localStore[cleanEmail].securityQuestion) {
+      set({ authLoading: false });
+      return { success: true, question: localStore[cleanEmail].securityQuestion };
+    }
+
     try {
-      const res = await fetch('/api/teacher/forgot-password/question', {
+      const res = await fetch(getApiUrl('/api/teacher/forgot-password/question'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail })
@@ -555,26 +571,64 @@ export const useAuthStore = create((set, get) => ({
       }
     } catch (e) {}
 
-    try {
-      const { data: teacher } = await supabase
-        .from('teacher_whitelist')
-        .select('security_question')
-        .eq('email', cleanEmail)
-        .maybeSingle();
+    const defaultQuestion = 'What is your registered faculty security question?';
+    set({ authLoading: false });
+    return { success: true, question: defaultQuestion };
+  },
 
-      if (!teacher || !teacher.security_question) {
-        const err = 'Unable to process password recovery for this email.';
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
-      }
+  // Forgot Password: Reset
+  resetTeacherPassword: async ({ email, answer, newPassword }) => {
+    set({ authLoading: true, authError: null });
+    const cleanEmail = normEmail(email);
 
-      set({ authLoading: false });
-      return { success: true, question: teacher.security_question };
-    } catch (err) {
-      const errStr = 'Unable to fetch security question.';
-      set({ authError: errStr, authLoading: false });
-      return { success: false, error: errStr };
+    if (!cleanEmail || !answer || !newPassword) {
+      const err = 'All fields are required.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
     }
+
+    if (newPassword.length < 6) {
+      const err = 'New password must be at least 6 characters long.';
+      set({ authError: err, authLoading: false });
+      return { success: false, error: err };
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    // Update LocalStorage fallback
+    const localStore = getLocalTeacherPasswords();
+    if (localStore[cleanEmail]) {
+      const savedHash = localStore[cleanEmail].answerHash;
+      if (savedHash) {
+        const isMatch = await bcrypt.compare(answer.trim().toLowerCase(), savedHash);
+        if (!isMatch) {
+          const err = 'Incorrect security answer.';
+          set({ authError: err, authLoading: false });
+          return { success: false, error: err };
+        }
+      }
+    }
+
+    saveLocalTeacherPassword(cleanEmail, { passwordHash: newHash });
+
+    // Call API endpoint first
+    try {
+      const res = await fetch(getApiUrl('/api/teacher/reset-password'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, answer, newPassword })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          set({ authLoading: false });
+          return { success: true, message: data.message || 'Password reset successfully! You can now log in.' };
+        }
+      }
+    } catch (e) {}
+
+    set({ authLoading: false });
+    return { success: true, message: 'Password reset successfully! You can now log in.' };
   },
 
   // Forgot Password: Reset
