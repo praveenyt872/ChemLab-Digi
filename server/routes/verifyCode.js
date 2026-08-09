@@ -5,12 +5,12 @@ import rateLimit from 'express-rate-limit';
 import { supabaseAdmin } from '../db.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'chemlab_secret_jwt_key_2026';
 
-// Rate limiter for access code verification (5 attempts per IP per minute)
+// Rate limiter for access code verification
 const verifyLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 5,
+  max: 10,
   message: {
     success: false,
     error: 'Too many code verification attempts. Please wait 1 minute before trying again.'
@@ -22,9 +22,10 @@ const verifyLimiter = rateLimit({
 // Verify 6-digit access code submitted by student
 router.post('/verify-code', verifyLimiter, async (req, res) => {
   try {
-    const { code, email } = req.body;
+    const { code, email, userId } = req.body;
     const cleanCode = (code || '').toString().trim();
     const studentEmail = (email || '').toString().trim().toLowerCase() || 'student@guest.com';
+    const studentUserId = userId || studentEmail;
 
     if (!cleanCode || cleanCode.length !== 6) {
       return res.status(400).json({
@@ -33,17 +34,28 @@ router.post('/verify-code', verifyLimiter, async (req, res) => {
       });
     }
 
-    // 1. Fetch current active access code from DB
-    const { data: activeCode, error: fetchErr } = await supabaseAdmin
-      .from('access_code')
+    // 1. Fetch current active access code from DB (querying active_code first, fallback to access_code)
+    let activeCode = null;
+
+    const { data: acData } = await supabaseAdmin
+      .from('active_code')
       .select('*')
-      .eq('active', true)
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (fetchErr) {
-      console.error('Error fetching active access code:', fetchErr);
+    if (acData) {
+      activeCode = acData;
+    } else {
+      const { data: legacyCode } = await supabaseAdmin
+        .from('access_code')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (legacyCode) activeCode = legacyCode;
     }
 
     if (!activeCode) {
@@ -53,8 +65,14 @@ router.post('/verify-code', verifyLimiter, async (req, res) => {
       });
     }
 
-    // 2. Bcrypt compare submitted code against stored hash
-    const isMatch = await bcrypt.compare(cleanCode, activeCode.code_hash);
+    // 2. Validate submitted code (either exact plaintext match or bcrypt hash)
+    let isMatch = false;
+    if (activeCode.code && activeCode.code === cleanCode) {
+      isMatch = true;
+    } else if (activeCode.code_hash) {
+      isMatch = await bcrypt.compare(cleanCode, activeCode.code_hash);
+    }
+
     if (!isMatch) {
       return res.status(400).json({
         success: false,
@@ -62,21 +80,33 @@ router.post('/verify-code', verifyLimiter, async (req, res) => {
       });
     }
 
-    // 3. Record student session in DB
+    // 3. Deactivate previous student sessions for this user
+    try {
+      await supabaseAdmin
+        .from('student_sessions')
+        .update({ is_active: false })
+        .eq('user_id', studentUserId);
+    } catch (e) {}
+
+    // 4. Insert new student session row
     try {
       await supabaseAdmin
         .from('student_sessions')
         .insert({
+          user_id: studentUserId,
           student_email: studentEmail,
-          code_id: activeCode.id
+          authorized_code: cleanCode,
+          code_row_id: activeCode.id,
+          authorized_at: new Date().toISOString(),
+          is_active: true
         });
     } catch (dbErr) {
       console.error('Error recording student session:', dbErr);
     }
 
-    // 4. Issue student verified JWT session token cookie
+    // 5. Issue student verified JWT token
     const studentToken = jwt.sign(
-      { email: studentEmail, role: 'student', verified: true, codeId: activeCode.id },
+      { email: studentEmail, userId: studentUserId, role: 'student', verified: true, codeId: activeCode.id },
       JWT_SECRET,
       { expiresIn: '8h' }
     );
@@ -98,6 +128,55 @@ router.post('/verify-code', verifyLimiter, async (req, res) => {
   } catch (err) {
     console.error('Verify code error:', err);
     return res.status(500).json({ success: false, error: 'Internal server error verifying code.' });
+  }
+});
+
+// Validate student session endpoint
+router.post('/validate-access', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.json({ success: true, valid: false });
+
+    // Fetch latest active student session
+    const { data: session } = await supabaseAdmin
+      .from('student_sessions')
+      .select('authorized_code, code_row_id, is_active')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('authorized_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Fetch current active code
+    let activeCode = null;
+    const { data: acData } = await supabaseAdmin
+      .from('active_code')
+      .select('id, code, is_active')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (acData) {
+      activeCode = acData;
+    } else {
+      const { data: legacyCode } = await supabaseAdmin
+        .from('access_code')
+        .select('id, code, active')
+        .eq('active', true)
+        .maybeSingle();
+      if (legacyCode) activeCode = { id: legacyCode.id, code: legacyCode.code, is_active: legacyCode.active };
+    }
+
+    if (!session || !activeCode) {
+      return res.json({ success: true, valid: false });
+    }
+
+    if (session.code_row_id !== activeCode.id) {
+      return res.json({ success: true, valid: false });
+    }
+
+    return res.json({ success: true, valid: true });
+  } catch (err) {
+    return res.json({ success: true, valid: false });
   }
 });
 

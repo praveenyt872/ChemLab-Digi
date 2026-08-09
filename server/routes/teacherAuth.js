@@ -4,12 +4,62 @@ import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from '../db.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'chemlab_secret_jwt_key_2026';
 
 // Helper: Normalize email
 const normEmail = (email) => (email || '').trim().toLowerCase();
 
-// 1. First-Time Setup: Set password + security question
+// 1. Check Teacher Status: Returns whether email exists and needs setup / is locked
+router.post('/check-status', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const cleanEmail = normEmail(email);
+
+    if (!cleanEmail) {
+      return res.status(400).json({ success: false, error: 'Email is required.' });
+    }
+
+    const { data: teacher, error: fetchErr } = await supabaseAdmin
+      .from('teacher_whitelist')
+      .select('email, password_hash, failed_attempt_count, locked_until')
+      .eq('email', cleanEmail)
+      .maybeSingle();
+
+    if (fetchErr || !teacher) {
+      return res.json({
+        success: true,
+        exists: false,
+        message: 'This email is not registered by your department. Contact admin.'
+      });
+    }
+
+    // Check Lockout Status
+    const now = new Date();
+    let isLocked = false;
+    let lockRemainingSeconds = 0;
+
+    if (teacher.locked_until && new Date(teacher.locked_until) > now) {
+      isLocked = true;
+      lockRemainingSeconds = Math.ceil((new Date(teacher.locked_until) - now) / 1000);
+    }
+
+    const needsSetup = !teacher.password_hash;
+
+    return res.json({
+      success: true,
+      exists: true,
+      needsSetup,
+      isLocked,
+      lockRemainingSeconds,
+      email: teacher.email
+    });
+  } catch (err) {
+    console.error('Check status error:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error checking teacher status.' });
+  }
+});
+
+// 2. First-Time Setup: Set password + security question
 router.post('/set-password', async (req, res) => {
   try {
     const { email, password, securityQuestion, securityAnswer } = req.body;
@@ -23,28 +73,29 @@ router.post('/set-password', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long.' });
     }
 
-    // Check whitelist
+    // Re-check server-side that password_hash is still NULL (race condition protection)
     const { data: teacher, error: fetchErr } = await supabaseAdmin
       .from('teacher_whitelist')
-      .select('*')
+      .select('email, password_hash')
       .eq('email', cleanEmail)
-      .single();
+      .maybeSingle();
 
     if (fetchErr || !teacher) {
       return res.status(403).json({
         success: false,
-        error: 'Email is not whitelisted for faculty access. Please contact administrator.'
+        error: 'Email is not registered by your department. Contact admin.'
       });
     }
 
     if (teacher.password_hash) {
       return res.status(400).json({
         success: false,
-        error: 'Account setup has already been completed for this email. Please log in instead.'
+        needsSetup: false,
+        error: 'Password already set up. Please log in instead.'
       });
     }
 
-    // Hash password & security answer (normalized trim + lowercase)
+    // Hash password & security answer
     const passwordHash = await bcrypt.hash(password, 10);
     const cleanAnswer = securityAnswer.trim().toLowerCase();
     const answerHash = await bcrypt.hash(cleanAnswer, 10);
@@ -54,7 +105,9 @@ router.post('/set-password', async (req, res) => {
       .update({
         password_hash: passwordHash,
         security_question: securityQuestion,
-        security_answer_hash: answerHash
+        security_answer_hash: answerHash,
+        password_set_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .eq('email', cleanEmail);
 
@@ -73,7 +126,7 @@ router.post('/set-password', async (req, res) => {
   }
 });
 
-// 2. Teacher Login
+// 3. Teacher Login (with 5-attempt / 15-min Lockout logic)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -87,23 +140,56 @@ router.post('/login', async (req, res) => {
       .from('teacher_whitelist')
       .select('*')
       .eq('email', cleanEmail)
-      .single();
+      .maybeSingle();
 
     if (fetchErr || !teacher) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials or email not whitelisted.' });
+      return res.status(401).json({ success: false, error: 'Invalid email or password.' });
     }
 
     if (!teacher.password_hash) {
       return res.status(400).json({
         success: false,
-        error: 'First-time setup required. Please complete account setup first.'
+        needsSetup: true,
+        error: 'First-time setup required. Please set up your password.'
       });
     }
 
-    const isMatch = await bcrypt.compare(password, teacher.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, error: 'Invalid password. Please try again.' });
+    // Check Lockout
+    const now = new Date();
+    if (teacher.locked_until && new Date(teacher.locked_until) > now) {
+      const remSec = Math.ceil((new Date(teacher.locked_until) - now) / 1000);
+      const remMin = Math.ceil(remSec / 60);
+      return res.status(423).json({
+        success: false,
+        error: `Account locked due to too many failed attempts. Try again in ${remMin} minute(s).`
+      });
     }
+
+    // Compare Password
+    const isMatch = await bcrypt.compare(password, teacher.password_hash);
+
+    if (!isMatch) {
+      const currentAttempts = (teacher.failed_attempt_count || 0) + 1;
+      let updatePayload = { failed_attempt_count: currentAttempts };
+
+      if (currentAttempts >= 5) {
+        const lockoutTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+        updatePayload.locked_until = lockoutTime;
+      }
+
+      await supabaseAdmin
+        .from('teacher_whitelist')
+        .update(updatePayload)
+        .eq('email', cleanEmail);
+
+      return res.status(401).json({ success: false, error: 'Invalid email or password.' });
+    }
+
+    // On Success: Reset failed attempts & lockouts
+    await supabaseAdmin
+      .from('teacher_whitelist')
+      .update({ failed_attempt_count: 0, locked_until: null })
+      .eq('email', cleanEmail);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -131,7 +217,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 3. Forgot Password: Fetch Security Question
+// 4. Forgot Password: Fetch Security Question
 router.post('/forgot-password/question', async (req, res) => {
   try {
     const { email } = req.body;
@@ -145,10 +231,9 @@ router.post('/forgot-password/question', async (req, res) => {
       .from('teacher_whitelist')
       .select('security_question')
       .eq('email', cleanEmail)
-      .single();
+      .maybeSingle();
 
     if (!teacher || !teacher.security_question) {
-      // Generic error response to prevent email enumeration
       return res.status(400).json({
         success: false,
         error: 'Unable to process password recovery for this email.'
@@ -165,7 +250,7 @@ router.post('/forgot-password/question', async (req, res) => {
   }
 });
 
-// 4. Forgot Password: Reset Password using Security Answer
+// 5. Forgot Password: Reset Password using Security Answer
 router.post('/forgot-password/reset', async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
@@ -183,7 +268,7 @@ router.post('/forgot-password/reset', async (req, res) => {
       .from('teacher_whitelist')
       .select('*')
       .eq('email', cleanEmail)
-      .single();
+      .maybeSingle();
 
     if (!teacher || !teacher.security_answer_hash) {
       return res.status(400).json({ success: false, error: 'Incorrect answer or request could not be processed.' });
@@ -196,11 +281,17 @@ router.post('/forgot-password/reset', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Incorrect answer or request could not be processed.' });
     }
 
-    // Update to new password
+    // Reset password & clear lockouts
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
     const { error: updateErr } = await supabaseAdmin
       .from('teacher_whitelist')
-      .update({ password_hash: newPasswordHash })
+      .update({
+        password_hash: newPasswordHash,
+        failed_attempt_count: 0,
+        locked_until: null,
+        password_set_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
       .eq('email', cleanEmail);
 
     if (updateErr) {

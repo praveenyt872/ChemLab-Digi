@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { KeyRound, ShieldAlert, WifiOff, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { KeyRound, ShieldAlert, WifiOff, Lock, CheckCircle2, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export function StudentGate({ children }) {
-  const { user, isVerifiedStudent, verifyStudentCode, authLoading, authError, isOffline, logout } = useAuthStore();
+  const {
+    user,
+    isVerifiedStudent,
+    verifyStudentCode,
+    authLoading,
+    authError,
+    isOffline,
+    logout,
+    ejectionToastMessage
+  } = useAuthStore();
   const [code, setCode] = useState('');
 
-  // If student has successfully verified their 6-digit access code (or user is a teacher), grant access to children workspace!
+  // If student has verified their 6-digit access code (or user is teacher), grant access!
   if (isVerifiedStudent) {
     return <>{children}</>;
   }
@@ -33,6 +42,14 @@ export function StudentGate({ children }) {
             Signed in as <span className="font-semibold text-slate-800">{user?.email}</span>
           </p>
         </div>
+
+        {/* Ejection Toast Notice (FLAW 2) */}
+        {ejectionToastMessage && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 animate-pulse">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <span className="font-medium">{ejectionToastMessage}</span>
+          </div>
+        )}
 
         {/* Offline Notice */}
         {isOffline && (

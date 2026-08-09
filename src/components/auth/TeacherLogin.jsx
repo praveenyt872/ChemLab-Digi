@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { ShieldCheck, KeyRound, HelpCircle, ArrowLeft, CheckCircle2, AlertCircle, WifiOff } from 'lucide-react';
+import { ShieldCheck, KeyRound, HelpCircle, ArrowLeft, CheckCircle2, AlertCircle, WifiOff, ArrowRight } from 'lucide-react';
 
 const PRESET_QUESTIONS = [
   'What was your first childhood pet name?',
@@ -11,11 +11,13 @@ const PRESET_QUESTIONS = [
 ];
 
 export function TeacherLogin() {
-  const [mode, setMode] = useState('login'); // 'login' | 'setup' | 'forgot-question' | 'forgot-answer'
+  // Steps: 'email' | 'login' | 'setup' | 'forgot-question' | 'forgot-answer'
+  const [step, setStep] = useState('email');
   
   // Form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [securityQuestion, setSecurityQuestion] = useState(PRESET_QUESTIONS[0]);
   const [customQuestion, setCustomQuestion] = useState('');
   const [securityAnswer, setSecurityAnswer] = useState('');
@@ -25,8 +27,10 @@ export function TeacherLogin() {
   const [resetAnswer, setResetAnswer] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [lockoutMsg, setLockoutMsg] = useState('');
 
   const {
+    checkTeacherStatus,
     teacherLogin,
     teacherSetup,
     fetchSecurityQuestion,
@@ -37,25 +41,47 @@ export function TeacherLogin() {
     isOffline
   } = useAuthStore();
 
-  const handleModeChange = (newMode) => {
-    setMode(newMode);
+  const handleStepChange = (newStep) => {
+    setStep(newStep);
     setSuccessMsg('');
+    setLockoutMsg('');
     clearAuthError();
   };
 
-  // 1. Submit Login
-  const handleLoginSubmit = async (e) => {
+  // STEP 1: Submit Email Check
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) return;
-    const res = await teacherLogin({ email, password });
-    if (res.success) {
-      setSuccessMsg('Logged in successfully!');
+    if (!email) return;
+
+    const res = await checkTeacherStatus(email);
+    if (!res) return;
+
+    if (res.exists === false) {
+      // Error message is set in store: "This email is not registered by your department. Contact admin."
+      return;
+    }
+
+    if (res.isLocked) {
+      const remMin = Math.ceil(res.lockRemainingSeconds / 60);
+      setLockoutMsg(`Account locked due to too many failed attempts. Try again in ${remMin} minute(s).`);
+      return;
+    }
+
+    if (res.needsSetup) {
+      handleStepChange('setup');
+    } else {
+      handleStepChange('login');
     }
   };
 
-  // 2. Submit First-Time Setup
+  // STEP 2A: Submit First-Time Setup
   const handleSetupSubmit = async (e) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      useAuthStore.setState({ authError: 'Passwords do not match.' });
+      return;
+    }
+
     const finalQuestion = securityQuestion === 'custom' ? customQuestion : securityQuestion;
     if (!email || !password || !finalQuestion || !securityAnswer) return;
 
@@ -68,11 +94,23 @@ export function TeacherLogin() {
 
     if (res.success) {
       setSuccessMsg(res.message);
-      setTimeout(() => handleModeChange('login'), 2000);
+      setTimeout(() => handleStepChange('login'), 2000);
+    } else if (res.needsSetup === false) {
+      setTimeout(() => handleStepChange('login'), 2000);
     }
   };
 
-  // 3. Submit Forgot Password Email Check
+  // STEP 2B: Submit Login
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    const res = await teacherLogin({ email, password });
+    if (res.success) {
+      setSuccessMsg('Logged in successfully!');
+    }
+  };
+
+  // FORGOT 1: Submit Email Check for Security Question
   const handleForgotQuestionSubmit = async (e) => {
     e.preventDefault();
     if (!email) return;
@@ -80,11 +118,11 @@ export function TeacherLogin() {
     const res = await fetchSecurityQuestion(email);
     if (res.success && res.question) {
       setRecoveredQuestion(res.question);
-      handleModeChange('forgot-answer');
+      handleStepChange('forgot-answer');
     }
   };
 
-  // 4. Submit Reset Password
+  // FORGOT 2: Submit Reset Password
   const handleResetSubmit = async (e) => {
     e.preventDefault();
     if (!email || !resetAnswer || !newPassword) return;
@@ -97,7 +135,7 @@ export function TeacherLogin() {
 
     if (res.success) {
       setSuccessMsg(res.message);
-      setTimeout(() => handleModeChange('login'), 2500);
+      setTimeout(() => handleStepChange('login'), 2500);
     }
   };
 
@@ -110,16 +148,18 @@ export function TeacherLogin() {
           <ShieldCheck className="w-6 h-6" />
         </div>
         <h3 className="text-xl font-bold text-slate-900">
-          {mode === 'login' && 'Faculty Portal Login'}
-          {mode === 'setup' && 'First-Time Account Setup'}
-          {mode === 'forgot-question' && 'Password Recovery'}
-          {mode === 'forgot-answer' && 'Reset Your Password'}
+          {step === 'email' && 'Faculty Access Check'}
+          {step === 'login' && 'Faculty Portal Sign In'}
+          {step === 'setup' && 'First-Time Account Setup'}
+          {step === 'forgot-question' && 'Password Recovery'}
+          {step === 'forgot-answer' && 'Reset Your Password'}
         </h3>
         <p className="text-sm text-slate-500">
-          {mode === 'login' && 'Log in with your whitelisted faculty credentials'}
-          {mode === 'setup' && 'Set up your password & security recovery question'}
-          {mode === 'forgot-question' && 'Enter your faculty email to fetch your security question'}
-          {mode === 'forgot-answer' && 'Answer your security question to set a new password'}
+          {step === 'email' && 'Enter your department-registered faculty email'}
+          {step === 'login' && 'Enter your password to access the faculty dashboard'}
+          {step === 'setup' && 'Set up your account password & security recovery question'}
+          {step === 'forgot-question' && 'Enter your faculty email to fetch your security question'}
+          {step === 'forgot-answer' && 'Answer your security question to set a new password'}
         </p>
       </div>
 
@@ -128,6 +168,14 @@ export function TeacherLogin() {
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-3">
           <WifiOff className="w-5 h-5 text-amber-600 shrink-0" />
           <span>You need an active internet connection to authenticate.</span>
+        </div>
+      )}
+
+      {/* Lockout Warning */}
+      {lockoutMsg && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+          <span>{lockoutMsg}</span>
         </div>
       )}
 
@@ -147,12 +195,12 @@ export function TeacherLogin() {
         </div>
       )}
 
-      {/* MODE 1: LOGIN */}
-      {mode === 'login' && (
-        <form onSubmit={handleLoginSubmit} className="space-y-4">
+      {/* STEP 1: EMAIL FIRST INPUT */}
+      {step === 'email' && (
+        <form onSubmit={handleEmailSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Faculty Email
+              Faculty Email Address
             </label>
             <input
               type="email"
@@ -160,67 +208,33 @@ export function TeacherLogin() {
               placeholder="e.g. praveenyt872@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
             />
           </div>
 
           <button
             type="submit"
-            disabled={authLoading || isOffline}
-            className="w-full py-3.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-semibold text-sm shadow-md shadow-violet-600/20 transition-all disabled:opacity-50 cursor-pointer"
+            disabled={authLoading || isOffline || !email}
+            className="w-full py-3.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-semibold text-sm shadow-md shadow-violet-600/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
-            {authLoading ? 'Signing in...' : 'Sign In as Faculty'}
+            {authLoading ? 'Verifying Email...' : 'Continue'}
+            <ArrowRight className="w-4 h-4" />
           </button>
-
-          <div className="flex items-center justify-between text-xs pt-2">
-            <button
-              type="button"
-              onClick={() => handleModeChange('setup')}
-              className="text-violet-600 hover:underline font-semibold cursor-pointer"
-            >
-              First-time setup? Set password
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleModeChange('forgot-question')}
-              className="text-slate-500 hover:text-slate-800 cursor-pointer"
-            >
-              Forgot password?
-            </button>
-          </div>
         </form>
       )}
 
-      {/* MODE 2: FIRST-TIME SETUP */}
-      {mode === 'setup' && (
+      {/* STEP 2A: FIRST-TIME ACCOUNT SETUP */}
+      {step === 'setup' && (
         <form onSubmit={handleSetupSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Whitelisted Faculty Email
-            </label>
-            <input
-              type="email"
-              required
-              placeholder="e.g. praveenyt872@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
-            />
+          <div className="p-3 rounded-xl bg-violet-50 border border-violet-100 text-xs text-violet-900 flex items-center justify-between">
+            <span className="font-semibold truncate">{email}</span>
+            <button
+              type="button"
+              onClick={() => handleStepChange('email')}
+              className="text-violet-700 hover:underline text-[11px] font-semibold shrink-0 cursor-pointer"
+            >
+              Change
+            </button>
           </div>
 
           <div>
@@ -234,6 +248,15 @@ export function TeacherLogin() {
               placeholder="At least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all mb-2"
+            />
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
             />
           </div>
@@ -277,9 +300,6 @@ export function TeacherLogin() {
               onChange={(e) => setSecurityAnswer(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              For extra safety, choose an answer only you'd know, not something guessable from your public profile.
-            </p>
           </div>
 
           <button
@@ -289,23 +309,63 @@ export function TeacherLogin() {
           >
             {authLoading ? 'Completing Setup...' : 'Complete Account Setup'}
           </button>
-
-          <button
-            type="button"
-            onClick={() => handleModeChange('login')}
-            className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 cursor-pointer py-1"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
-          </button>
         </form>
       )}
 
-      {/* MODE 3: FORGOT PASSWORD - STEP 1 EMAIL */}
-      {mode === 'forgot-question' && (
+      {/* STEP 2B: LOGIN FORM */}
+      {step === 'login' && (
+        <form onSubmit={handleLoginSubmit} className="space-y-4">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-center justify-between">
+            <span className="font-semibold text-slate-900 truncate">{email}</span>
+            <button
+              type="button"
+              onClick={() => handleStepChange('email')}
+              className="text-violet-600 hover:underline text-[11px] font-semibold shrink-0 cursor-pointer"
+            >
+              Change Email
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={authLoading || isOffline}
+            className="w-full py-3.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-[0.99] text-white font-semibold text-sm shadow-md shadow-violet-600/20 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {authLoading ? 'Signing in...' : 'Sign In as Faculty'}
+          </button>
+
+          <div className="text-right text-xs pt-1">
+            <button
+              type="button"
+              onClick={() => handleStepChange('forgot-question')}
+              className="text-slate-500 hover:text-slate-800 cursor-pointer"
+            >
+              Forgot password?
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* FORGOT PASSWORD - STEP 1 EMAIL */}
+      {step === 'forgot-question' && (
         <form onSubmit={handleForgotQuestionSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Your Whitelisted Faculty Email
+              Your Registered Faculty Email
             </label>
             <input
               type="email"
@@ -327,16 +387,16 @@ export function TeacherLogin() {
 
           <button
             type="button"
-            onClick={() => handleModeChange('login')}
+            onClick={() => handleStepChange('email')}
             className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 cursor-pointer py-1"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Email Check
           </button>
         </form>
       )}
 
-      {/* MODE 4: FORGOT PASSWORD - STEP 2 ANSWER & NEW PASSWORD */}
-      {mode === 'forgot-answer' && (
+      {/* FORGOT PASSWORD - STEP 2 ANSWER & NEW PASSWORD */}
+      {step === 'forgot-answer' && (
         <form onSubmit={handleResetSubmit} className="space-y-4">
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
             <span className="font-semibold text-slate-500 block uppercase tracking-wider text-[10px]">Security Question:</span>
@@ -382,7 +442,7 @@ export function TeacherLogin() {
 
           <button
             type="button"
-            onClick={() => handleModeChange('login')}
+            onClick={() => handleStepChange('login')}
             className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 cursor-pointer py-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In

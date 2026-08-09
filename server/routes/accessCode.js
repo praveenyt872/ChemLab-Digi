@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from '../db.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'chemlab_secret_jwt_key_2026';
 
 // Middleware to verify teacher authorization
 const requireTeacher = async (req, res, next) => {
@@ -21,12 +21,11 @@ const requireTeacher = async (req, res, next) => {
       return res.status(403).json({ success: false, error: 'Forbidden: Teacher access required.' });
     }
 
-    // Double check email is in whitelist
     const { data: teacher } = await supabaseAdmin
       .from('teacher_whitelist')
       .select('email')
       .eq('email', decoded.email.trim().toLowerCase())
-      .single();
+      .maybeSingle();
 
     if (!teacher) {
       return res.status(403).json({ success: false, error: 'Teacher email is not whitelisted.' });
@@ -42,33 +41,52 @@ const requireTeacher = async (req, res, next) => {
 // 1. Generate 6-digit access code (Teacher-only)
 router.post('/generate-code', requireTeacher, async (req, res) => {
   try {
-    // Generate 6-digit random code
     const rawCode = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = await bcrypt.hash(rawCode, 10);
+    const nowIso = new Date().toISOString();
 
-    // Deactivate previous active codes
+    // Deactivate previous active codes in both active_code and access_code
+    await supabaseAdmin
+      .from('active_code')
+      .update({ is_active: false, ended_at: nowIso })
+      .eq('is_active', true);
+
     await supabaseAdmin
       .from('access_code')
-      .update({ active: false })
+      .update({ active: false, is_active: false, ended_at: nowIso })
       .eq('active', true);
 
-    // Insert new active access code
+    // Insert new active access code in active_code
     const { data: newCode, error: insertErr } = await supabaseAdmin
-      .from('access_code')
+      .from('active_code')
       .insert({
+        code: rawCode,
         code_hash: codeHash,
-        generated_by: req.teacherEmail,
-        active: true
+        created_by: req.teacherEmail,
+        is_active: true
       })
       .select('id, created_at')
       .single();
+
+    // Sync to access_code table for backward compatibility
+    try {
+      await supabaseAdmin
+        .from('access_code')
+        .insert({
+          id: newCode.id,
+          code: rawCode,
+          code_hash: codeHash,
+          generated_by: req.teacherEmail,
+          active: true,
+          is_active: true
+        });
+    } catch (e) {}
 
     if (insertErr) {
       console.error('Error inserting access code:', insertErr);
       return res.status(500).json({ success: false, error: 'Failed to generate access code.' });
     }
 
-    // Return plaintext code to frontend for display on teacher dashboard
     return res.json({
       success: true,
       code: rawCode,
@@ -85,15 +103,26 @@ router.post('/generate-code', requireTeacher, async (req, res) => {
 // 2. End active code (Teacher-only)
 router.post('/end-code', requireTeacher, async (req, res) => {
   try {
-    const { error: updateErr } = await supabaseAdmin
+    const nowIso = new Date().toISOString();
+
+    // Set is_active = false and ended_at = now() on active_code and access_code
+    const { error: updateErr1 } = await supabaseAdmin
+      .from('active_code')
+      .update({ is_active: false, ended_at: nowIso })
+      .eq('is_active', true);
+
+    const { error: updateErr2 } = await supabaseAdmin
       .from('access_code')
-      .update({ active: false })
+      .update({ active: false, is_active: false, ended_at: nowIso })
       .eq('active', true);
 
-    if (updateErr) {
-      console.error('Error deactivating access code:', updateErr);
-      return res.status(500).json({ success: false, error: 'Failed to deactivate access code.' });
-    }
+    // Mark active student_sessions as is_active: false
+    try {
+      await supabaseAdmin
+        .from('student_sessions')
+        .update({ is_active: false })
+        .eq('is_active', true);
+    } catch (e) {}
 
     return res.json({
       success: true,
@@ -105,13 +134,13 @@ router.post('/end-code', requireTeacher, async (req, res) => {
   }
 });
 
-// 3. Get active access code status (Returns active status boolean and created_at without exposing plaintext/hash)
+// 3. Get active access code status
 router.get('/active-status', async (req, res) => {
   try {
     const { data: activeCode } = await supabaseAdmin
-      .from('access_code')
-      .select('id, created_at, generated_by')
-      .eq('active', true)
+      .from('active_code')
+      .select('id, created_at, created_by')
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
