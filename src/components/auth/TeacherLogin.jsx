@@ -41,36 +41,66 @@ export function TeacherLogin() {
     isOffline
   } = useAuthStore();
 
+  const [localError, setLocalError] = useState('');
+
   const handleStepChange = (newStep) => {
     setStep(newStep);
     setSuccessMsg('');
     setLockoutMsg('');
+    setLocalError('');
     clearAuthError();
   };
 
   // STEP 1: Submit Email Check
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    if (!email) return;
+    setLocalError('');
+    setSuccessMsg('');
+    setLockoutMsg('');
+    clearAuthError();
 
-    const res = await checkTeacherStatus(email);
-    if (!res) return;
-
-    if (res.exists === false) {
-      // Error message is set in store: "This email is not registered by your department. Contact admin."
+    const clean = (email || '').trim().toLowerCase();
+    if (!clean) {
+      setLocalError('Please enter a faculty email address.');
       return;
     }
 
-    if (res.isLocked) {
-      const remMin = Math.ceil(res.lockRemainingSeconds / 60);
-      setLockoutMsg(`Account locked due to too many failed attempts. Try again in ${remMin} minute(s).`);
-      return;
-    }
+    try {
+      console.log('[Faculty Access Check] Submitting email check for:', clean);
+      const res = await checkTeacherStatus(clean);
+      console.log('[Faculty Access Check] Response received:', res);
 
-    if (res.needsSetup) {
-      handleStepChange('setup');
-    } else {
-      handleStepChange('login');
+      if (!res) {
+        console.error('[Faculty Access Check] Null response from checkTeacherStatus');
+        setLocalError('Unable to verify email status. Please check your network connection and try again.');
+        return;
+      }
+
+      if (res.exists === false || res.error) {
+        const msg = res.error || 'This email is not registered by your department. Contact administrator.';
+        console.warn('[Faculty Access Check] Email check rejected:', msg);
+        setLocalError(msg);
+        return;
+      }
+
+      if (res.isLocked) {
+        const remMin = Math.ceil((res.lockRemainingSeconds || 900) / 60);
+        const msg = `Account locked due to too many failed attempts. Try again in ${remMin} minute(s).`;
+        console.warn('[Faculty Access Check] Account locked:', msg);
+        setLockoutMsg(msg);
+        return;
+      }
+
+      if (res.needsSetup) {
+        console.log('[Faculty Access Check] Email needs password setup -> advancing to setup form');
+        handleStepChange('setup');
+      } else {
+        console.log('[Faculty Access Check] Email password set -> advancing to login form');
+        handleStepChange('login');
+      }
+    } catch (err) {
+      console.error('[Faculty Access Check Error]', err);
+      setLocalError(err.message || 'An unexpected error occurred during email verification. Please try again.');
     }
   };
 
@@ -180,10 +210,10 @@ export function TeacherLogin() {
       )}
 
       {/* Error Alert */}
-      {authError && (
+      {(localError || authError) && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-          <span>{authError}</span>
+          <span className="font-medium">{localError || authError}</span>
         </div>
       )}
 

@@ -16,9 +16,9 @@ export function Navbar({ currentPage, onNavigate }) {
     setStudentGateOpen
   } = useExperimentStore();
 
-  const { user, role, logout } = useAuthStore();
+  const { user, role, isVerifiedStudent, logout } = useAuthStore();
 
-  const hasStudentDetails = studentDetails?.studentName && studentDetails?.registerNumber;
+  const hasStudentDetails = user && (role === 'teacher' || isVerifiedStudent) && studentDetails?.studentName && studentDetails?.registerNumber;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#1A1D23] text-white border-b border-slate-800 shadow-sm">
