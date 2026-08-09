@@ -20,11 +20,11 @@ export const SUBJECTS_CONFIG = {
   heat_transfer: {
     id: 'heat_transfer',
     name: 'Heat Transfer',
-    courseCode: 'CH23332',
+    courseCode: 'CH23521',
     courseTitle: 'Heat Transfer Lab',
     field: 'Chemical Engineering',
-    semester: 'VII',
-    section: 'B'
+    semester: 'V',
+    section: 'A'
   },
   mass_transfer: {
     id: 'mass_transfer',

@@ -9,8 +9,11 @@ export function LiveResultsPanel() {
   const config = activePartConfig || experimentConfig;
   const calcColumns = config?.calculated_columns || [];
   
+  const isFreeConvection = currentExperimentId === 'free_convection';
   const isProcessControl = currentExperimentId === 'exp1-first-order-system-response';
-  const primaryMetric = isProcessControl
+  const primaryMetric = isFreeConvection
+    ? 'Heat Transfer Coefficient (h)'
+    : isProcessControl
     ? activePartId === 'partA'
       ? 'Time Constant τ (63.2%)'
       : 'Amplitude Ratio (AR)'
@@ -18,7 +21,9 @@ export function LiveResultsPanel() {
     ? 'Observed Flow Rate (Q)'
     : 'Coefficient of Discharge (Cd)';
 
-  const resultUnit = isProcessControl
+  const resultUnit = isFreeConvection
+    ? 'W/m²°C'
+    : isProcessControl
     ? activePartId === 'partA'
       ? 'sec'
       : 'dim'
@@ -49,7 +54,7 @@ export function LiveResultsPanel() {
               ) : headlineResult.mean !== null ? (
                 currentExperimentId === 'rotameter_calibration'
                   ? formatScientific(headlineResult.mean, 4)
-                  : headlineResult.mean.toFixed(3)
+                  : headlineResult.mean.toFixed(2)
               ) : (
                 '—'
               )}

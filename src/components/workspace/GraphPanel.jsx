@@ -154,9 +154,7 @@ export function GraphPanel() {
       marker: { color: MATLAB_COLORS[0], size: 7, symbol: 'circle' }
     };
 
-    const traces = [actualTrace];
-
-    if (theoPoints && theoPoints.length >= 2) {
+    if (graphConfig.show_theoretical !== false && theoPoints && theoPoints.length >= 2) {
       const theoTrace = {
         x: theoPoints.map(d => d.x),
         y: theoPoints.map(d => d.y),
@@ -169,7 +167,7 @@ export function GraphPanel() {
     }
 
     return traces;
-  }, [calculatedRows, isStepGraph, isSinusoidalGraph, stepData, sinusoidalData, chartData, theoPoints]);
+  }, [calculatedRows, isStepGraph, isSinusoidalGraph, stepData, sinusoidalData, chartData, theoPoints, graphConfig.show_theoretical]);
 
   const exportChartPng = async () => {
     if (!containerRef.current) return;

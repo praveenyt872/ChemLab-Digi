@@ -49,11 +49,36 @@ export function ExperimentSelectPage({ onNavigate }) {
     }
   ];
 
+  const heatTransferExps = [
+    {
+      id: 'free_convection',
+      title: 'Free Convection',
+      aim: 'Estimation of overall heat transfer coefficient in a FREE CONVECTION setup',
+      schematic: 'Vertical Brass Cylinder + Heater + 7 Surface Temp Sensors + Duct Sensor',
+      formulaPreview: 'h = q / (As × (Ts - Ta))',
+      calcCount: '5 Formula Steps',
+      icon: <Zap className="w-6 h-6 text-violet-600" />
+    }
+  ];
+
   const isProcessControl = currentSubject === 'instrumentation-process-control';
-  const experiments = isProcessControl ? processControlExps : fluidMechanicsExps;
-  const subjectTitle = isProcessControl ? 'Process Control Lab' : 'Fluid Mechanics Lab';
+  const isHeatTransfer = currentSubject === 'heat_transfer';
+  const experiments = isProcessControl
+    ? processControlExps
+    : isHeatTransfer
+    ? heatTransferExps
+    : fluidMechanicsExps;
+
+  const subjectTitle = isProcessControl
+    ? 'Process Control Lab'
+    : isHeatTransfer
+    ? 'Heat Transfer Lab'
+    : 'Fluid Mechanics Lab';
+
   const subjectDesc = isProcessControl
     ? 'First-order thermal response dynamics, step input, sinusoidal lag, time constants, and phase shift.'
+    : isHeatTransfer
+    ? 'Natural convection, heat transfer coefficient h, surface temperature profiles, and thermal calculations.'
     : 'Select an experiment module to launch the interactive virtual workspace and calculation engine.';
 
   const handleLaunch = (expId) => {

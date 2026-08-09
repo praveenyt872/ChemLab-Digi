@@ -41,11 +41,11 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'heat_transfer',
       name: 'Heat Transfer',
-      icon: <Flame className="w-6 h-6 text-slate-400" />,
-      active: false,
-      experimentsCount: 0,
+      icon: <Flame className="w-6 h-6 text-violet-600" />,
+      active: true,
+      experimentsCount: 1,
       category: 'Thermal Operations',
-      desc: 'Double pipe heat exchanger, shell & tube exchanger, Stefan-Boltzmann radiation, and thermal conductivity.'
+      desc: 'Free convection over vertical cylinder, overall heat transfer coefficient h, and thermal calculations.'
     },
     {
       id: 'mass_transfer',

@@ -3,6 +3,7 @@ import rotameterConfig from '../data/experiments/rotameter.json';
 import venturiConfig from '../data/experiments/venturi.json';
 import orificeConfig from '../data/experiments/orifice.json';
 import processControlConfig from '../data/experiments/process_control_first_order.json';
+import freeConvectionConfig from '../data/experiments/free_convection.json';
 import { calculateTable, calculateSummary } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
@@ -12,7 +13,15 @@ const EXPERIMENT_CONFIGS = {
   rotameter_calibration: rotameterConfig,
   venturi_meter: venturiConfig,
   orifice_meter: orificeConfig,
-  'exp1-first-order-system-response': processControlConfig
+  'exp1-first-order-system-response': processControlConfig,
+  free_convection: freeConvectionConfig
+};
+
+const getPrimaryKey = (expId, activePartId = 'partA') => {
+  if (expId === 'free_convection') return 'h';
+  if (expId === 'rotameter_calibration') return 'Q';
+  if (expId === 'exp1-first-order-system-response') return activePartId === 'partA' ? 'T_dev_heat' : 'T_out';
+  return 'Cd';
 };
 
 export function getActivePartConfig(experimentConfig, activePartId = 'partA') {
@@ -118,7 +127,7 @@ export const useExperimentStore = create((set, get) => ({
     const initialRows = activeConfig.sample_data || [];
     const computedRows = calculateTable(initialRows, activeConfig.calculations, activeConfig.fixed_inputs);
     const flags = validateObservationData(activeConfig, initialRows, computedRows);
-    const primaryKey = expId === 'rotameter_calibration' ? 'Q' : expId === 'exp1-first-order-system-response' ? (defaultPartId === 'partA' ? 'T_dev_heat' : 'T_out') : 'Cd';
+    const primaryKey = getPrimaryKey(expId, defaultPartId);
     const summary = calculateSummary(computedRows, primaryKey);
 
     set({
@@ -183,7 +192,7 @@ export const useExperimentStore = create((set, get) => ({
       activePartConfig.fixed_inputs
     );
     const flags = validateObservationData(activePartConfig, updatedRows, computedRows);
-    const primaryKey = currentExperimentId === 'rotameter_calibration' ? 'Q' : currentExperimentId === 'exp1-first-order-system-response' ? (activePartId === 'partA' ? 'T_dev_heat' : 'T_out') : 'Cd';
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
     const summary = calculateSummary(computedRows, primaryKey);
 
     saveSessionToDb(currentExperimentId, {
@@ -215,7 +224,7 @@ export const useExperimentStore = create((set, get) => ({
       activePartConfig.fixed_inputs
     );
     const flags = validateObservationData(activePartConfig, updatedRows, computedRows);
-    const primaryKey = currentExperimentId === 'rotameter_calibration' ? 'Q' : currentExperimentId === 'exp1-first-order-system-response' ? (activePartId === 'partA' ? 'T_dev_heat' : 'T_out') : 'Cd';
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
 
     set({
       observationRows: updatedRows,
@@ -235,7 +244,7 @@ export const useExperimentStore = create((set, get) => ({
       activePartConfig.fixed_inputs
     );
     const flags = validateObservationData(activePartConfig, updatedRows, computedRows);
-    const primaryKey = currentExperimentId === 'rotameter_calibration' ? 'Q' : currentExperimentId === 'exp1-first-order-system-response' ? (activePartId === 'partA' ? 'T_dev_heat' : 'T_out') : 'Cd';
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
 
     set({
       observationRows: updatedRows,
@@ -256,7 +265,7 @@ export const useExperimentStore = create((set, get) => ({
 
     const computedRows = calculateTable(defaultRows, activePartConfig.calculations, activePartConfig.fixed_inputs);
     const flags = validateObservationData(activePartConfig, defaultRows, computedRows);
-    const primaryKey = currentExperimentId === 'rotameter_calibration' ? 'Q' : currentExperimentId === 'exp1-first-order-system-response' ? (activePartId === 'partA' ? 'T_dev_heat' : 'T_out') : 'Cd';
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
 
     set({
       observationRows: defaultRows,
@@ -273,7 +282,7 @@ export const useExperimentStore = create((set, get) => ({
     const sample = activePartConfig.sample_data || [];
     const computedRows = calculateTable(sample, activePartConfig.calculations, activePartConfig.fixed_inputs);
     const flags = validateObservationData(activePartConfig, sample, computedRows);
-    const primaryKey = currentExperimentId === 'rotameter_calibration' ? 'Q' : currentExperimentId === 'exp1-first-order-system-response' ? (activePartId === 'partA' ? 'T_dev_heat' : 'T_out') : 'Cd';
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
 
     set({
       observationRows: sample,

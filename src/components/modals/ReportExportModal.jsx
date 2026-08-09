@@ -413,6 +413,12 @@ export function ReportExportModal() {
                 </tbody>
               </table>
             </div>
+          ) : part.result_template || config.result_template ? (
+            <p className="text-xs font-semibold text-gray-900 font-sans">
+              {(part.result_template || config.result_template)
+                .replace('{mean_h}', headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : '—')
+                .replace('{mean}', headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—')}
+            </p>
           ) : (
             <p className="text-xs font-semibold text-gray-900 font-sans">
               The mean value is calculated to be {headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.
@@ -544,7 +550,9 @@ export function ReportExportModal() {
           <div className="pt-3 border-t border-gray-300 flex items-center justify-between text-[10px] font-mono text-gray-600">
             <span>
               {experimentConfig.subject === 'instrumentation-process-control'
-                ? 'Process Control Laboratory | CH19712'
+                ? 'Process Control Laboratory | CH23722'
+                : experimentConfig.subject === 'heat_transfer'
+                ? 'Heat Transfer Laboratory | CH23521'
                 : 'Chemical Engineering | CH23331'}
             </span>
             <span className="font-bold text-black">

@@ -142,6 +142,60 @@ export function validateObservationData(experimentConfig, observationRows = [], 
         });
       }
     }
+
+    // 4. Free Convection Validation Rules
+    if (expId === 'free_convection') {
+      if (row.V !== undefined && row.V !== '' && parseFloat(row.V) > 90) {
+        flags.push({
+          id: `voltage_exceeds_90_row_${rowNum}`,
+          type: 'amber',
+          severity: 'warning',
+          title: `Voltmeter Warning in Trial ${rowNum}`,
+          description: `Voltmeter reading (${row.V} V) exceeds 90V precaution limit per manual instructions.`,
+          why: 'The lab manual specifies keeping dimmerstat output voltage ≤ 90V to prevent overheating the heater element.',
+          suggestion: { rowIdx: idx, field: 'V', val: 85 },
+          rowIndex: rowNum,
+          field: 'V'
+        });
+      }
+
+      const tsVal = calcRow.Ts !== undefined ? calcRow.Ts : (
+        row.T1 && row.T2 && row.T3 && row.T4 && row.T5 && row.T6 && row.T7 ?
+        (parseFloat(row.T1)+parseFloat(row.T2)+parseFloat(row.T3)+parseFloat(row.T4)+parseFloat(row.T5)+parseFloat(row.T6)+parseFloat(row.T7))/7 : null
+      );
+      const taVal = calcRow.Ta !== undefined ? calcRow.Ta : (row.T8 ? parseFloat(row.T8) : null);
+
+      if (tsVal !== null && taVal !== null && tsVal <= taVal) {
+        flags.push({
+          id: `ts_le_ta_row_${rowNum}`,
+          type: 'red',
+          severity: 'error',
+          title: `Invalid Temperature Gradient in Trial ${rowNum}`,
+          description: `Surface temperature (${tsVal.toFixed(1)}°C) must be greater than ambient temperature (${taVal.toFixed(1)}°C).`,
+          why: 'Natural convection heat transfer from a heated cylinder requires a positive temperature difference (Ts > Ta) for upward buoyant airflow.',
+          suggestion: null,
+          rowIndex: rowNum,
+          field: 'T1'
+        });
+      }
+
+      if (calcRow.h !== undefined && calcRow.h !== null) {
+        const hVal = calcRow.h;
+        if (hVal < 3.0 || hVal > 35.0) {
+          flags.push({
+            id: `h_out_of_range_row_${rowNum}`,
+            type: 'amber',
+            severity: 'warning',
+            title: `Unusual Heat Transfer Coefficient in Trial ${rowNum}`,
+            description: `Computed h (${hVal.toFixed(2)} W/m²°C) is outside typical free convection range (~4–25 W/m²°C).`,
+            why: 'Free convection coefficients for air over a vertical cylinder usually range between 4 and 25 W/m²°C. Values far outside this range suggest unit errors in diameter/length inputs or temperature sensor readings.',
+            suggestion: null,
+            rowIndex: rowNum,
+            field: null
+          });
+        }
+      }
+    }
   });
 
   // 5. First-Order System Process Control Validation Rules (Part A & Part B)
