@@ -40,7 +40,8 @@ export function calculateRow(row, calculations = {}, fixedInputs = []) {
     if (!expr) return;
 
     try {
-      const calculatedVal = evaluate(expr, scope);
+      const cleanExpr = expr.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
+      const calculatedVal = evaluate(cleanExpr, scope);
 
       if (typeof calculatedVal === 'number' && !isNaN(calculatedVal) && isFinite(calculatedVal)) {
         results[calcId] = calculatedVal;
@@ -107,7 +108,8 @@ export function evaluateStepCalculations(trialRow = {}, calculationSteps = [], f
 
     try {
       if (formula_expression) {
-        stepValue = evaluate(formula_expression, scope);
+        const cleanExpr = formula_expression.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
+        stepValue = evaluate(cleanExpr, scope);
         if (typeof stepValue === 'number' && !isNaN(stepValue) && isFinite(stepValue)) {
           scope[step_id] = stepValue;
         } else {

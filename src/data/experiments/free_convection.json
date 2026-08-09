@@ -42,7 +42,7 @@
     "As": "pi * D * L",
     "Ts": "(T1 + T2 + T3 + T4 + T5 + T6 + T7) / 7",
     "Ta": "T8",
-    "h": "(Ts > Ta && (Ts - Ta) > 0) ? (V * I) / (pi * D * L * (Ts - Ta)) : null"
+    "h": "(Ts > Ta) ? (V * I) / (pi * D * L * (Ts - Ta)) : null"
   },
   "calculated_columns": [
     { "id": "q", "label": "Heat Input (q)", "unit": "W", "format": "decimal" },
@@ -179,7 +179,7 @@
       "step_number": 5,
       "label": "Step 5: Heat Transfer Coefficient (h)",
       "formula_latex": "h = \\frac{q}{A_s \\times (T_s - T_a)}",
-      "formula_expression": "(Ts > Ta && (Ts - Ta) > 0) ? q / (As * (Ts - Ta)) : null",
+      "formula_expression": "(Ts > Ta) ? q / (As * (Ts - Ta)) : null",
       "substitution_template": "h = \\frac{{q}}{{As} \\times ({Ts} - {Ta})}",
       "depends_on": ["q", "As", "Ts", "Ta"],
       "unit": "W/m²°C",
