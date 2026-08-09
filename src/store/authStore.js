@@ -290,40 +290,60 @@ export const useAuthStore = create((set, get) => ({
 
     // Whitelist array check fallback
     const isWhitelisted = TEACHER_WHITELIST.includes(cleanEmail);
-    if (!isWhitelisted) {
-      const msg = 'This email is not registered by your department. Contact admin.';
-      set({ authError: msg, authLoading: false });
-      return { success: true, exists: false, error: msg };
-    }
 
     // Query Supabase table for password_hash
     try {
-      const { data: teacher } = await supabase
+      const { data: teacher, error: tableErr } = await supabase
         .from('teacher_whitelist')
-        .select('password_hash, locked_until')
+        .select('email, password_hash')
         .eq('email', cleanEmail)
         .maybeSingle();
 
-      set({ authLoading: false });
-      const now = new Date();
+      if (tableErr) {
+        console.error('teacher_whitelist table query error:', tableErr);
+      }
+
+      if (!isWhitelisted && !teacher) {
+        const msg = 'This email is not registered by your department. Contact admin.';
+        set({ authError: msg, authLoading: false });
+        return { success: true, exists: false, error: msg };
+      }
+
       let isLocked = false;
       let lockRemainingSeconds = 0;
 
-      if (teacher && teacher.locked_until && new Date(teacher.locked_until) > now) {
-        isLocked = true;
-        lockRemainingSeconds = Math.ceil((new Date(teacher.locked_until) - now) / 1000);
-      }
+      // Safely check locked_until if column exists
+      try {
+        const { data: lockData } = await supabase
+          .from('teacher_whitelist')
+          .select('locked_until')
+          .eq('email', cleanEmail)
+          .maybeSingle();
 
+        if (lockData && lockData.locked_until && new Date(lockData.locked_until) > new Date()) {
+          isLocked = true;
+          lockRemainingSeconds = Math.ceil((new Date(lockData.locked_until) - new Date()) / 1000);
+        }
+      } catch (lErr) {}
+
+      const hasPassword = !!(teacher && teacher.password_hash);
+
+      set({ authLoading: false });
       return {
         success: true,
         exists: true,
-        needsSetup: !teacher || !teacher.password_hash,
+        needsSetup: !hasPassword,
         isLocked,
         lockRemainingSeconds
       };
     } catch (e) {
+      console.error('checkTeacherStatus fallback error:', e);
       set({ authLoading: false });
-      return { success: true, exists: true, needsSetup: false };
+      return {
+        success: true,
+        exists: isWhitelisted,
+        needsSetup: true
+      };
     }
   },
 
@@ -434,49 +454,66 @@ export const useAuthStore = create((set, get) => ({
 
     // Direct Supabase login fallback
     try {
-      const { data: teacher } = await supabase
+      const { data: teacher, error: fetchErr } = await supabase
         .from('teacher_whitelist')
-        .select('*')
+        .select('email, password_hash')
         .eq('email', cleanEmail)
         .maybeSingle();
 
-      if (!teacher || !teacher.password_hash) {
+      if (fetchErr || !teacher || !teacher.password_hash) {
         const err = 'Invalid email or password.';
         set({ authError: err, authLoading: false });
         return { success: false, error: err };
       }
 
-      // Check lockout
-      const now = new Date();
-      if (teacher.locked_until && new Date(teacher.locked_until) > now) {
-        const remMin = Math.ceil((new Date(teacher.locked_until) - now) / 60000);
-        const err = `Account locked due to too many failed attempts. Try again in ${remMin} minute(s).`;
-        set({ authError: err, authLoading: false });
-        return { success: false, error: err };
-      }
+      // Safely check lockout
+      try {
+        const { data: lockData } = await supabase
+          .from('teacher_whitelist')
+          .select('locked_until')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (lockData && lockData.locked_until && new Date(lockData.locked_until) > new Date()) {
+          const remMin = Math.ceil((new Date(lockData.locked_until) - new Date()) / 60000);
+          const err = `Account locked due to too many failed attempts. Try again in ${remMin} minute(s).`;
+          set({ authError: err, authLoading: false });
+          return { success: false, error: err };
+        }
+      } catch (lErr) {}
 
       const isMatch = await bcrypt.compare(password, teacher.password_hash);
       if (!isMatch) {
-        const attempts = (teacher.failed_attempt_count || 0) + 1;
-        let updateData = { failed_attempt_count: attempts };
-        if (attempts >= 5) {
-          updateData.locked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-        }
-        await supabase
-          .from('teacher_whitelist')
-          .update(updateData)
-          .eq('email', cleanEmail);
+        try {
+          const { data: attData } = await supabase
+            .from('teacher_whitelist')
+            .select('failed_attempt_count')
+            .eq('email', cleanEmail)
+            .maybeSingle();
+
+          const attempts = ((attData && attData.failed_attempt_count) || 0) + 1;
+          let updateData = { failed_attempt_count: attempts };
+          if (attempts >= 5) {
+            updateData.locked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+          }
+          await supabase
+            .from('teacher_whitelist')
+            .update(updateData)
+            .eq('email', cleanEmail);
+        } catch (uErr) {}
 
         const err = 'Invalid email or password.';
         set({ authError: err, authLoading: false });
         return { success: false, error: err };
       }
 
-      // Reset attempts
-      await supabase
-        .from('teacher_whitelist')
-        .update({ failed_attempt_count: 0, locked_until: null })
-        .eq('email', cleanEmail);
+      // Reset attempts safely
+      try {
+        await supabase
+          .from('teacher_whitelist')
+          .update({ failed_attempt_count: 0, locked_until: null })
+          .eq('email', cleanEmail);
+      } catch (rErr) {}
 
       const teacherUser = { email: cleanEmail, role: 'teacher' };
       localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
