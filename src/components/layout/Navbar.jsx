@@ -1,24 +1,17 @@
 import React from 'react';
-import { FlaskConical, FileDown, HelpCircle, Sparkles, ChevronRight, UserCheck, Edit3, Search, Bell, ShieldCheck, LogOut } from 'lucide-react';
+import { FlaskConical, FileDown, HelpCircle, Sparkles, Edit3, Search } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
-import { useAuthStore } from '../../store/authStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 import { OfflineBadge } from '../pwa/OfflineBadge';
 import recLogo from '../../assets/rec-logo.png';
 
 export function Navbar({ currentPage, onNavigate }) {
   const {
-    experimentConfig,
     setReportModalOpen,
     setOnboardingOpen,
-    currentSubject,
     studentDetails,
     setStudentGateOpen
   } = useExperimentStore();
-
-  const { user, role, isVerifiedStudent, logout } = useAuthStore();
-
-  const hasStudentDetails = user && (role === 'teacher' || isVerifiedStudent) && studentDetails?.studentName && studentDetails?.registerNumber;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#1A1D23] text-white border-b border-slate-800 shadow-sm">
@@ -84,39 +77,9 @@ export function Navbar({ currentPage, onNavigate }) {
           />
         </div>
 
-        {/* Right: Actions & Student Profile Badge */}
+        {/* Right: Actions */}
         <div className="flex items-center gap-3 shrink-0">
-          {user && (
-            <div className="flex items-center gap-2">
-              <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border uppercase tracking-wider ${
-                role === 'teacher'
-                  ? 'bg-violet-500/20 text-violet-300 border-violet-500/40'
-                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-              }`}>
-                {role === 'teacher' ? 'Faculty' : 'Student'}
-              </span>
-
-              {role === 'teacher' && (
-                <button
-                  onClick={() => onNavigate('teacher-dashboard')}
-                  className="px-3 py-1.5 rounded-lg bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/40 text-violet-200 text-xs font-semibold transition-all cursor-pointer hidden sm:flex items-center gap-1.5"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
-                  Faculty Console
-                </button>
-              )}
-
-              <button
-                onClick={logout}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-300 hover:bg-slate-800 transition-all cursor-pointer"
-                title="Sign Out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {hasStudentDetails && (
+          {studentDetails?.studentName && (
             <button
               onClick={() => setStudentGateOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs font-mono text-slate-200 transition-all cursor-pointer group"
@@ -126,7 +89,6 @@ export function Navbar({ currentPage, onNavigate }) {
                 {studentDetails.studentName.charAt(0)}
               </div>
               <span className="font-semibold text-slate-200 hidden sm:inline">{studentDetails.studentName}</span>
-              <span className="text-[10px] text-slate-400 hidden md:inline">({studentDetails.registerNumber})</span>
               <Edit3 className="w-3 h-3 text-violet-400 group-hover:scale-110 transition-transform ml-0.5" />
             </button>
           )}

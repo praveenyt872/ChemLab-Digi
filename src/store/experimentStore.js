@@ -71,7 +71,7 @@ export const useExperimentStore = create((set, get) => ({
 
   // Student Identification State
   studentDetails: initialStudentDetails,
-  isStudentGateOpen: !initialStudentDetails.studentName || !initialStudentDetails.registerNumber,
+  isStudentGateOpen: false,
 
   // Table Data State
   observationRows: rotameterConfig.sample_data || [],
