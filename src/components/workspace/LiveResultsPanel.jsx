@@ -11,7 +11,13 @@ export function LiveResultsPanel() {
   
   const isFreeConvection = currentExperimentId === 'free_convection';
   const isProcessControl = currentExperimentId === 'exp1-first-order-system-response';
-  const primaryMetric = isFreeConvection
+  const headlineConfig = config?.headline_output || config?.headlineOutput;
+
+  const primaryMetric = headlineConfig?.label
+    ? headlineConfig.label === 'h'
+      ? 'Heat Transfer Coefficient (h)'
+      : headlineConfig.label
+    : isFreeConvection
     ? 'Heat Transfer Coefficient (h)'
     : isProcessControl
     ? activePartId === 'partA'
@@ -21,8 +27,10 @@ export function LiveResultsPanel() {
     ? 'Observed Flow Rate (Q)'
     : 'Coefficient of Discharge (Cd)';
 
-  const resultUnit = isFreeConvection
-    ? 'W/m²°C'
+  const resultUnit = headlineConfig?.unit
+    ? headlineConfig.unit
+    : isFreeConvection
+    ? 'W/m²·K'
     : isProcessControl
     ? activePartId === 'partA'
       ? 'sec'
@@ -116,7 +124,7 @@ export function LiveResultsPanel() {
                   </td>
                   {calcColumns.map(col => {
                     const val = row[col.id];
-                    const isPrimary = col.id === 'Cd' || col.id === 'Q';
+                    const isPrimary = col.id === (headlineConfig?.resultKey || 'Cd') || col.id === 'Q' || col.id === 'h';
 
                     return (
                       <td

@@ -12,6 +12,18 @@
     "Digital Ammeter",
     "Dimmerstat (heat input control)"
   ],
+  "show_graph": false,
+  "show_viva": false,
+  "headline_output": {
+    "label": "h",
+    "resultKey": "h",
+    "unit": "W/m²·K"
+  },
+  "headlineOutput": {
+    "label": "h",
+    "resultKey": "h",
+    "unit": "W/m²·K"
+  },
   "theory": "The fluid motion is produced due to change in density resulting from temperature gradients. The mechanism of heat transfer in these situations is called free or natural convection. Convection is the principal mode of heat transfer from pipes, transmission lines, refrigerating coils, hot radiators, and many other practical situations in everyday life.\n\nThe movement of fluid in free convection is due to the fact that fluid particles in the immediate vicinity of the hot object become warmer than surrounding fluid, resulting in a local reduction of density. The warmer fluid is replaced by colder fluid, creating convection currents. These currents originate when a body force (such as gravity) acts on a fluid in which density gradients exist. The force which induces these convection currents is called buoyancy force.",
   "procedure": [
     "Ensure dimmerstat is at zero position before switching on the power supply.",
@@ -48,7 +60,7 @@
     { "id": "q", "label": "Heat Input (q)", "unit": "W", "format": "decimal" },
     { "id": "Ts", "label": "Surface Temp (Ts)", "unit": "°C", "format": "decimal" },
     { "id": "Ta", "label": "Ambient Temp (Ta)", "unit": "°C", "format": "decimal" },
-    { "id": "h", "label": "Heat Transfer Coeff (h)", "unit": "W/m²°C", "format": "decimal" }
+    { "id": "h", "label": "Heat Transfer Coeff (h)", "unit": "W/m²·K", "format": "decimal" }
   ],
   "formulas": [
     {
@@ -105,14 +117,14 @@
       "id": "h",
       "label": "Heat Transfer Coefficient (h)",
       "latex": "h = \\frac{q}{A_s \\times (T_s - T_a)}",
-      "derivation": "Newton's Law of Cooling expresses convective heat transfer rate q as:\n\nq = h \\cdot A_s \\cdot (T_s - T_a) \\implies h = \\frac{q}{A_s (T_s - T_a)} \\text{ (W/m²°C)}",
+      "derivation": "Newton's Law of Cooling expresses convective heat transfer rate q as:\n\nq = h \\cdot A_s \\cdot (T_s - T_a) \\implies h = \\frac{q}{A_s (T_s - T_a)} \\text{ (W/m²·K)}",
       "purpose": "Determines the experimental free convection heat transfer coefficient.",
       "variables": [
         { "symbol": "q", "meaning": "Heat input", "unit": "W", "typical_range": "5 – 100 W" },
         { "symbol": "A_s", "meaning": "Surface area", "unit": "m²", "typical_range": "0.0503 m²" },
         { "symbol": "T_s", "meaning": "Avg surface temp", "unit": "°C", "typical_range": "40 – 120 °C" },
         { "symbol": "T_a", "meaning": "Ambient duct temp (T8)", "unit": "°C", "typical_range": "25 – 35 °C" },
-        { "symbol": "h", "meaning": "Convection Heat Transfer Coefficient", "unit": "W/m²°C", "typical_range": "4 – 25 W/m²°C" }
+        { "symbol": "h", "meaning": "Convection Heat Transfer Coefficient", "unit": "W/m²·K", "typical_range": "4 – 15 W/m²·K" }
       ],
       "assumptions": [
         "Pure natural convection in quiet duct environment",
@@ -182,7 +194,7 @@
       "formula_expression": "(Ts > Ta) ? q / (As * (Ts - Ta)) : null",
       "substitution_template": "h = \\frac{{q}}{{As} \\times ({Ts} - {Ta})}",
       "depends_on": ["q", "As", "Ts", "Ta"],
-      "unit": "W/m²°C",
+      "unit": "W/m²·K",
       "format": "decimal",
       "decimal_precision": 2
     }
@@ -195,50 +207,15 @@
     { "V": 85, "I": 0.57, "T1": 95, "T2": 103, "T3": 110, "T4": 115, "T5": 109, "T6": 101, "T7": 92, "T8": 28 },
     { "V": 90, "I": 0.60, "T1": 101, "T2": 110, "T3": 118, "T4": 123, "T5": 117, "T6": 108, "T7": 98, "T8": 28 }
   ],
-  "graph": {
-    "type": "scatter_with_trend",
-    "x": "q",
-    "y": "h",
-    "x_label": "Heat Input q (W)",
-    "y_label": "Heat Transfer Coefficient h (W/m²°C)",
-    "title": "Heat Transfer Coefficient vs Heat Input (h vs q)"
-  },
-  "graph_config": {
-    "show_theoretical": false,
-    "x_axis": { "label": "Heat Input q (W)", "variable_ref": "q" },
-    "y_axis": { "label": "Heat Transfer Coefficient h (W/m²°C)", "variable_ref": "h" },
-    "series": [
-      {
-        "id": "experimental",
-        "label": "Experimental Data",
-        "type": "scatter+line",
-        "style": "solid",
-        "color_index": 0,
-        "source": "trial_inputs_calculated"
-      }
-    ]
-  },
-  "viva_questions": [
-    {
-      "question": "1. Explain Newton's law of cooling.",
-      "answer": "Newton's law of cooling states that the rate of heat loss from a body is directly proportional to the difference in temperatures between the body and its surroundings: q = h · A · (Ts - Ta), where h is the convection heat transfer coefficient."
+  "reference_code": {
+    "python": {
+      "label": "Python (Churchill-Chu Correlation) Reference",
+      "code": "import math\n\ndef free_convection_h(Ts, T_inf, L, D=None):\n    \"\"\"\n    Estimate overall heat transfer coefficient for natural (free)\n    convection from a vertical cylinder/plate using the\n    Churchill-Chu correlation.\n\n    Ts    : surface temperature (deg C)\n    T_inf : ambient/bulk fluid temperature (deg C)\n    L     : characteristic length / height of cylinder (m)\n    D     : cylinder diameter (m), optional — used only to check\n             whether the cylinder can be treated as a vertical plate\n    \"\"\"\n\n    # --- Film temperature (K) ---\n    Tf_C = (Ts + T_inf) / 2\n    Tf_K = Tf_C + 273.15\n\n    # --- Air properties at film temperature (standard air tables) ---\n    # These should be pulled from an interpolated air-properties table\n    # (nu, k, Pr, beta) in the actual engine. Illustrative placeholders:\n    beta = 1 / Tf_K                  # ideal gas approximation, 1/K\n    nu   = 1.6e-5                    # kinematic viscosity, m^2/s (approx at ~300K)\n    k    = 0.026                     # thermal conductivity, W/m.K (approx at ~300K)\n    Pr   = 0.71                      # Prandtl number (approx for air)\n\n    g = 9.81  # m/s^2\n\n    # --- Grashof and Rayleigh numbers ---\n    Gr_L = (g * beta * abs(Ts - T_inf) * L**3) / (nu**2)\n    Ra_L = Gr_L * Pr\n\n    # --- Validity check: vertical cylinder behaves as vertical plate if\n    #     D/L >= 35 / Gr_L^(1/4) ---\n    if D is not None:\n        cylinder_criterion = 35 / (Gr_L**0.25)\n        treat_as_plate = (D / L) >= cylinder_criterion\n    else:\n        treat_as_plate = True  # assume plate behavior if D not supplied\n\n    # --- Churchill-Chu correlation (valid for all Ra_L, vertical plate) ---\n    numerator = 0.387 * Ra_L**(1/6)\n    denominator = (1 + (0.492 / Pr)**(9/16))**(8/27)\n    Nu_sqrt = 0.825 + numerator / denominator\n    Nu_L = Nu_sqrt**2\n\n    # --- Heat transfer coefficient ---\n    h = Nu_L * k / L   # W/m^2.K\n\n    return {\n        \"Tf_K\": Tf_K,\n        \"Gr_L\": Gr_L,\n        \"Ra_L\": Ra_L,\n        \"Nu_L\": Nu_L,\n        \"h\": h,\n        \"treated_as_plate\": treat_as_plate\n    }\n\n# Example usage\nresult = free_convection_h(Ts=80, T_inf=30, L=0.5, D=0.04)\nprint(f\"h = {result['h']:.3f} W/m^2.K\")"
     },
-    {
-      "question": "2. Give the relation between fluid velocity and heat transfer.",
-      "answer": "In convection, the heat transfer coefficient h increases with fluid velocity v according to empirical correlations of the form Nu = C · Re^m · Pr^n. Higher fluid velocity enhances thermal boundary layer mixing and increases heat transfer rate."
-    },
-    {
-      "question": "3. On which properties does convection heat transfer strongly depend?",
-      "answer": "Convection heat transfer depends strongly on fluid physical properties including density (ρ), dynamic viscosity (μ), thermal conductivity (k), specific heat capacity (Cp), and thermal expansion coefficient (β)."
-    },
-    {
-      "question": "4. Define convection heat transfer coefficient with dimensions.",
-      "answer": "The convection heat transfer coefficient h is defined as the rate of heat transfer per unit surface area per unit temperature difference between the surface and fluid. Its SI units are W/(m²·°C) or W/(m²·K), with dimensions [M L⁰ T⁻³ θ⁻¹]."
-    },
-    {
-      "question": "5. What are the differences between natural convection and forced convection?",
-      "answer": "In natural (free) convection, fluid motion is caused entirely by buoyancy forces resulting from density gradients near the heated surface. In forced convection, fluid motion is externally driven by a mechanical device such as a pump, fan, or blower."
+    "matlab": {
+      "label": "MATLAB Plot Script Reference",
+      "code": "% MATLAB Reference Script for Free Convection Heat Transfer\nTs = 80;    % Surface temperature (deg C)\nT_inf = 30; % Ambient temperature (deg C)\nL = 0.5;    % Height of cylinder (m)\n\nTf_K = ((Ts + T_inf)/2) + 273.15;\nbeta = 1 / Tf_K;\nnu = 1.6e-5;\nk = 0.026;\nPr = 0.71;\ng = 9.81;\n\nGr_L = (g * beta * abs(Ts - T_inf) * L^3) / (nu^2);\nRa_L = Gr_L * Pr;\n\nNu_L = (0.825 + (0.387 * Ra_L^(1/6)) / (1 + (0.492/Pr)^(9/16))^(8/27))^2;\nh = Nu_L * k / L;\n\nfprintf('h = %.3f W/m^2.K\\n', h);"
     }
-  ],
-  "result_template": "The heat transfer coefficient of a vertical cylinder in a natural convection setup was found to be {mean_h} W/m²°C."
+  },
+  "result_template": "The heat transfer coefficient of a vertical cylinder in a natural convection setup was found to be {mean_h} W/m²·K."
 }

@@ -181,14 +181,14 @@ export function validateObservationData(experimentConfig, observationRows = [], 
 
       if (calcRow.h !== undefined && calcRow.h !== null) {
         const hVal = calcRow.h;
-        if (hVal < 3.0 || hVal > 35.0) {
+        if (hVal < 3.5 || hVal > 16.0) {
           flags.push({
             id: `h_out_of_range_row_${rowNum}`,
             type: 'amber',
             severity: 'warning',
             title: `Unusual Heat Transfer Coefficient in Trial ${rowNum}`,
-            description: `Computed h (${hVal.toFixed(2)} W/m²°C) is outside typical free convection range (~4–25 W/m²°C).`,
-            why: 'Free convection coefficients for air over a vertical cylinder usually range between 4 and 25 W/m²°C. Values far outside this range suggest unit errors in diameter/length inputs or temperature sensor readings.',
+            description: `Computed h (${hVal.toFixed(2)} W/m²·K) is outside typical free convection range (4–15 W/m²·K).`,
+            why: 'Free convection coefficients for air over a vertical cylinder usually range between 4 and 15 W/m²·K. Values outside this range suggest checking temperature sensor readings or tube dimensions.',
             suggestion: null,
             rowIndex: rowNum,
             field: null

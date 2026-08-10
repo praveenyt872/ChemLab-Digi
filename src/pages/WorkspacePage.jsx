@@ -10,7 +10,8 @@ import {
   FileText,
   ChevronRight,
   Info,
-  HelpCircle
+  HelpCircle,
+  Code2
 } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
 import { formatScientific } from '../engine/formulaEngine';
@@ -21,6 +22,7 @@ import { LiveResultsPanel } from '../components/workspace/LiveResultsPanel';
 import { GraphPanel } from '../components/workspace/GraphPanel';
 import { FormulaCard } from '../components/workspace/FormulaCard';
 import { AIValidationPanel } from '../components/workspace/AIValidationPanel';
+import { CodeReferenceModal } from '../components/modals/CodeReferenceModal';
 import recLogo from '../assets/rec-logo.png';
 
 export function WorkspacePage({ onNavigate }) {
@@ -33,12 +35,37 @@ export function WorkspacePage({ onNavigate }) {
     currentSubject
   } = useExperimentStore();
   const [mobileTab, setMobileTab] = useState('data');
+  const [isCodeModalOpen, setCodeModalOpen] = useState(false);
 
   const config = activePartConfig || experimentConfig;
   if (!config) return null;
 
   const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
+  const isHeatTransfer = currentSubject === 'heat_transfer' || experimentConfig?.subject === 'heat_transfer';
+  const isFreeConvection = experimentConfig?.experiment_id === 'free_convection';
+
+  const subjectCategoryLabel = isProcessControl
+    ? 'Process Control Lab'
+    : isHeatTransfer
+    ? 'Heat Transfer Lab'
+    : 'Fluid Mechanics Lab';
+
   const hasParts = Array.isArray(experimentConfig?.parts) && experimentConfig.parts.length > 0;
+  const headlineConfig = config?.headline_output || config?.headlineOutput || experimentConfig?.headline_output || experimentConfig?.headlineOutput;
+  const headlineLabel = headlineConfig?.label || (isFreeConvection ? 'h' : 'Cd');
+
+  let headlineOutputText = '—';
+  if (headlineResult.mean !== null && headlineResult.mean !== undefined) {
+    if (experimentConfig.experiment_id === 'rotameter_calibration') {
+      headlineOutputText = `Q = ${formatScientific(headlineResult.mean, 4)} m³/s`;
+    } else if (experimentConfig.experiment_id === 'exp1-first-order-system-response') {
+      headlineOutputText = activePartId === 'partA' ? `τ = 10.0 s (63.2%)` : `AR = 0.375 | τ = 27 s`;
+    } else if (isFreeConvection || headlineLabel === 'h') {
+      headlineOutputText = `h = ${headlineResult.mean.toFixed(2)} W/m²·K`;
+    } else {
+      headlineOutputText = `Cd = ${headlineResult.mean.toFixed(3)}`;
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-slate-900">
@@ -48,7 +75,7 @@ export function WorkspacePage({ onNavigate }) {
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-violet-700">
             <span className="uppercase tracking-wider">
-              {isProcessControl ? 'Process Control Lab' : 'Fluid Mechanics Lab'}
+              {subjectCategoryLabel}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <div className="flex items-center gap-1.5">
@@ -68,15 +95,7 @@ export function WorkspacePage({ onNavigate }) {
           <div className="px-4 py-2 rounded-xl bg-violet-50 border border-violet-100 text-right font-mono">
             <span className="text-[10px] text-slate-500 block font-semibold uppercase">Headline Output</span>
             <span className="text-lg font-bold text-violet-700">
-              {headlineResult.mean !== null
-                ? experimentConfig.experiment_id === 'rotameter_calibration'
-                  ? formatScientific(headlineResult.mean, 4)
-                  : experimentConfig.experiment_id === 'exp1-first-order-system-response'
-                  ? activePartId === 'partA'
-                    ? `τ = 10.0 s (63.2%)`
-                    : `AR = 0.375 | τ = 27 s`
-                  : `Cd = ${headlineResult.mean.toFixed(3)}`
-                : '—'}
+              {headlineOutputText}
             </span>
           </div>
         </div>
@@ -119,14 +138,16 @@ export function WorkspacePage({ onNavigate }) {
         >
           Results
         </button>
-        <button
-          onClick={() => setMobileTab('graph')}
-          className={`flex-1 py-2 px-3 rounded-lg font-bold text-center transition-all ${
-            mobileTab === 'graph' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600'
-          }`}
-        >
-          Graph
-        </button>
+        {config.show_graph !== false && config.graph && (
+          <button
+            onClick={() => setMobileTab('graph')}
+            className={`flex-1 py-2 px-3 rounded-lg font-bold text-center transition-all ${
+              mobileTab === 'graph' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600'
+            }`}
+          >
+            Graph
+          </button>
+        )}
         <button
           onClick={() => setMobileTab('theory')}
           className={`flex-1 py-2 px-3 rounded-lg font-bold text-center transition-all ${
@@ -181,9 +202,20 @@ export function WorkspacePage({ onNavigate }) {
                   Theory & Formula Derivations
                 </h3>
               </div>
-              <span className="text-xs font-mono font-bold text-violet-700 px-2.5 py-1 rounded-full bg-violet-50 border border-violet-200">
-                {(config.formulas || []).length} Formulas
-              </span>
+              <div className="flex items-center gap-2">
+                {config.reference_code && (
+                  <button
+                    onClick={() => setCodeModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 text-xs font-mono font-bold transition-all cursor-pointer"
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span>View Code Reference</span>
+                  </button>
+                )}
+                <span className="text-xs font-mono font-bold text-violet-700 px-2.5 py-1 rounded-full bg-violet-50 border border-violet-200">
+                  {(config.formulas || []).length} Formulas
+                </span>
+              </div>
             </div>
 
             <p className="text-xs text-slate-600 font-sans leading-relaxed whitespace-pre-wrap">
@@ -207,13 +239,15 @@ export function WorkspacePage({ onNavigate }) {
             <SampleCalculationPanel />
           </GlassCard>
 
-          {/* Graph Panel */}
-          <GlassCard className="space-y-4">
-            <GraphPanel />
-          </GlassCard>
+          {/* Graph Panel (gated by config.show_graph !== false && config.graph) */}
+          {config.show_graph !== false && Boolean(config.graph) && (
+            <GlassCard className="space-y-4">
+              <GraphPanel />
+            </GlassCard>
+          )}
 
-          {/* Viva Voce Section for Process Control */}
-          {config.viva_questions && config.viva_questions.length > 0 && (
+          {/* Viva Voce Section (gated by config.show_viva !== false && config.viva_questions) */}
+          {config.show_viva !== false && Boolean(config.viva_questions) && config.viva_questions.length > 0 && (
             <GlassCard className="border-l-4 border-l-violet-600 space-y-4">
               <h3 className="font-heading text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-[#EDEEF1] pb-3">
                 <HelpCircle className="w-5 h-5 text-violet-600" />
@@ -267,6 +301,12 @@ export function WorkspacePage({ onNavigate }) {
                     </div>
                   </div>
                 )
+              ) : config.result_template ? (
+                <p className="text-sm font-semibold text-slate-900 font-sans">
+                  {config.result_template
+                    .replace('{mean_h}', headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : '—')
+                    .replace('{mean}', headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—')}
+                </p>
               ) : (
                 <p className="text-sm font-semibold text-slate-900 font-sans">
                   The mean coefficient of discharge for {experimentConfig.short_name} Cd is found to be {headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.
@@ -311,6 +351,16 @@ export function WorkspacePage({ onNavigate }) {
         </div>
 
       </div>
+
+      {/* Code Reference Modal */}
+      {config.reference_code && (
+        <CodeReferenceModal
+          isOpen={isCodeModalOpen}
+          onClose={() => setCodeModalOpen(false)}
+          referenceCode={config.reference_code}
+          experimentTitle={config.title}
+        />
+      )}
     </div>
   );
 }
