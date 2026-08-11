@@ -530,7 +530,7 @@ export function ReportExportModal() {
                 </tr>
                 <tr>
                   <td className="p-1.5 font-bold border-r border-black bg-gray-50">Semester</td>
-                  <td className="p-1.5 text-black">{GLOBAL_APP_CONFIG.semester}</td>
+                  <td className="p-1.5 text-black font-bold">Semester {studentDetails?.semester || subjectInfo.semester || GLOBAL_APP_CONFIG.semester}</td>
                 </tr>
                 <tr>
                   <td className="p-1.5 font-bold border-r border-black bg-gray-50">Student Name</td>
@@ -542,7 +542,7 @@ export function ReportExportModal() {
                 </tr>
                 <tr>
                   <td className="p-1.5 font-bold border-r border-black bg-gray-50">Section</td>
-                  <td className="p-1.5 text-black">{GLOBAL_APP_CONFIG.section}</td>
+                  <td className="p-1.5 text-black font-bold">Section {studentDetails?.section || subjectInfo.section || GLOBAL_APP_CONFIG.section}</td>
                 </tr>
               </tbody>
             </table>

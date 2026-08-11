@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserCheck, ShieldCheck, Lock, AlertCircle, CheckCircle2, X, ChevronDown, BookOpen } from 'lucide-react';
+import { UserCheck, Lock, AlertCircle, CheckCircle2, X, ChevronDown, BookOpen } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
 
@@ -18,23 +18,32 @@ export function StudentDetailsGateModal({ onProceed }) {
   const [name, setName] = useState(studentDetails?.studentName || '');
   const [regNo, setRegNo] = useState(studentDetails?.registerNumber || '');
   const [acadYear, setAcadYear] = useState(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
+  const activeSubjectInfo = SUBJECTS_CONFIG[selectedSubjectKey] || SUBJECTS_CONFIG.fluid_mechanics;
+  
+  const [semester, setSemester] = useState(studentDetails?.semester || activeSubjectInfo?.semester || 'VII');
+  const [section, setSection] = useState(studentDetails?.section || activeSubjectInfo?.section || 'B');
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     setName(studentDetails?.studentName || '');
     setRegNo(studentDetails?.registerNumber || '');
     setAcadYear(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
+    setSemester(studentDetails?.semester || activeSubjectInfo?.semester || 'VII');
+    setSection(studentDetails?.section || activeSubjectInfo?.section || 'B');
     setSelectedSubjectKey(currentSubject || 'fluid_mechanics');
   }, [studentDetails, isStudentGateOpen, currentSubject]);
 
   if (!isStudentGateOpen) return null;
 
-  const activeSubjectInfo = SUBJECTS_CONFIG[selectedSubjectKey] || SUBJECTS_CONFIG.fluid_mechanics;
-
   const handleSubjectChange = (e) => {
     const newSubKey = e.target.value;
     setSelectedSubjectKey(newSubKey);
     setSubject(newSubKey);
+    const subInfo = SUBJECTS_CONFIG[newSubKey];
+    if (subInfo) {
+      if (subInfo.semester) setSemester(subInfo.semester);
+      if (subInfo.section) setSection(subInfo.section);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -56,7 +65,9 @@ export function StudentDetailsGateModal({ onProceed }) {
     saveStudentDetails({
       studentName: name.trim(),
       registerNumber: regNo.trim(),
-      academicYear: acadYear.trim()
+      academicYear: acadYear.trim(),
+      semester,
+      section
     });
 
     if (onProceed) {
@@ -153,13 +164,48 @@ export function StudentDetailsGateModal({ onProceed }) {
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
                 </div>
 
-                {/* Semester & Section */}
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between sm:col-span-2">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Semester & Section</span>
-                    <span className="text-slate-800 font-bold">Semester {GLOBAL_APP_CONFIG.semester} — Section {GLOBAL_APP_CONFIG.section}</span>
+                {/* Semester Selection */}
+                <div className="space-y-1">
+                  <label className="text-xs font-mono text-slate-700 flex items-center justify-between font-semibold">
+                    <span>Semester <span className="text-violet-600">*</span></span>
+                    <span className="text-[10px] text-violet-600 font-semibold">Sem III – VIII</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={semester}
+                      onChange={(e) => setSemester(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono text-slate-900 font-bold focus:border-violet-500 appearance-none cursor-pointer pr-10 shadow-sm"
+                    >
+                      <option value="III">Semester III (3rd Sem)</option>
+                      <option value="IV">Semester IV (4th Sem)</option>
+                      <option value="V">Semester V (5th Sem)</option>
+                      <option value="VI">Semester VI (6th Sem)</option>
+                      <option value="VII">Semester VII (7th Sem)</option>
+                      <option value="VIII">Semester VIII (8th Sem)</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-violet-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                </div>
+
+                {/* Section Selection */}
+                <div className="space-y-1">
+                  <label className="text-xs font-mono text-slate-700 flex items-center justify-between font-semibold">
+                    <span>Section <span className="text-violet-600">*</span></span>
+                    <span className="text-[10px] text-slate-400">Class Section</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={section}
+                      onChange={(e) => setSection(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono text-slate-900 font-bold focus:border-violet-500 appearance-none cursor-pointer pr-10 shadow-sm"
+                    >
+                      <option value="A">Section A</option>
+                      <option value="B">Section B</option>
+                      <option value="C">Section C</option>
+                      <option value="D">Section D</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-violet-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
 
               </div>

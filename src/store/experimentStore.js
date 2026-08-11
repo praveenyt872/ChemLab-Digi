@@ -46,7 +46,11 @@ const loadInitialStudentDetails = () => {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.studentName && parsed.registerNumber) {
-        return parsed;
+        return {
+          semester: 'VII',
+          section: 'B',
+          ...parsed
+        };
       }
     }
   } catch (e) {
@@ -55,7 +59,9 @@ const loadInitialStudentDetails = () => {
   return {
     studentName: '',
     registerNumber: '',
-    academicYear: '2027-2028'
+    academicYear: '2027-2028',
+    semester: 'VII',
+    section: 'B'
   };
 };
 
