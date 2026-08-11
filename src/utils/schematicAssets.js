@@ -5,28 +5,20 @@ import orificeSchematic from '../assets/schematics/orifice-schematic.png';
 export function getSchematicDiagram(config, expId = '') {
   if (!config && !expId) return null;
 
-  const rawText = (
-    JSON.stringify(config || {}) +
-    ' ' +
-    String(expId || '') +
-    ' ' +
-    String(config?.experiment_id || '') +
-    ' ' +
-    String(config?.title || '') +
-    ' ' +
-    String(config?.short_name || '') +
-    ' ' +
-    String(config?.schematic_diagram || '')
-  ).toLowerCase();
+  const id = String(config?.experiment_id || config?.id || expId || '').toLowerCase();
+  const title = String(config?.title || config?.short_name || '').toLowerCase();
+  const path = String(config?.schematic_diagram || '').toLowerCase();
 
-  if (rawText.includes('rotameter')) {
+  if (id.includes('orifice') || title.includes('orifice') || path.includes('orifice')) {
+    return orificeSchematic;
+  }
+
+  if (id.includes('rotameter') || title.includes('rotameter') || path.includes('rotameter')) {
     return rotameterSchematic;
   }
-  if (rawText.includes('venturi')) {
+
+  if (id.includes('venturi') || title.includes('venturi') || path.includes('venturi')) {
     return venturiSchematic;
-  }
-  if (rawText.includes('orifice')) {
-    return orificeSchematic;
   }
 
   return null;
