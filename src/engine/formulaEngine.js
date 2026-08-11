@@ -270,3 +270,24 @@ export function formatValue(value, format = 'decimal') {
       return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
   }
 }
+
+/**
+ * Evaluates result templates replacing placeholders like {avg_Cd}, {CD_Avg}, {mean}, {mean_h} with computed values.
+ */
+export function formatResultString(template, headlineResult) {
+  if (!template || typeof template !== 'string') return '';
+  const meanVal = headlineResult?.mean;
+  const val3 = meanVal !== null && meanVal !== undefined && !isNaN(meanVal) ? Number(meanVal).toFixed(3) : '—';
+  const val2 = meanVal !== null && meanVal !== undefined && !isNaN(meanVal) ? Number(meanVal).toFixed(2) : '—';
+
+  return template
+    .replace(/\{avg_Cd\}/gi, val3)
+    .replace(/\{Cd_avg\}/gi, val3)
+    .replace(/\{CD_Avg\}/gi, val3)
+    .replace(/\{mean_Cd\}/gi, val3)
+    .replace(/\{mean_h\}/gi, val2)
+    .replace(/\{mean\}/gi, val3)
+    .replace(/\{Cd\}/gi, val3)
+    .replace(/\{h\}/gi, val2);
+}
+

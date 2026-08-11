@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, FileDown, Printer, Loader2, Download } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
-import { formatValue, calculateTable, evaluateStepCalculations } from '../../engine/formulaEngine';
+import { formatValue, calculateTable, evaluateStepCalculations, formatResultString } from '../../engine/formulaEngine';
 import { KaTeXRenderer } from '../common/KaTeXRenderer';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -447,9 +447,7 @@ export function ReportExportModal() {
             </div>
           ) : part.result_template || config.result_template ? (
             <p className="text-xs font-semibold text-gray-900 font-sans">
-              {(part.result_template || config.result_template)
-                .replace('{mean_h}', headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : '—')
-                .replace('{mean}', headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—')}
+              {formatResultString(part.result_template || config.result_template, headlineResult)}
             </p>
           ) : (
             <p className="text-xs font-semibold text-gray-900 font-sans">

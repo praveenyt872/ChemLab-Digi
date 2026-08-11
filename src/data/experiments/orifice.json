@@ -237,7 +237,7 @@
     { "h1": 7.0, "h2": 16.0, "t": 52.0 },
     { "h1": 8.0, "h2": 15.0, "t": 60.0 }
   ],
-  "result_template": "Coefficient of Discharge for orifice meter is found to be , Cd = {avg_Cd}",
+  "result_template": "The mean coefficient of discharge for Orifice meter (Cd) is found to be {avg_Cd}.",
   "precautions": [
     "The sharp edge of the orifice plate must face upstream.",
     "Purge all air bubbles from piezometer glass tubes and manometer lines before starting.",

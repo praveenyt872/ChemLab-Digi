@@ -14,7 +14,7 @@ import {
   Code2
 } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
-import { formatScientific } from '../engine/formulaEngine';
+import { formatScientific, formatResultString } from '../engine/formulaEngine';
 import { GlassCard } from '../components/common/GlassCard';
 import { ObservationTable } from '../components/workspace/ObservationTable';
 import { SampleCalculationPanel } from '../components/workspace/SampleCalculationPanel';
@@ -319,9 +319,7 @@ export function WorkspacePage({ onNavigate }) {
                 )
               ) : config.result_template ? (
                 <p className="text-sm font-semibold text-slate-900 font-sans">
-                  {config.result_template
-                    .replace('{mean_h}', headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : '—')
-                    .replace('{mean}', headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—')}
+                  {formatResultString(config.result_template, headlineResult)}
                 </p>
               ) : (
                 <p className="text-sm font-semibold text-slate-900 font-sans">
