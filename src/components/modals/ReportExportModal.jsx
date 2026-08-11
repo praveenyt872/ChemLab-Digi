@@ -316,68 +316,70 @@ export function ReportExportModal() {
         )}
 
         {/* GRAPH */}
-        <div className="space-y-1.5 printable-section">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">GRAPH:</h3>
-          <p className="text-xs text-gray-900 font-sans italic">
-            {isStep
-              ? 'Draw graph of T̄\'(t)/K vs time/τ and note time required to reach 63.2% of final value.'
-              : isSinusoidal
-              ? 'Draw graph comparing Input Bath and Output Thermowell temperature vs time.'
-              : `Draw graph between ${part.graph?.y_label} on Y-axis and ${part.graph?.x_label} on X-axis.`}
-          </p>
+        {part.show_graph !== false && config.show_graph !== false && (part.graph || isStep || isSinusoidal) && (
+          <div className="space-y-1.5 printable-section">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">GRAPH:</h3>
+            <p className="text-xs text-gray-900 font-sans italic">
+              {isStep
+                ? 'Draw graph of T̄\'(t)/K vs time/τ and note time required to reach 63.2% of final value.'
+                : isSinusoidal
+                ? 'Draw graph comparing Input Bath and Output Thermowell temperature vs time.'
+                : `Draw graph between ${part.graph?.y_label} on Y-axis and ${part.graph?.x_label} on X-axis.`}
+            </p>
 
-          <div className="h-[220px] w-full rounded border border-black bg-white p-2">
-            <ResponsiveContainer width="100%" height="100%">
-              {isStep ? (
-                <ComposedChart data={stepData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                  <XAxis dataKey="t_over_tau" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'time / τ', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
-                  <YAxis domain={[0, 1.1]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: "T̄'(t) / K", angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
-                  <ReferenceLine y={0.632} stroke="#10B981" strokeDasharray="3 3" />
-                  <Line type="monotone" dataKey="exp_norm" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
-                  <Line type="monotone" dataKey="theo_norm" stroke="#3B82F6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
-                </ComposedChart>
-              ) : isSinusoidal ? (
-                <ComposedChart data={sinusoidalData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                  <XAxis dataKey="t" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Time (s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
-                  <YAxis domain={[25, 55]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Temp (°C)', angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
-                  <Line type="monotone" dataKey="T_in" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3.5, fill: '#3B82F6' }} />
-                  <Line type="monotone" dataKey="T_out" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
-                </ComposedChart>
-              ) : (
-                <ComposedChart margin={{ top: 12, right: 20, bottom: 25, left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                  <XAxis
-                    dataKey="x"
-                    type="number"
-                    domain={['auto', 'auto']}
-                    tick={{ fill: '#0f172a', fontSize: 9 }}
-                    stroke="#000"
-                    tickFormatter={formatTickX}
-                    label={{ value: part.graph?.x_label, position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }}
-                  />
-                  <YAxis
-                    dataKey="y"
-                    type="number"
-                    domain={['auto', 'auto']}
-                    width={40}
-                    tick={{ fill: '#0f172a', fontSize: 9 }}
-                    stroke="#000"
-                    label={{ value: part.graph?.y_label, angle: -90, position: 'insideLeft', offset: 10, fill: '#000', fontSize: 9 }}
-                  />
-                  <Scatter name="Data" data={chartData} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />
-                  {lineData.length >= 2 && (
-                    <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} />
-                  )}
-                </ComposedChart>
-              )}
-            </ResponsiveContainer>
+            <div className="h-[220px] w-full rounded border border-black bg-white p-2">
+              <ResponsiveContainer width="100%" height="100%">
+                {isStep ? (
+                  <ComposedChart data={stepData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                    <XAxis dataKey="t_over_tau" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'time / τ', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
+                    <YAxis domain={[0, 1.1]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: "T̄'(t) / K", angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
+                    <ReferenceLine y={0.632} stroke="#10B981" strokeDasharray="3 3" />
+                    <Line type="monotone" dataKey="exp_norm" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
+                    <Line type="monotone" dataKey="theo_norm" stroke="#3B82F6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                  </ComposedChart>
+                ) : isSinusoidal ? (
+                  <ComposedChart data={sinusoidalData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                    <XAxis dataKey="t" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Time (s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
+                    <YAxis domain={[25, 55]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Temp (°C)', angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
+                    <Line type="monotone" dataKey="T_in" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3.5, fill: '#3B82F6' }} />
+                    <Line type="monotone" dataKey="T_out" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
+                  </ComposedChart>
+                ) : (
+                  <ComposedChart margin={{ top: 12, right: 20, bottom: 25, left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                    <XAxis
+                      dataKey="x"
+                      type="number"
+                      domain={['auto', 'auto']}
+                      tick={{ fill: '#0f172a', fontSize: 9 }}
+                      stroke="#000"
+                      tickFormatter={formatTickX}
+                      label={{ value: part.graph?.x_label, position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }}
+                    />
+                    <YAxis
+                      dataKey="y"
+                      type="number"
+                      domain={['auto', 'auto']}
+                      width={40}
+                      tick={{ fill: '#0f172a', fontSize: 9 }}
+                      stroke="#000"
+                      label={{ value: part.graph?.y_label, angle: -90, position: 'insideLeft', offset: 10, fill: '#000', fontSize: 9 }}
+                    />
+                    <Scatter name="Data" data={chartData} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />
+                    {lineData.length >= 2 && (
+                      <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} />
+                    )}
+                  </ComposedChart>
+                )}
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* VIVA QUESTIONS */}
-        {part.viva_questions && part.viva_questions.length > 0 && (
+        {part.show_viva !== false && config.show_viva !== false && part.viva_questions && part.viva_questions.length > 0 && (
           <div className="space-y-1.5 printable-section pt-1">
             <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">VIVA VOCE / REVIEW QUESTIONS:</h3>
             <div className="space-y-1 text-xs text-gray-900 font-sans">
