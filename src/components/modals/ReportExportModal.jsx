@@ -117,6 +117,20 @@ export function ReportExportModal() {
     const isStep = part.graph?.type === 'first_order_step';
     const isSinusoidal = part.graph?.type === 'first_order_sinusoidal';
 
+    const hasGraph = part?.show_graph !== false &&
+                     config?.show_graph !== false &&
+                     experimentConfig?.show_graph !== false &&
+                     experimentConfig?.experiment_id !== 'free_convection' &&
+                     Boolean(part?.graph) &&
+                     Boolean(part?.graph?.x_label || isStep || isSinusoidal);
+
+    const hasViva = part?.show_viva !== false &&
+                    config?.show_viva !== false &&
+                    experimentConfig?.show_viva !== false &&
+                    experimentConfig?.experiment_id !== 'free_convection' &&
+                    Array.isArray(part?.viva_questions) &&
+                    part.viva_questions.length > 0;
+
     const stepData = partRows.map((r) => {
       const t = parseFloat(r.t || 0);
       const normHeat = parseFloat(r.norm_heat || 0);
@@ -316,7 +330,7 @@ export function ReportExportModal() {
         )}
 
         {/* GRAPH */}
-        {part.show_graph !== false && config.show_graph !== false && (part.graph || isStep || isSinusoidal) && (
+        {hasGraph && (
           <div className="space-y-1.5 printable-section">
             <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">GRAPH:</h3>
             <p className="text-xs text-gray-900 font-sans italic">
@@ -379,7 +393,7 @@ export function ReportExportModal() {
         )}
 
         {/* VIVA QUESTIONS */}
-        {part.show_viva !== false && config.show_viva !== false && part.viva_questions && part.viva_questions.length > 0 && (
+        {hasViva && (
           <div className="space-y-1.5 printable-section pt-1">
             <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">VIVA VOCE / REVIEW QUESTIONS:</h3>
             <div className="space-y-1 text-xs text-gray-900 font-sans">
