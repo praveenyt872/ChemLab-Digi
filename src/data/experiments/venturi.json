@@ -3,6 +3,7 @@
   "subject": "fluid_mechanics",
   "title": "Determine Coefficient of Discharge for Venturi Meter",
   "short_name": "Venturi Meter",
+  "schematic_diagram": "/schematics/venturi-schematic.png",
   "aim": "To determine the coefficient of discharge of Venturi meter.",
   "apparatus": [
     "Venturi meter (d1 = 20 mm, d2 = 15 mm)",

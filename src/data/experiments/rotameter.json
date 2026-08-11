@@ -3,6 +3,7 @@
   "subject": "fluid_mechanics",
   "title": "Calibration of Rotameter",
   "short_name": "Rotameter Calibration",
+  "schematic_diagram": "/schematics/rotameter-schematic.png",
   "aim": "To generate the calibration curve for the given rotameter.",
   "apparatus": [
     "Rotameter setup with graduated glass tube",

@@ -23,6 +23,7 @@ import { GraphPanel } from '../components/workspace/GraphPanel';
 import { FormulaCard } from '../components/workspace/FormulaCard';
 import { AIValidationPanel } from '../components/workspace/AIValidationPanel';
 import { CodeReferenceModal } from '../components/modals/CodeReferenceModal';
+import { getSchematicDiagram } from '../utils/schematicAssets';
 import recLogo from '../assets/rec-logo.png';
 
 export function WorkspacePage({ onNavigate }) {
@@ -39,6 +40,8 @@ export function WorkspacePage({ onNavigate }) {
 
   const config = activePartConfig || experimentConfig;
   if (!config) return null;
+
+  const schematicUrl = getSchematicDiagram(config) || getSchematicDiagram(experimentConfig);
 
   const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
   const isHeatTransfer = currentSubject === 'heat_transfer' || experimentConfig?.subject === 'heat_transfer';
@@ -190,6 +193,19 @@ export function WorkspacePage({ onNavigate }) {
                   ))}
                 </ul>
               </div>
+
+              {schematicUrl && (
+                <div className="pt-3 border-t border-slate-200 space-y-2">
+                  <span className="text-violet-700 font-bold uppercase tracking-wider block font-mono">EXPERIMENTAL SETUP SCHEMATIC DIAGRAM</span>
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex justify-center items-center overflow-hidden">
+                    <img
+                      src={schematicUrl}
+                      alt={`${config.title || experimentConfig.title} Schematic Diagram`}
+                      className="max-h-80 w-auto object-contain rounded-lg shadow-sm bg-white p-2 border border-slate-200"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </GlassCard>
 

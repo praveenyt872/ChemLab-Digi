@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
+import { getSchematicDiagram } from '../../utils/schematicAssets';
 import recLogo from '../../assets/rec-logo.png';
 
 export function ReportExportModal() {
@@ -233,6 +234,21 @@ export function ReportExportModal() {
           <span className="font-bold text-xs uppercase tracking-wider text-black font-mono underline mr-2">APPARATUS:</span>
           <span className="text-xs text-gray-900 font-sans">{(part.apparatus || experimentConfig.apparatus || []).join(', ')}.</span>
         </div>
+
+        {/* SCHEMATIC DIAGRAM */}
+        {Boolean(getSchematicDiagram(part) || getSchematicDiagram(experimentConfig)) && (
+          <div className="printable-section space-y-1">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">EXPERIMENTAL SETUP SCHEMATIC DIAGRAM:</h3>
+            <div className="flex justify-center p-2 border border-gray-300 rounded bg-white my-1">
+              <img
+                src={getSchematicDiagram(part) || getSchematicDiagram(experimentConfig)}
+                alt="Experimental Setup Schematic Diagram"
+                className="max-h-[220px] max-w-full object-contain"
+                crossOrigin="anonymous"
+              />
+            </div>
+          </div>
+        )}
 
         {/* THEORY */}
         <div className="space-y-1.5 printable-section">

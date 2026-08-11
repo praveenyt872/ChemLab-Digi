@@ -3,6 +3,7 @@
   "subject": "fluid_mechanics",
   "title": "Determine Coefficient of Discharge for Orifice Meter",
   "short_name": "Orifice Meter",
+  "schematic_diagram": "/schematics/orifice-schematic.png",
   "aim": "To determine the coefficient of discharge of the given orifice meter and to calibrate.",
   "apparatus": [
     "A pipe fitted with an orifice meter (d1 = 20 mm, d2 = 15 mm)",
