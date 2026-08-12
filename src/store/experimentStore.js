@@ -43,6 +43,70 @@ export function getActivePartConfig(experimentConfig, activePartId = 'partA') {
   };
 }
 
+const defaultStdA = [
+  { V1: 10, initial: 0, final: 0.5, concordant: true },
+  { V1: 10, initial: 0, final: 0.5, concordant: true }
+];
+
+const defaultStdB = [
+  { V1: 2, initial: 0, final: 4, concordant: true },
+  { V1: 2, initial: 0, final: 4, concordant: true }
+];
+
+const computeNormatilities = (stdA = defaultStdA, stdB = defaultStdB, N1_oxalic = 0.1) => {
+  let sumN_NaOH = 0;
+  let countA = 0;
+  (stdA || []).forEach(r => {
+    const v1 = parseFloat(r.V1 ?? 10);
+    const init = parseFloat(r.initial ?? 0);
+    const fin = parseFloat(r.final ?? 0);
+    const v2 = Math.max(0, fin - init);
+    if (v2 > 0) {
+      sumN_NaOH += (v1 * N1_oxalic) / v2;
+      countA++;
+    }
+  });
+  const nNaOH = countA > 0 ? sumN_NaOH / countA : 2.0;
+
+  let sumN_HCl = 0;
+  let countB = 0;
+  (stdB || []).forEach(r => {
+    const v1 = parseFloat(r.V1 ?? 2);
+    const init = parseFloat(r.initial ?? 0);
+    const fin = parseFloat(r.final ?? 0);
+    const v2 = Math.max(0, fin - init);
+    if (v2 > 0) {
+      sumN_HCl += (v1 * nNaOH) / v2;
+      countB++;
+    }
+  });
+  const nHCl = countB > 0 ? sumN_HCl / countB : 1.0;
+
+  return { nNaOH, nHCl };
+};
+
+const getEffectiveFixedInputs = (activeConfig, stdA = defaultStdA, stdB = defaultStdB) => {
+  const baseFixed = activeConfig?.fixed_inputs ? [...activeConfig.fixed_inputs] : [];
+  if (activeConfig?.experiment_id !== 'rtd_cstr') return baseFixed;
+
+  const N1_oxalic = (baseFixed.find(f => f.id === 'N1_oxalic')?.value) ?? 0.1;
+  const { nNaOH, nHCl } = computeNormatilities(stdA, stdB, N1_oxalic);
+
+  const updated = baseFixed.filter(f => f.id !== 'N_HCl' && f.id !== 'N_NaOH' && f.id !== 'C0');
+  updated.push({ id: 'N_NaOH', value: nNaOH });
+  updated.push({ id: 'N_HCl', value: nHCl });
+  updated.push({ id: 'C0', value: nNaOH });
+
+  const stdARow = stdA?.[0] || { V1: 10, initial: 0, final: 0.5 };
+  const stdBRow = stdB?.[0] || { V1: 2, initial: 0, final: 4 };
+  updated.push({ id: 'V1_stdA', value: parseFloat(stdARow.V1 ?? 10) });
+  updated.push({ id: 'V2_stdA', value: Math.max(0.1, parseFloat(stdARow.final ?? 0.5) - parseFloat(stdARow.initial ?? 0)) });
+  updated.push({ id: 'V1_stdB', value: parseFloat(stdBRow.V1 ?? 2) });
+  updated.push({ id: 'V2_stdB', value: Math.max(0.1, parseFloat(stdBRow.final ?? 4) - parseFloat(stdBRow.initial ?? 0)) });
+
+  return updated;
+};
+
 const loadInitialStudentDetails = () => {
   try {
     const saved = localStorage.getItem('labflow_student_details');
@@ -82,6 +146,12 @@ export const useExperimentStore = create((set, get) => ({
   studentDetails: initialStudentDetails,
   isStudentGateOpen: false,
 
+  // Standardization Tables State (for RTD CSTR)
+  stdTableA: defaultStdA,
+  stdTableB: defaultStdB,
+  computedNNaOH: 2.0,
+  computedNHCl: 1.0,
+
   // Table Data State
   observationRows: rotameterConfig.sample_data || [],
   calculatedRows: calculateTable(
@@ -96,7 +166,7 @@ export const useExperimentStore = create((set, get) => ({
   ),
   headlineResult: calculateSummary(
     calculateTable(rotameterConfig.sample_data || [], rotameterConfig.calculations, rotameterConfig.fixed_inputs),
-    rotameterConfig.experiment_id === 'rotameter_calibration' ? 'Q' : 'Cd'
+    'Q'
   ),
 
   // Modals & UI State
@@ -122,19 +192,22 @@ export const useExperimentStore = create((set, get) => ({
 
   // --- ACTIONS ---
 
-  // Select Subject
   setSubject: (subjectId) => {
     set({ currentSubject: subjectId });
   },
 
-  // Select Active Experiment
   setExperiment: (expId) => {
     const rawConfig = EXPERIMENT_CONFIGS[expId] || rotameterConfig;
     const defaultPartId = rawConfig.parts ? rawConfig.parts[0].id : 'partA';
     const activeConfig = getActivePartConfig(rawConfig, defaultPartId);
 
+    const stdA = defaultStdA;
+    const stdB = defaultStdB;
+    const { nNaOH, nHCl } = computeNormatilities(stdA, stdB);
+    const effectiveFixed = getEffectiveFixedInputs(activeConfig, stdA, stdB);
+
     const initialRows = activeConfig.sample_data || [];
-    const computedRows = calculateTable(initialRows, activeConfig.calculations, activeConfig.fixed_inputs);
+    const computedRows = calculateTable(initialRows, activeConfig.calculations, effectiveFixed);
     const flags = validateObservationData(activeConfig, initialRows, computedRows);
     const primaryKey = getPrimaryKey(expId, defaultPartId);
     const summary = calculateSummary(computedRows, primaryKey);
@@ -144,6 +217,10 @@ export const useExperimentStore = create((set, get) => ({
       experimentConfig: rawConfig,
       activePartId: defaultPartId,
       activePartConfig: activeConfig,
+      stdTableA: stdA,
+      stdTableB: stdB,
+      computedNNaOH: nNaOH,
+      computedNHCl: nHCl,
       observationRows: initialRows,
       calculatedRows: computedRows,
       validationFlags: flags,
@@ -159,14 +236,14 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
-  // Switch Sub-Part (e.g., Part A vs Part B)
   setActivePart: (partId) => {
-    const { experimentConfig } = get();
+    const { experimentConfig, stdTableA, stdTableB } = get();
     if (!experimentConfig) return;
 
     const activeConfig = getActivePartConfig(experimentConfig, partId);
+    const effectiveFixed = getEffectiveFixedInputs(activeConfig, stdTableA, stdTableB);
     const initialRows = activeConfig.sample_data || [];
-    const computedRows = calculateTable(initialRows, activeConfig.calculations, activeConfig.fixed_inputs);
+    const computedRows = calculateTable(initialRows, activeConfig.calculations, effectiveFixed);
     const flags = validateObservationData(activeConfig, initialRows, computedRows);
     const primaryKey = partId === 'partA' ? 'T_dev_heat' : 'T_out';
     const summary = calculateSummary(computedRows, primaryKey);
@@ -181,9 +258,8 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
-  // Update Observation Cell Value
   updateCell: (rowIndex, fieldId, value) => {
-    const { observationRows, activePartConfig, currentExperimentId, activePartId } = get();
+    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB } = get();
     const updatedRows = [...observationRows];
     
     if (!updatedRows[rowIndex]) {
@@ -195,10 +271,11 @@ export const useExperimentStore = create((set, get) => ({
       [fieldId]: value
     };
 
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
     const computedRows = calculateTable(
       updatedRows,
       activePartConfig.calculations,
-      activePartConfig.fixed_inputs
+      effectiveFixed
     );
     const flags = validateObservationData(activePartConfig, updatedRows, computedRows);
     const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
@@ -218,19 +295,98 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
-  // Add New Row
+  // Standardization Table Actions
+  updateStdCellA: (idx, field, value) => {
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, activePartId } = get();
+    const updatedA = [...stdTableA];
+    updatedA[idx] = { ...updatedA[idx], [field]: value };
+
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, updatedA, stdTableB);
+    const computedRows = calculateTable(observationRows, activePartConfig.calculations, effectiveFixed);
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
+    const summary = calculateSummary(computedRows, primaryKey);
+    const { nNaOH, nHCl } = computeNormatilities(updatedA, stdTableB, effectiveFixed.find(f => f.id === 'N1_oxalic')?.value ?? 0.1);
+
+    set({
+      stdTableA: updatedA,
+      calculatedRows: computedRows,
+      headlineResult: summary,
+      computedNNaOH: nNaOH,
+      computedNHCl: nHCl
+    });
+  },
+
+  updateStdCellB: (idx, field, value) => {
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, activePartId } = get();
+    const updatedB = [...stdTableB];
+    updatedB[idx] = { ...updatedB[idx], [field]: value };
+
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, updatedB);
+    const computedRows = calculateTable(observationRows, activePartConfig.calculations, effectiveFixed);
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
+    const summary = calculateSummary(computedRows, primaryKey);
+    const { nNaOH, nHCl } = computeNormatilities(stdTableA, updatedB, effectiveFixed.find(f => f.id === 'N1_oxalic')?.value ?? 0.1);
+
+    set({
+      stdTableB: updatedB,
+      calculatedRows: computedRows,
+      headlineResult: summary,
+      computedNNaOH: nNaOH,
+      computedNHCl: nHCl
+    });
+  },
+
+  addStdRowA: () => {
+    const { stdTableA, stdTableB, activePartConfig, observationRows } = get();
+    const updatedA = [...stdTableA, { V1: 10, initial: 0, final: 0.5, concordant: true }];
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, updatedA, stdTableB);
+    const computedRows = calculateTable(observationRows, activePartConfig.calculations, effectiveFixed);
+    const { nNaOH, nHCl } = computeNormatilities(updatedA, stdTableB);
+    set({ stdTableA: updatedA, calculatedRows: computedRows, computedNNaOH: nNaOH, computedNHCl: nHCl });
+  },
+
+  addStdRowB: () => {
+    const { stdTableA, stdTableB, activePartConfig, observationRows } = get();
+    const updatedB = [...stdTableB, { V1: 2, initial: 0, final: 4, concordant: true }];
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, updatedB);
+    const computedRows = calculateTable(observationRows, activePartConfig.calculations, effectiveFixed);
+    const { nNaOH, nHCl } = computeNormatilities(stdTableA, updatedB);
+    set({ stdTableB: updatedB, calculatedRows: computedRows, computedNNaOH: nNaOH, computedNHCl: nHCl });
+  },
+
+  removeStdRowA: (idx) => {
+    const { stdTableA, stdTableB, activePartConfig, observationRows } = get();
+    if (stdTableA.length <= 1) return;
+    const updatedA = stdTableA.filter((_, i) => i !== idx);
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, updatedA, stdTableB);
+    const computedRows = calculateTable(observationRows, activePartConfig.calculations, effectiveFixed);
+    const { nNaOH, nHCl } = computeNormatilities(updatedA, stdTableB);
+    set({ stdTableA: updatedA, calculatedRows: computedRows, computedNNaOH: nNaOH, computedNHCl: nHCl });
+  },
+
+  removeStdRowB: (idx) => {
+    const { stdTableA, stdTableB, activePartConfig, observationRows } = get();
+    if (stdTableB.length <= 1) return;
+    const updatedB = stdTableB.filter((_, i) => i !== idx);
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, updatedB);
+    const computedRows = calculateTable(observationRows, activePartConfig.calculations, effectiveFixed);
+    const { nNaOH, nHCl } = computeNormatilities(stdTableA, updatedB);
+    set({ stdTableB: updatedB, calculatedRows: computedRows, computedNNaOH: nNaOH, computedNHCl: nHCl });
+  },
+
   addRow: () => {
-    const { observationRows, activePartConfig, currentExperimentId, activePartId } = get();
+    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB } = get();
     const newRow = {};
     (activePartConfig.trial_inputs || []).forEach(inp => {
       newRow[inp.id] = '';
     });
 
     const updatedRows = [...observationRows, newRow];
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
     const computedRows = calculateTable(
       updatedRows,
       activePartConfig.calculations,
-      activePartConfig.fixed_inputs
+      effectiveFixed
     );
     const flags = validateObservationData(activePartConfig, updatedRows, computedRows);
     const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
@@ -243,14 +399,14 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
-  // Remove Row
   removeRow: (rowIndex) => {
-    const { observationRows, activePartConfig, currentExperimentId, activePartId } = get();
+    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB } = get();
     const updatedRows = observationRows.filter((_, idx) => idx !== rowIndex);
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
     const computedRows = calculateTable(
       updatedRows,
       activePartConfig.calculations,
-      activePartConfig.fixed_inputs
+      effectiveFixed
     );
     const flags = validateObservationData(activePartConfig, updatedRows, computedRows);
     const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
@@ -263,16 +419,16 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
-  // Reset Table
   resetTable: () => {
-    const { activePartConfig, currentExperimentId, activePartId } = get();
+    const { activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB } = get();
     const defaultRows = Array(5).fill(0).map(() => {
       const emptyRow = {};
       (activePartConfig.trial_inputs || []).forEach(inp => { emptyRow[inp.id] = ''; });
       return emptyRow;
     });
 
-    const computedRows = calculateTable(defaultRows, activePartConfig.calculations, activePartConfig.fixed_inputs);
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
+    const computedRows = calculateTable(defaultRows, activePartConfig.calculations, effectiveFixed);
     const flags = validateObservationData(activePartConfig, defaultRows, computedRows);
     const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
 
@@ -285,11 +441,11 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
-  // Load Sample Lab Data
   loadSampleData: () => {
-    const { activePartConfig, currentExperimentId, activePartId } = get();
+    const { activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB } = get();
     const sample = activePartConfig.sample_data || [];
-    const computedRows = calculateTable(sample, activePartConfig.calculations, activePartConfig.fixed_inputs);
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
+    const computedRows = calculateTable(sample, activePartConfig.calculations, effectiveFixed);
     const flags = validateObservationData(activePartConfig, sample, computedRows);
     const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
 
@@ -301,14 +457,12 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
-  // Apply AI Suggested Correction
   applyValidationSuggestion: (suggestion) => {
     if (!suggestion || suggestion.rowIdx === undefined || !suggestion.field) return;
     const { updateCell } = get();
     updateCell(suggestion.rowIdx, suggestion.field, suggestion.val);
   },
 
-  // Send AI Assistant Message
   sendChatMessage: async (text) => {
     if (!text.trim()) return;
     const { chatMessages, activePartConfig, experimentConfig, activePartId, currentSubject, observationRows, calculatedRows, headlineResult } = get();
@@ -351,39 +505,17 @@ export const useExperimentStore = create((set, get) => ({
         isAiThinking: false
       }));
     } catch (err) {
-      console.error('AI chat error:', err);
-      const errorMsg = {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        text: "Having trouble reaching the AI assistant right now. Please try again in a moment.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      set((state) => ({
-        chatMessages: [...state.chatMessages, errorMsg],
-        isAiThinking: false
-      }));
+      set({ isAiThinking: false });
     }
   },
 
-  // Student Identification Actions
-  saveStudentDetails: (details) => {
-    try {
-      localStorage.setItem('labflow_student_details', JSON.stringify(details));
-    } catch (e) {
-      console.error('Error saving student details:', e);
-    }
-    set({
-      studentDetails: details,
-      isStudentGateOpen: false
-    });
-  },
   setStudentGateOpen: (isOpen) => set({ isStudentGateOpen: isOpen }),
+  updateStudentDetails: (details) => set({ studentDetails: details }),
 
-  // Modal Open/Close Controls
   setOnboardingOpen: (isOpen) => set({ isOnboardingOpen: isOpen }),
   setResetConfirmOpen: (isOpen) => set({ isResetConfirmOpen: isOpen }),
   setReportModalOpen: (isOpen) => set({ isReportModalOpen: isOpen }),
-  setDerivationModal: (formula) => set({ isDerivationModalOpen: !!formula, activeDerivationFormula: formula }),
-  setValidationModal: (flag) => set({ isValidationModalOpen: !!flag, activeValidationFlag: flag }),
+  setDerivationModalOpen: (isOpen, formula = null) => set({ isDerivationModalOpen: isOpen, activeDerivationFormula: formula }),
+  setValidationModalOpen: (isOpen, flag = null) => set({ isValidationModalOpen: isOpen, activeValidationFlag: flag }),
   setChatOpen: (isOpen) => set({ isChatOpen: isOpen })
 }));

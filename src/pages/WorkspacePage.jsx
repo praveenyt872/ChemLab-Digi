@@ -11,13 +11,15 @@ import {
   ChevronRight,
   Info,
   HelpCircle,
-  Code2
+  Code2,
+  ListOrdered
 } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
 import { formatScientific, formatResultString } from '../engine/formulaEngine';
 import { GlassCard } from '../components/common/GlassCard';
 import { ObservationTable } from '../components/workspace/ObservationTable';
 import { SampleCalculationPanel } from '../components/workspace/SampleCalculationPanel';
+import { StandardizationTables } from '../components/workspace/StandardizationTables';
 import { LiveResultsPanel } from '../components/workspace/LiveResultsPanel';
 import { GraphPanel } from '../components/workspace/GraphPanel';
 import { FormulaCard } from '../components/workspace/FormulaCard';
@@ -209,6 +211,26 @@ export function WorkspacePage({ onNavigate }) {
             </div>
           </GlassCard>
 
+          {/* Procedure Card */}
+          {config.procedure && config.procedure.length > 0 && (
+            <GlassCard className="space-y-4">
+              <div className="flex items-center gap-2 border-b border-[#EDEEF1] pb-3">
+                <ListOrdered className="w-5 h-5 text-violet-600" />
+                <h3 className="font-heading text-lg font-bold text-slate-900">
+                  Experimental Procedure
+                </h3>
+              </div>
+
+              <ol className="space-y-2 text-xs font-sans text-slate-700 list-decimal list-inside leading-relaxed">
+                {config.procedure.map((step, idx) => (
+                  <li key={idx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="font-semibold text-slate-900">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </GlassCard>
+          )}
+
           {/* Theory & Formulas Section */}
           <GlassCard className="space-y-4">
             <div className="flex items-center justify-between border-b border-[#EDEEF1] pb-3">
@@ -244,6 +266,11 @@ export function WorkspacePage({ onNavigate }) {
               ))}
             </div>
           </GlassCard>
+
+          {/* Standardization Tables (Table A & Table B for RTD in CSTR) */}
+          {config.experiment_id === 'rtd_cstr' && (
+            <StandardizationTables />
+          )}
 
           {/* Observation Table Input */}
           <GlassCard className="space-y-4">

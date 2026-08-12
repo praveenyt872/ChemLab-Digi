@@ -6,7 +6,7 @@ import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useExperimentStore } from '../../store/experimentStore';
 
 export function CodeReferenceModal({ isOpen, onClose, referenceCode, experimentTitle }) {
-  const { experimentConfig, activePartConfig, observationRows } = useExperimentStore();
+  const { experimentConfig, activePartConfig, observationRows, stdTableA, stdTableB } = useExperimentStore();
   const [activeTab, setActiveTab] = useState('python');
   const [copied, setCopied] = useState(false);
 
@@ -392,9 +392,21 @@ title('Orifice Meter Calibration (Cd vs Qth)');
 legend('Location', 'northeast');`;
 
   } else if (expId === 'rtd_cstr') {
-    const N_HCl = fixed.N_HCl ?? 1.0;
+    const N1_oxalic = fixed.N1_oxalic ?? 0.1;
     const Vol_sample = fixed.Vol_sample ?? 10.0;
     const dt = fixed.dt ?? 30.0;
+
+    const stdA = stdTableA || [
+      { V1: 10, initial: 0, final: 0.5 },
+      { V1: 10, initial: 0, final: 0.5 }
+    ];
+    const stdB = stdTableB || [
+      { V1: 2, initial: 0, final: 4 },
+      { V1: 2, initial: 0, final: 4 }
+    ];
+
+    const stdAPython = stdA.map(r => `    {"V1": ${parseFloat(r.V1 ?? 10)}, "initial": ${parseFloat(r.initial ?? 0)}, "final": ${parseFloat(r.final ?? 0.5)}}`).join(',\n');
+    const stdBPython = stdB.map(r => `    {"V1": ${parseFloat(r.V1 ?? 2)}, "initial": ${parseFloat(r.initial ?? 0)}, "final": ${parseFloat(r.final ?? 4)}}`).join(',\n');
 
     let validRows = (observationRows || []).filter(r => (
       r &&
@@ -409,9 +421,28 @@ legend('Location', 'northeast');`;
 
     pythonCode = `import math
 
-N_HCl = ${N_HCl}        # standardized HCl normality (N) — student-entered
-Vol_sample = ${Vol_sample}   # mL — student-entered
-dt = ${dt}            # sec — student-entered
+# --- 1) Table A: Standardization of NaOH against Oxalic Acid ---
+N1_oxalic = ${N1_oxalic}  # N
+std_A = [
+${stdAPython}
+]
+n_naoh_list = [(r["V1"] * N1_oxalic) / (r["final"] - r["initial"]) for r in std_A if (r["final"] - r["initial"]) > 0]
+N_NaOH = sum(n_naoh_list) / len(n_naoh_list) if n_naoh_list else 2.0
+C0 = N_NaOH  # Initial tracer concentration (mol/L)
+
+# --- 2) Table B: Standardization of HCl against Standardized NaOH ---
+std_B = [
+${stdBPython}
+]
+n_hcl_list = [(r["V1"] * N_NaOH) / (r["final"] - r["initial"]) for r in std_B if (r["final"] - r["initial"]) > 0]
+N_HCl = sum(n_hcl_list) / len(n_hcl_list) if n_hcl_list else 1.0
+
+print(f"Standardized N_NaOH = {N_NaOH:.2f} N (Tracer C0 = {C0:.2f} mol/L)")
+print(f"Standardized N_HCl  = {N_HCl:.2f} N")
+
+# --- 3) Main RTD Experiment Trial Loop ---
+Vol_sample = ${Vol_sample}   # mL
+dt = ${dt}            # sec
 
 trials = [
 ${pythonTrialDicts}
@@ -437,10 +468,32 @@ for tr in trials:
 print(f"Sum CDt = {sum_CDt:.3f}, Sum tCDt = {sum_tCDt:.1f}")
 print(f"Mean residence time = {t_bar:.2f} sec")`;
 
+    const v1A = stdA.map(r => parseFloat(r.V1 ?? 10)).join(' ');
+    const v2A = stdA.map(r => Math.max(0.1, parseFloat(r.final ?? 0.5) - parseFloat(r.initial ?? 0))).join(' ');
+
+    const v1B = stdB.map(r => parseFloat(r.V1 ?? 2)).join(' ');
+    const v2B = stdB.map(r => Math.max(0.1, parseFloat(r.final ?? 4) - parseFloat(r.initial ?? 0))).join(' ');
+
     const tList = validRows.map(r => parseFloat(r.t ?? 0)).join(' ');
     const v3List = validRows.map(r => parseFloat(r.V3 ?? 0)).join(' ');
 
-    matlabCode = `N_HCl = ${N_HCl}; Vol_sample = ${Vol_sample}; dt = ${dt};
+    matlabCode = `% --- 1) Table A: Standardization of NaOH ---
+N1_oxalic = ${N1_oxalic};
+V1_A = [${v1A}];
+V2_A = [${v2A}];
+N_NaOH = mean((V1_A .* N1_oxalic) ./ V2_A);
+C0 = N_NaOH;
+
+% --- 2) Table B: Standardization of HCl ---
+V1_B = [${v1B}];
+V2_B = [${v2B}];
+N_HCl = mean((V1_B .* N_NaOH) ./ V2_B);
+
+fprintf('Standardized N_NaOH = %.2f N (C0 = %.2f mol/L)\\n', N_NaOH, C0);
+fprintf('Standardized N_HCl  = %.2f N\\n', N_HCl);
+
+% --- 3) Main RTD Experiment Calculation ---
+Vol_sample = ${Vol_sample}; dt = ${dt};
 
 t  = [${tList}];
 V3 = [${v3List}];

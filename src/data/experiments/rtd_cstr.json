@@ -13,18 +13,25 @@
     "Stopwatch / digital timer",
     "Measuring flasks & titration burette"
   ],
-  "theory": "Non-ideality in reactors arises due to deviation from ideal flow patterns (plug flow and mixed flow), caused by channeling of fluid, recycling, or creation of stagnant regions. In CSTR, elements of fluid taking different routes through the reactor require different lengths of time to pass through the vessel.\n\nThe distribution of these times for the stream of liquid leaving the vessel is called the exit age distribution E or residence time distribution (RTD) of the fluid. With no tracer initially present anywhere, an idealized instantaneous pulse of tracer is imposed on the entering stream. The normalized response is then called the C curve or E curve.\n\nExit Age Distribution Function:\nE(t) = C(t) / ∫₀^∞ C(t) dt ≈ C(t) / Σ (C(t) Δt)\n\nMean Residence Time:\nt̄ = ∫₀^∞ t C(t) dt / ∫₀^∞ C(t) dt ≈ Σ (t C(t) Δt) / Σ (C(t) Δt)\n\nFor an ideal single CSTR:\nE_theoretical(t) = (1 / t̄) * exp(-t / t̄)",
   "procedure": [
-    "Prepare 1 L of 0.1 N HCl and 100 mL of 1 N NaOH solutions.",
-    "Standardize NaOH solutions using standard oxalic acid (0.1 N) and standardize HCl using known normality of NaOH.",
-    "Open feed valve V3-V4 and fill the feed tank with water.",
-    "Start the supply of water to the reactor at a particular flow rate (e.g. 5 LPH).",
+    "Prepare 1 litre of 0.1 N HCl and 100 mL of 1N NaOH solutions.",
+    "Standardize NaOH solution using standard oxalic acid of 0.1N, and standardize HCl solution using the known normality of NaOH.",
+    "Close all valves V1-V6.",
+    "Open valves V3-V4 and fill the feed tank with water.",
+    "Connect compressed air supply to the setup at valve V1.",
+    "Open valve V1 and set air pressure 0.5 to 1 kg/cm^2 using the pressure regulator and gauge.",
+    "Start the supply of water to the reactor at the particular flow rate (5 LPH) using valve V2.",
     "Allow the experiment to reach steady state.",
-    "At time t=0, inject the tracer pulse of 10 mL (1 N NaOH) at the injection point in the mixed flow reactor and start the stopwatch.",
-    "Collect 10 mL of mixture from the outlet and transfer into a conical flask at regular time intervals (Δt = 30 sec).",
-    "Titrate the collected reaction mixture against standard HCl solution using phenolphthalein indicator until pale pink color disappears.",
-    "Tabulate observations, calculate C, CΔt, tCΔt, E, and mean residence time t̄."
+    "Fill the concentrated NaOH (1N, 10 mL solution) in the syringe.",
+    "Place the syringe at the tracer inlet.",
+    "Switch on the stirrer and wait until water comes out from the outlet.",
+    "At time t=0, inject the tracer of 10 mL (1N NaOH) at the injection point in the mixed flow reactor and start the stopwatch.",
+    "Collect 10 mL of mixture from the outlet and transfer into a conical flask at regular time intervals (per the Δt fixed input) for about 20 min.",
+    "Titrate the collected reaction mixture against standard HCl solution using phenolphthalein as indicator.",
+    "The end point is disappearance of the pale pink colour.",
+    "Tabulate the observations and report the results."
   ],
+  "theory": "Non-ideality in reactors arises due to deviation from ideal flow patterns (plug flow and mixed flow), caused by channeling of fluid, recycling, or creation of stagnant regions. In CSTR, elements of fluid taking different routes through the reactor require different lengths of time to pass through the vessel.\n\nThe distribution of these times for the stream of liquid leaving the vessel is called the exit age distribution E or residence time distribution (RTD) of the fluid. With no tracer initially present anywhere, an idealized instantaneous pulse of tracer is imposed on the entering stream. The normalized response is then called the C curve or E curve.\n\nExit Age Distribution Function:\nE(t) = C(t) / ∫₀^∞ C(t) dt ≈ C(t) / Σ (C(t) Δt)\n\nMean Residence Time:\nt̄ = ∫₀^∞ t C(t) dt / ∫₀^∞ C(t) dt ≈ Σ (t C(t) Δt) / Σ (C(t) Δt)\n\nFor an ideal single CSTR:\nE_theoretical(t) = (1 / t̄) * exp(-t / t̄)",
   "headline_output": {
     "label": "Mean Residence Time t̄",
     "resultKey": "t_bar",
@@ -36,8 +43,7 @@
     "unit": "sec"
   },
   "fixed_inputs": [
-    { "id": "N_HCl", "label": "Normality of HCl (N_HCl)", "value": 1.0, "unit": "N", "description": "Standardized normality of HCl titrant" },
-    { "id": "C0", "label": "Tracer Concentration (C0)", "value": 2.0, "unit": "mol/L", "description": "Initial tracer concentration (display value)" },
+    { "id": "N1_oxalic", "label": "Normality of Oxalic Acid (N1_oxalic)", "value": 0.1, "unit": "N", "description": "Standardized normality of oxalic acid for Table A" },
     { "id": "Vol_sample", "label": "Sample Volume (Vol_sample)", "value": 10.0, "unit": "mL", "description": "Volume of sample titrated each time" },
     { "id": "dt", "label": "Sampling Interval (Δt)", "value": 30.0, "unit": "sec", "description": "Time interval between consecutive samples" }
   ],
@@ -56,6 +62,92 @@
     { "id": "CDt", "label": "C · Δt", "unit": "mol·s/L", "format": "decimal" },
     { "id": "E", "label": "Exit Age Dist. E(t)", "unit": "s⁻¹", "format": "scientific" },
     { "id": "tCDt", "label": "t · C · Δt", "unit": "mol·s²/L", "format": "decimal" }
+  ],
+  "calculation_steps": [
+    {
+      "step_id": "N_NaOH",
+      "step_number": 1,
+      "label": "Normality of NaOH (from standardization Table A)",
+      "formula_latex": "N_{\\text{NaOH}} = \\frac{V_1 \\times N_{1,\\text{oxalic}}}{V_2}",
+      "formula_expression": "(V1_stdA * N1_oxalic) / V2_stdA",
+      "substitution_template": "N_{\\text{NaOH}} = \\frac{{V1_stdA} \\times {N1_oxalic}}{{V2_stdA}} = \\frac{10 \\times 0.1}{0.5}",
+      "unit": "N",
+      "format": "decimal",
+      "decimal_precision": 2,
+      "feeds_into": "Step 2 and Initial Tracer Concentration (C0)"
+    },
+    {
+      "step_id": "N_HCl",
+      "step_number": 2,
+      "label": "Normality of HCl (from standardization Table B)",
+      "formula_latex": "N_{\\text{HCl}} = \\frac{V_1 \\times N_{1,\\text{NaOH}}}{V_2}",
+      "formula_expression": "(V1_stdB * N_NaOH) / V2_stdB",
+      "substitution_template": "N_{\\text{HCl}} = \\frac{{V1_stdB} \\times {N_NaOH}}{{V2_stdB}} = \\frac{2 \\times 2.0}{4}",
+      "unit": "N",
+      "format": "decimal",
+      "decimal_precision": 2,
+      "feeds_into": "Step 3 (Concentration C)"
+    },
+    {
+      "step_id": "C",
+      "step_number": 3,
+      "label": "Concentration of mixture (C) — Trial #1",
+      "formula_latex": "C = \\frac{V_3 \\times N_{\\text{HCl}}}{\\text{Vol}_{\\text{sample}}}",
+      "formula_expression": "(V3 * N_HCl) / Vol_sample",
+      "substitution_template": "C = \\frac{{V3} \\times {N_HCl}}{{Vol_sample}} = \\frac{0.4 \\times 1.0}{10}",
+      "unit": "mol/L",
+      "format": "decimal",
+      "decimal_precision": 4,
+      "feeds_into": "Step 4 (CΔt)"
+    },
+    {
+      "step_id": "CDt",
+      "step_number": 4,
+      "label": "C · Δt — Trial #1",
+      "formula_latex": "C\\Delta t = C \\times \\Delta t",
+      "formula_expression": "C * dt",
+      "substitution_template": "C\\Delta t = {C} \\times {dt} = 0.04 \\times 30",
+      "unit": "mol·s/L",
+      "format": "decimal",
+      "decimal_precision": 3,
+      "feeds_into": "Step 6 (Exit Age Distribution E) and ΣCΔt total"
+    },
+    {
+      "step_id": "tCDt",
+      "step_number": 5,
+      "label": "t · C · Δt — Trial #1",
+      "formula_latex": "tC\\Delta t = t \\times C\\Delta t",
+      "formula_expression": "t * CDt",
+      "substitution_template": "tC\\Delta t = {t} \\times {CDt} = 30 \\times 1.2",
+      "unit": "mol·s²/L",
+      "format": "decimal",
+      "decimal_precision": 1,
+      "feeds_into": "Step 7 (Mean Residence Time t̄)"
+    },
+    {
+      "step_id": "E",
+      "step_number": 6,
+      "label": "Exit Age Distribution E(t) — Trial #1",
+      "formula_latex": "E = \\frac{C}{\\sum (C\\Delta t)}",
+      "formula_expression": "C / sum_CDt",
+      "substitution_template": "E = \\frac{{C}}{{sum_CDt}} = \\frac{0.04}{10.8}",
+      "unit": "s⁻¹",
+      "format": "scientific",
+      "decimal_precision": 3,
+      "feeds_into": "E-Curve Graph"
+    },
+    {
+      "step_id": "t_bar",
+      "step_number": 7,
+      "label": "Mean Residence Time (t̄)",
+      "formula_latex": "\\bar{t} = \\frac{\\sum (tC\\Delta t)}{\\sum (C\\Delta t)}",
+      "formula_expression": "sum_tCDt / sum_CDt",
+      "substitution_template": "\\bar{t} = \\frac{{sum_tCDt}}{{sum_CDt}} = \\frac{1224}{10.8}",
+      "unit": "sec",
+      "format": "decimal",
+      "decimal_precision": 2,
+      "feeds_into": "Statutory Result & E-Curve Graph"
+    }
   ],
   "graph": {
     "type": "scatter_with_trend",
@@ -91,11 +183,11 @@
   "reference_code": {
     "python": {
       "label": "Python (NumPy / SciPy) Reference",
-      "code": "import math\n\nN_HCl = 1.0        # standardized HCl normality (N) — student-entered\nVol_sample = 10.0   # mL — student-entered\ndt = 30.0            # sec — student-entered\n\ntrials = [\n    {\"t\": 30,  \"V3\": 0.4},\n    {\"t\": 60,  \"V3\": 0.6},\n    {\"t\": 90,  \"V3\": 0.8},\n    {\"t\": 120, \"V3\": 0.6},\n    {\"t\": 150, \"V3\": 0.4},\n    {\"t\": 180, \"V3\": 0.4},\n    {\"t\": 210, \"V3\": 0.4},\n]\n\nfor tr in trials:\n    tr[\"C\"] = tr[\"V3\"] * N_HCl / Vol_sample\n    tr[\"CDt\"] = tr[\"C\"] * dt\n\nsum_CDt = sum(tr[\"CDt\"] for tr in trials)\n\nfor tr in trials:\n    tr[\"tCDt\"] = tr[\"t\"] * tr[\"CDt\"]\n    tr[\"E\"] = tr[\"C\"] / sum_CDt\n\nsum_tCDt = sum(tr[\"tCDt\"] for tr in trials)\nt_bar = sum_tCDt / sum_CDt\n\nfor tr in trials:\n    print(f\"t={tr['t']:>3} s  C={tr['C']:.4f}  CDt={tr['CDt']:.3f}  \" \n          f\"E={tr['E']*1000:.3f}e-3  tCDt={tr['tCDt']:.1f}\")\n\nprint(f\"Sum CDt = {sum_CDt:.3f}, Sum tCDt = {sum_tCDt:.1f}\")\nprint(f\"Mean residence time = {t_bar:.2f} sec\")"
+      "code": "# Dynamic Python reference script"
     },
     "matlab": {
       "label": "MATLAB Plot Script Reference",
-      "code": "N_HCl = 1.0; Vol_sample = 10.0; dt = 30.0;\n\nt  = [30 60 90 120 150 180 210];\nV3 = [0.4 0.6 0.8 0.6 0.4 0.4 0.4];\n\nC    = (V3 .* N_HCl) ./ Vol_sample;\nCDt  = C .* dt;\nsum_CDt = sum(CDt);\n\ntCDt = t .* CDt;\nE    = C ./ sum_CDt;\nsum_tCDt = sum(tCDt);\nt_bar = sum_tCDt / sum_CDt;\n\nfor i = 1:numel(t)\n    fprintf('t=%3d s  C=%.4f  CDt=%.3f  E=%.3fe-3  tCDt=%.1f\\n', ...\n        t(i), C(i), CDt(i), E(i)*1000, tCDt(i));\nend\nfprintf('Sum CDt = %.3f, Sum tCDt = %.1f\\n', sum_CDt, sum_tCDt);\nfprintf('Mean residence time = %.2f sec\\n', t_bar);"
+      "code": "% Dynamic MATLAB reference script"
     }
   },
   "validation_ranges": {
@@ -110,6 +202,14 @@
     { "t": 150, "V3": 0.4 },
     { "t": 180, "V3": 0.4 },
     { "t": 210, "V3": 0.4 }
+  ],
+  "sample_std_a": [
+    { "V1": 10, "initial": 0, "final": 0.5, "concordant": true },
+    { "V1": 10, "initial": 0, "final": 0.5, "concordant": true }
+  ],
+  "sample_std_b": [
+    { "V1": 2, "initial": 0, "final": 4, "concordant": true },
+    { "V1": 2, "initial": 0, "final": 4, "concordant": true }
   ],
   "result_template": "The mean residence time for impulse injection of tracer in the CSTR was found to be {mean} sec.",
   "precautions": [
