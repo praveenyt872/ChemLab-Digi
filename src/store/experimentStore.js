@@ -510,7 +510,22 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   setStudentGateOpen: (isOpen) => set({ isStudentGateOpen: isOpen }),
-  updateStudentDetails: (details) => set({ studentDetails: details }),
+  saveStudentDetails: (details) => {
+    try {
+      localStorage.setItem('labflow_student_details', JSON.stringify(details));
+    } catch (e) {
+      console.error('Failed to save student details:', e);
+    }
+    set({ studentDetails: details, isStudentGateOpen: false });
+  },
+  updateStudentDetails: (details) => {
+    try {
+      localStorage.setItem('labflow_student_details', JSON.stringify(details));
+    } catch (e) {
+      console.error('Failed to save student details:', e);
+    }
+    set({ studentDetails: details, isStudentGateOpen: false });
+  },
 
   setOnboardingOpen: (isOpen) => set({ isOnboardingOpen: isOpen }),
   setResetConfirmOpen: (isOpen) => set({ isResetConfirmOpen: isOpen }),

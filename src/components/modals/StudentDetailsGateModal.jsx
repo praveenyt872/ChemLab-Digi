@@ -62,13 +62,19 @@ export function StudentDetailsGateModal({ onProceed }) {
     }
 
     setErrorMsg('');
-    saveStudentDetails({
+    const details = {
       studentName: name.trim(),
       registerNumber: regNo.trim(),
       academicYear: acadYear.trim(),
       semester,
       section
-    });
+    };
+
+    if (typeof saveStudentDetails === 'function') {
+      saveStudentDetails(details);
+    }
+
+    setStudentGateOpen(false);
 
     if (onProceed) {
       onProceed();
