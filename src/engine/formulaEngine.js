@@ -153,10 +153,10 @@ export function evaluateStepCalculations(trialRow = {}, calculationSteps = [], f
       if (!templateStr) return '';
       return templateStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, varName) => {
         const val = scope[varName];
-        if (val === undefined || val === null) return `\\text{${varName.replace(/_/g, '\\_')}}`;
+        if (val === undefined || val === null) return match;
         if (typeof val === 'string') return val;
         if (typeof val === 'number') {
-          if (isNaN(val)) return `\\text{${varName.replace(/_/g, '\\_')}}`;
+          if (isNaN(val)) return match;
           if (Math.abs(val) < 0.001 && val !== 0) {
             return formatScientific(val, 3);
           }
