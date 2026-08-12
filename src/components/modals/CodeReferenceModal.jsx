@@ -390,6 +390,76 @@ xlabel('Theoretical Flow Rate Qth (m^3/s)');
 ylabel('Coefficient of Discharge (Cd)');
 title('Orifice Meter Calibration (Cd vs Qth)');
 legend('Location', 'northeast');`;
+
+  } else if (expId === 'rtd_cstr') {
+    const N_HCl = fixed.N_HCl ?? 1.0;
+    const Vol_sample = fixed.Vol_sample ?? 10.0;
+    const dt = fixed.dt ?? 30.0;
+
+    let validRows = (observationRows || []).filter(r => (
+      r &&
+      r.t !== undefined && r.t !== '' && !isNaN(parseFloat(r.t)) &&
+      r.V3 !== undefined && r.V3 !== '' && !isNaN(parseFloat(r.V3))
+    ));
+    if (validRows.length === 0) validRows = experimentConfig?.sample_data || [];
+
+    const pythonTrialDicts = validRows.map(r => {
+      return `    {"t": ${parseFloat(r.t ?? 0)}, "V3": ${parseFloat(r.V3 ?? 0)}}`;
+    }).join(',\n');
+
+    pythonCode = `import math
+
+N_HCl = ${N_HCl}        # standardized HCl normality (N) — student-entered
+Vol_sample = ${Vol_sample}   # mL — student-entered
+dt = ${dt}            # sec — student-entered
+
+trials = [
+${pythonTrialDicts}
+]
+
+for tr in trials:
+    tr["C"] = tr["V3"] * N_HCl / Vol_sample
+    tr["CDt"] = tr["C"] * dt
+
+sum_CDt = sum(tr["CDt"] for tr in trials)
+
+for tr in trials:
+    tr["tCDt"] = tr["t"] * tr["CDt"]
+    tr["E"] = tr["C"] / sum_CDt if sum_CDt > 0 else 0
+
+sum_tCDt = sum(tr["tCDt"] for tr in trials)
+t_bar = sum_tCDt / sum_CDt if sum_CDt > 0 else 0
+
+for tr in trials:
+    print(f"t={tr['t']:>3} s  C={tr['C']:.4f}  CDt={tr['CDt']:.3f}  "
+          f"E={tr['E']*1000:.3f}e-3  tCDt={tr['tCDt']:.1f}")
+
+print(f"Sum CDt = {sum_CDt:.3f}, Sum tCDt = {sum_tCDt:.1f}")
+print(f"Mean residence time = {t_bar:.2f} sec")`;
+
+    const tList = validRows.map(r => parseFloat(r.t ?? 0)).join(' ');
+    const v3List = validRows.map(r => parseFloat(r.V3 ?? 0)).join(' ');
+
+    matlabCode = `N_HCl = ${N_HCl}; Vol_sample = ${Vol_sample}; dt = ${dt};
+
+t  = [${tList}];
+V3 = [${v3List}];
+
+C    = (V3 .* N_HCl) ./ Vol_sample;
+CDt  = C .* dt;
+sum_CDt = sum(CDt);
+
+tCDt = t .* CDt;
+E    = C ./ sum_CDt;
+sum_tCDt = sum(tCDt);
+t_bar = sum_tCDt / sum_CDt;
+
+for i = 1:numel(t)
+    fprintf('t=%3d s  C=%.4f  CDt=%.3f  E=%.3fe-3  tCDt=%.1f\\n', ...
+        t(i), C(i), CDt(i), E(i)*1000, tCDt(i));
+end
+fprintf('Sum CDt = %.3f, Sum tCDt = %.1f\\n', sum_CDt, sum_tCDt);
+fprintf('Mean residence time = %.2f sec\\n', t_bar);`;
   }
 
   const currentSnippet = activeTab === 'python' ? pythonCode : matlabCode;

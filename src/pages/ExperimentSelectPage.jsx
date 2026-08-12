@@ -61,24 +61,44 @@ export function ExperimentSelectPage({ onNavigate }) {
     }
   ];
 
+  const reactionEngExps = [
+    {
+      id: 'rtd_cstr',
+      title: 'RTD Studies in a CSTR',
+      aim: 'Study non-ideality of CSTR and find mean residence time t̄ for impulse tracer injection; plot exit age distribution (E curve).',
+      schematic: 'CSTR + Peristaltic Pump + RTD Probe & DAQ + Titration Setup',
+      formulaPreview: 'E = C / Σ(CΔt)  |  t̄ = Σ(tCΔt) / Σ(CΔt)',
+      calcCount: '4 Formula Steps',
+      icon: <Zap className="w-6 h-6 text-violet-600" />
+    }
+  ];
+
   const isProcessControl = currentSubject === 'instrumentation-process-control';
   const isHeatTransfer = currentSubject === 'heat_transfer';
+  const isReactionEng = currentSubject === 'reaction_eng';
+
   const experiments = isProcessControl
     ? processControlExps
     : isHeatTransfer
     ? heatTransferExps
+    : isReactionEng
+    ? reactionEngExps
     : fluidMechanicsExps;
 
   const subjectTitle = isProcessControl
     ? 'Process Control Lab'
     : isHeatTransfer
     ? 'Heat Transfer Lab'
+    : isReactionEng
+    ? 'Reaction Engineering Lab'
     : 'Fluid Mechanics Lab';
 
   const subjectDesc = isProcessControl
     ? 'First-order thermal response dynamics, step input, sinusoidal lag, time constants, and phase shift.'
     : isHeatTransfer
     ? 'Natural convection, heat transfer coefficient h, surface temperature profiles, and thermal calculations.'
+    : isReactionEng
+    ? 'CSTR RTD exit age distribution, impulse tracer injection, mean residence time, and ideal reactor comparison.'
     : 'Select an experiment module to launch the interactive virtual workspace and calculation engine.';
 
   const handleLaunch = (expId) => {

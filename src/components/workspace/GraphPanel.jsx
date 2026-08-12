@@ -185,6 +185,46 @@ function GraphPanelContent() {
 
     if (!chartData || chartData.length === 0) return [];
 
+    // RTD CSTR E(t) vs t with E_theo = (1/t_bar) * exp(-t/t_bar) overlay
+    if (config?.experiment_id === 'rtd_cstr') {
+      const actualTrace = {
+        x: chartData.map(d => d.x),
+        y: chartData.map(d => d.y),
+        mode: 'lines+markers',
+        name: 'Observed Data',
+        type: 'scatter',
+        line: { color: MATLAB_COLORS[0], width: 2, shape: 'spline' },
+        marker: { color: MATLAB_COLORS[0], size: 7, symbol: 'circle' }
+      };
+
+      const traces = [actualTrace];
+      const t_bar = calculatedRows?.[0]?.t_bar;
+
+      if (t_bar && !isNaN(t_bar) && t_bar > 0) {
+        const maxT = Math.max(...chartData.map(d => d.x), 240);
+        const theoX = [];
+        const theoY = [];
+        const steps = 60;
+        for (let i = 0; i <= steps; i++) {
+          const tVal = (maxT / steps) * i;
+          const eTheo = (1 / t_bar) * Math.exp(-tVal / t_bar);
+          theoX.push(tVal);
+          theoY.push(eTheo);
+        }
+
+        traces.push({
+          x: theoX,
+          y: theoY,
+          mode: 'lines',
+          name: 'Theoretical Line (Ideal CSTR)',
+          type: 'scatter',
+          line: { color: MATLAB_COLORS[1], width: 2, dash: 'dash' }
+        });
+      }
+
+      return traces;
+    }
+
     // Standard Experiment Scatter + Theoretical Linear Fit Overlay
     const actualTrace = {
       x: chartData.map(d => d.x),
@@ -211,7 +251,7 @@ function GraphPanelContent() {
     }
 
     return traces;
-  }, [calculatedRows, isStepGraph, isSinusoidalGraph, stepData, sinusoidalData, chartData, theoPoints, graphConfig.show_theoretical]);
+  }, [calculatedRows, isStepGraph, isSinusoidalGraph, config?.experiment_id, stepData, sinusoidalData, chartData, theoPoints, graphConfig.show_theoretical]);
 
   const exportChartPng = async () => {
     if (!containerRef.current) return;

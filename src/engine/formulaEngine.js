@@ -179,12 +179,44 @@ export function evaluateStepCalculations(trialRow = {}, calculationSteps = [], f
  * Calculates results for an entire table of observation rows.
  */
 export function calculateTable(rows = [], calculations = {}, fixedInputs = []) {
-  return rows.map((row, index) => {
+  const firstPass = rows.map((row, index) => {
     const calculated = calculateRow(row, calculations, fixedInputs);
     return {
       rowIndex: index + 1,
       ...row,
       ...calculated
+    };
+  });
+
+  // Calculate aggregates over valid rows (e.g., sum_CDt, sum_tCDt)
+  let sum_CDt = 0;
+  let sum_tCDt = 0;
+  let hasValidCDt = false;
+
+  firstPass.forEach(r => {
+    if (typeof r.CDt === 'number' && !isNaN(r.CDt) && isFinite(r.CDt)) {
+      sum_CDt += r.CDt;
+      hasValidCDt = true;
+    }
+    if (typeof r.tCDt === 'number' && !isNaN(r.tCDt) && isFinite(r.tCDt)) {
+      sum_tCDt += r.tCDt;
+    }
+  });
+
+  return firstPass.map(row => {
+    const scopeRow = { ...row };
+    if (hasValidCDt && sum_CDt > 0) {
+      scopeRow.sum_CDt = sum_CDt;
+      scopeRow.sum_tCDt = sum_tCDt;
+    }
+    const secondPassCalc = calculateRow(scopeRow, calculations, fixedInputs);
+    const t_bar = hasValidCDt && sum_CDt > 0 ? sum_tCDt / sum_CDt : null;
+    return {
+      ...row,
+      ...secondPassCalc,
+      sum_CDt: hasValidCDt && sum_CDt > 0 ? sum_CDt : null,
+      sum_tCDt: hasValidCDt && sum_CDt > 0 ? sum_tCDt : null,
+      t_bar: t_bar
     };
   });
 }

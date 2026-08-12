@@ -58,10 +58,11 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'reaction_eng',
       name: 'Chemical Reaction Engineering',
-      icon: <Atom className="w-6 h-6 text-slate-400" />,
-      active: false,
+      icon: <Atom className="w-6 h-6 text-violet-600" />,
+      active: true,
+      experimentsCount: 1,
       category: 'Kinetics & Reactor Design',
-      desc: 'Continuous Stirred Tank Reactor (CSTR), Tubular Plug Flow Reactor (PFR), and RTD studies.'
+      desc: 'Continuous Stirred Tank Reactor (CSTR) non-ideality, impulse tracer injection, and RTD exit-age E curve.'
     },
     {
       id: 'mechanical_ops',

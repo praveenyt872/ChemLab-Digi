@@ -4,6 +4,7 @@ import venturiConfig from '../data/experiments/venturi.json';
 import orificeConfig from '../data/experiments/orifice.json';
 import processControlConfig from '../data/experiments/process_control_first_order.json';
 import freeConvectionConfig from '../data/experiments/free_convection.json';
+import rtdCstrConfig from '../data/experiments/rtd_cstr.json';
 import { calculateTable, calculateSummary } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
@@ -14,12 +15,14 @@ const EXPERIMENT_CONFIGS = {
   venturi_meter: venturiConfig,
   orifice_meter: orificeConfig,
   'exp1-first-order-system-response': processControlConfig,
-  free_convection: freeConvectionConfig
+  free_convection: freeConvectionConfig,
+  rtd_cstr: rtdCstrConfig
 };
 
 const getPrimaryKey = (expId, activePartId = 'partA') => {
   if (expId === 'free_convection') return 'h';
   if (expId === 'rotameter_calibration') return 'Q';
+  if (expId === 'rtd_cstr') return 't_bar';
   if (expId === 'exp1-first-order-system-response') return activePartId === 'partA' ? 'T_dev_heat' : 'T_out';
   return 'Cd';
 };
