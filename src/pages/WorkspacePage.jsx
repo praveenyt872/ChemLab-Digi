@@ -47,9 +47,13 @@ export function WorkspacePage({ onNavigate }) {
 
   const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
   const isHeatTransfer = currentSubject === 'heat_transfer' || experimentConfig?.subject === 'heat_transfer';
+  const isReactionEng = currentSubject === 'reaction_eng' || experimentConfig?.subject === 'reaction_eng';
   const isFreeConvection = experimentConfig?.experiment_id === 'free_convection';
+  const isRtdCstr = experimentConfig?.experiment_id === 'rtd_cstr';
 
-  const subjectCategoryLabel = isProcessControl
+  const subjectCategoryLabel = isReactionEng
+    ? 'Reaction Engineering Lab'
+    : isProcessControl
     ? 'Process Control Lab'
     : isHeatTransfer
     ? 'Heat Transfer Lab'
@@ -57,11 +61,13 @@ export function WorkspacePage({ onNavigate }) {
 
   const hasParts = Array.isArray(experimentConfig?.parts) && experimentConfig.parts.length > 0;
   const headlineConfig = config?.headline_output || config?.headlineOutput || experimentConfig?.headline_output || experimentConfig?.headlineOutput;
-  const headlineLabel = headlineConfig?.label || (isFreeConvection ? 'h' : 'Cd');
+  const headlineLabel = headlineConfig?.label || (isFreeConvection ? 'h' : isRtdCstr ? 't̄' : 'Cd');
 
   let headlineOutputText = '—';
   if (headlineResult.mean !== null && headlineResult.mean !== undefined) {
-    if (experimentConfig.experiment_id === 'rotameter_calibration') {
+    if (isRtdCstr || headlineConfig?.resultKey === 't_bar') {
+      headlineOutputText = `t̄ = ${headlineResult.mean.toFixed(2)} sec`;
+    } else if (experimentConfig.experiment_id === 'rotameter_calibration') {
       headlineOutputText = `Q = ${formatScientific(headlineResult.mean, 4)} m³/s`;
     } else if (experimentConfig.experiment_id === 'exp1-first-order-system-response') {
       headlineOutputText = activePartId === 'partA' ? `τ = 10.0 s (63.2%)` : `AR = 0.375 | τ = 27 s`;
