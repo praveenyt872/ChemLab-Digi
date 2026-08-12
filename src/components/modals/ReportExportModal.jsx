@@ -175,7 +175,8 @@ export function ReportExportModal() {
         }
         return null;
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a, b) => a.x - b.x);
 
     // Linear regression trendline data
     let lineData = [];
@@ -397,9 +398,9 @@ export function ReportExportModal() {
                       stroke="#000"
                       label={{ value: part.graph?.y_label, angle: -90, position: 'insideLeft', offset: 10, fill: '#000', fontSize: 9 }}
                     />
-                    <Scatter name="Data" data={chartData} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />
+                    <Line data={chartData} type="monotone" dataKey="y" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 4, fill: '#8B5CF6' }} name="Experimental Curve" />
                     {lineData.length >= 2 && (
-                      <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} />
+                      <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} name="Trendline" />
                     )}
                   </ComposedChart>
                 )}
