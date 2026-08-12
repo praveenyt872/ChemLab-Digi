@@ -85,6 +85,24 @@ export function evaluateStepCalculations(trialRow = {}, calculationSteps = [], f
     }
   });
 
+  // Default fallbacks for RTD CSTR standardization and summation variables if not present in scope
+  if (scope.N1_oxalic === undefined) scope.N1_oxalic = 0.1;
+  if (scope.V1_stdA === undefined) scope.V1_stdA = 10.0;
+  if (scope.V2_stdA === undefined) scope.V2_stdA = 0.5;
+  if (scope.N_NaOH === undefined) {
+    scope.N_NaOH = (scope.V1_stdA * scope.N1_oxalic) / scope.V2_stdA;
+  }
+  if (scope.V1_stdB === undefined) scope.V1_stdB = 2.0;
+  if (scope.V2_stdB === undefined) scope.V2_stdB = 4.0;
+  if (scope.N_HCl === undefined) {
+    scope.N_HCl = (scope.V1_stdB * scope.N_NaOH) / scope.V2_stdB;
+  }
+  if (scope.Vol_sample === undefined) scope.Vol_sample = 10.0;
+  if (scope.dt === undefined) scope.dt = 30.0;
+  if (scope.C0 === undefined) scope.C0 = scope.N_NaOH;
+  if (scope.sum_CDt === undefined && trialRow.sum_CDt !== undefined) scope.sum_CDt = trialRow.sum_CDt;
+  if (scope.sum_tCDt === undefined && trialRow.sum_tCDt !== undefined) scope.sum_tCDt = trialRow.sum_tCDt;
+
   const evaluatedSteps = [];
 
   calculationSteps.forEach((step) => {

@@ -10,7 +10,11 @@ export function SampleCalculationPanel() {
     activePartConfig,
     experimentConfig,
     calculatedRows,
-    observationRows
+    observationRows,
+    computedNNaOH,
+    computedNHCl,
+    stdTableA,
+    stdTableB
   } = useExperimentStore();
 
   const [selectedTrialIndex, setSelectedTrialIndex] = useState(0);
@@ -18,7 +22,21 @@ export function SampleCalculationPanel() {
 
   const config = activePartConfig || experimentConfig;
   const calculationSteps = config?.calculation_steps || [];
-  const fixedInputs = config?.fixed_inputs || [];
+  const baseFixed = config?.fixed_inputs || [];
+
+  const effectiveFixed = [...baseFixed];
+  if (config?.experiment_id === 'rtd_cstr') {
+    const stdARow = stdTableA?.[0] || { V1: 10, initial: 0, final: 0.5 };
+    const stdBRow = stdTableB?.[0] || { V1: 2, initial: 0, final: 4 };
+
+    effectiveFixed.push({ id: 'N_NaOH', value: computedNNaOH || 2.0 });
+    effectiveFixed.push({ id: 'N_HCl', value: computedNHCl || 1.0 });
+    effectiveFixed.push({ id: 'C0', value: computedNNaOH || 2.0 });
+    effectiveFixed.push({ id: 'V1_stdA', value: parseFloat(stdARow.V1 ?? 10) });
+    effectiveFixed.push({ id: 'V2_stdA', value: Math.max(0.1, parseFloat(stdARow.final ?? 0.5) - parseFloat(stdARow.initial ?? 0)) });
+    effectiveFixed.push({ id: 'V1_stdB', value: parseFloat(stdBRow.V1 ?? 2) });
+    effectiveFixed.push({ id: 'V2_stdB', value: Math.max(0.1, parseFloat(stdBRow.final ?? 4) - parseFloat(stdBRow.initial ?? 0)) });
+  }
 
   const rows = calculatedRows && calculatedRows.length > 0 ? calculatedRows : observationRows;
   if (!config || !calculationSteps || calculationSteps.length === 0 || !rows || rows.length === 0) {
@@ -26,7 +44,7 @@ export function SampleCalculationPanel() {
   }
 
   const activeRow = rows[selectedTrialIndex] || rows[0];
-  const evaluatedSteps = evaluateStepCalculations(activeRow, calculationSteps, fixedInputs);
+  const evaluatedSteps = evaluateStepCalculations(activeRow, calculationSteps, effectiveFixed);
 
   return (
     <div className="space-y-4">
