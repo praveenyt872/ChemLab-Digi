@@ -6,22 +6,89 @@ import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useExperimentStore } from '../../store/experimentStore';
 
 export function CodeReferenceModal({ isOpen, onClose, referenceCode, experimentTitle }) {
+  const { experimentConfig, activePartConfig, observationRows } = useExperimentStore();
   const [activeTab, setActiveTab] = useState('python');
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !referenceCode) return null;
 
-  const pythonData = referenceCode.python || {
-    label: 'Python (NumPy) Reference',
-    code: '# Reference calculation code\n'
-  };
+  const isFreeConvection = experimentConfig?.experiment_id === 'free_convection';
 
-  const matlabData = referenceCode.matlab || {
-    label: 'MATLAB Reference',
-    code: '% Reference plotting code\n'
-  };
+  let pythonCode = referenceCode?.python?.code || '# Reference calculation code\n';
+  let matlabCode = referenceCode?.matlab?.code || '% Reference plotting code\n';
 
-  const currentSnippet = activeTab === 'python' ? pythonData.code : matlabData.code;
+  if (isFreeConvection) {
+    const config = activePartConfig || experimentConfig;
+    const D = config?.fixed_inputs?.find(f => f.id === 'D')?.value ?? 0.032;
+    const L = config?.fixed_inputs?.find(f => f.id === 'L')?.value ?? 0.5;
+
+    // Filter valid rows (where V and I are entered numbers)
+    let validRows = (observationRows || []).filter(r => (
+      r &&
+      r.V !== undefined && r.V !== '' && !isNaN(parseFloat(r.V)) &&
+      r.I !== undefined && r.I !== '' && !isNaN(parseFloat(r.I))
+    ));
+
+    // Fall back to sample_data if student hasn't entered data yet
+    if (validRows.length === 0) {
+      validRows = experimentConfig?.sample_data || [];
+    }
+
+    const Ta = parseFloat(validRows[0]?.T8 ?? validRows[0]?.Ta ?? 28);
+
+    const pythonTrialLines = validRows.map(r => {
+      const V = parseFloat(r.V ?? 0);
+      const I = parseFloat(r.I ?? 0);
+      const tArr = [r.T1, r.T2, r.T3, r.T4, r.T5, r.T6, r.T7].map(v => parseFloat(v ?? 0));
+      return `    {"V": ${V}, "I": ${I}, "T": [${tArr.join(', ')}]}`;
+    }).join(',\n');
+
+    pythonCode = `import math
+
+D, L, Ta = ${D}, ${L}, ${Ta}
+As = math.pi * D * L
+
+trials = [
+${pythonTrialLines}
+]
+
+hs = []
+for i, t in enumerate(trials, 1):
+    q  = t["V"] * t["I"]
+    Ts = sum(t["T"]) / len(t["T"])
+    h  = q / (As * (Ts - Ta))
+    hs.append(h)
+    print(f"Trial #{i}: q={q:.2f} W, Ts={Ts:.4f} C, h={h:.3f} W/m2.K")
+
+print(f"Average h = {sum(hs)/len(hs):.3f} W/m2.K")`;
+
+    const vList = validRows.map(r => parseFloat(r.V ?? 0)).join(' ');
+    const iList = validRows.map(r => parseFloat(r.I ?? 0)).join(' ');
+    const tMatrixLines = validRows.map(r => {
+      const tArr = [r.T1, r.T2, r.T3, r.T4, r.T5, r.T6, r.T7].map(v => parseFloat(v ?? 0));
+      return `     ${tArr.join(' ')}`;
+    }).join(';\n');
+
+    matlabCode = `D = ${D}; L = ${L}; Ta = ${Ta};
+As = pi * D * L;
+
+V = [${vList}];
+I = [${iList}];
+T = [
+${tMatrixLines}
+];
+
+h = zeros(1, numel(V));
+for i = 1:numel(V)
+    q = V(i) * I(i);
+    Ts = mean(T(i,:));
+    h(i) = q / (As * (Ts - Ta));
+    fprintf('Trial #%d: q=%.2f W, Ts=%.4f C, h=%.3f W/m2.K\\n', i, q, Ts, h(i));
+end
+fprintf('Average h = %.3f W/m2.K\\n', mean(h));`;
+  }
+
+  const currentSnippet = activeTab === 'python' ? pythonCode : matlabCode;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentSnippet);
@@ -73,7 +140,7 @@ export function CodeReferenceModal({ isOpen, onClose, referenceCode, experimentT
               }`}
             >
               <Terminal className="w-3.5 h-3.5" />
-              <span>Python (NumPy / SciPy)</span>
+              <span>Python</span>
             </button>
             <button
               onClick={() => setActiveTab('matlab')}
@@ -84,7 +151,7 @@ export function CodeReferenceModal({ isOpen, onClose, referenceCode, experimentT
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>MATLAB Plot Script</span>
+              <span>MATLAB Code</span>
             </button>
           </div>
 
