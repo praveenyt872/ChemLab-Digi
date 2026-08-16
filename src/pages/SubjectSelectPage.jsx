@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Waves, Flame, ArrowRightLeft, Atom, Cog, Gauge, Lock, ArrowRight, CheckCircle2, Search } from 'lucide-react';
-import { GlassCard } from '../components/common/GlassCard';
+import { Waves, Flame, ArrowRightLeft, Atom, Cog, Gauge, Search } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
-import { SubjectCardTheme, SUBJECT_THEMES } from '../components/common/SubjectCardTheme';
+import { SUBJECT_THEMES } from '../components/common/SubjectCardTheme';
+import { ThemedSubjectCard } from '../components/common/ThemedSubjectCard';
 
 export function SubjectSelectPage({ onNavigate }) {
   const { setSubject, studentDetails, setStudentGateOpen } = useExperimentStore();
@@ -24,7 +24,7 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'fluid_mechanics',
       name: 'Fluid Mechanics',
-      icon: <Waves className="w-6 h-6 text-sky-600" />,
+      icon: <Waves className="w-6 h-6 text-cyan-300" />,
       active: true,
       experimentsCount: 3,
       category: 'Core Chemical Engineering',
@@ -34,7 +34,7 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'instrumentation-process-control',
       name: 'Process Control Lab',
-      icon: <Gauge className="w-6 h-6 text-indigo-600" />,
+      icon: <Gauge className="w-6 h-6 text-cyan-300" />,
       active: true,
       experimentsCount: 1,
       category: 'Process Control & Systems',
@@ -44,7 +44,7 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'heat_transfer',
       name: 'Heat Transfer',
-      icon: <Flame className="w-6 h-6 text-amber-600" />,
+      icon: <Flame className="w-6 h-6 text-amber-300" />,
       active: true,
       experimentsCount: 1,
       category: 'Thermal Operations',
@@ -54,7 +54,7 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'mass_transfer',
       name: 'Mass Transfer',
-      icon: <ArrowRightLeft className="w-6 h-6 text-teal-600" />,
+      icon: <ArrowRightLeft className="w-6 h-6 text-teal-300" />,
       active: false,
       category: 'Separation Processes',
       desc: 'Simple distillation, liquid-liquid extraction, packed column absorption, and diffusivity measurements.',
@@ -63,7 +63,7 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'reaction_eng',
       name: 'Chemical Reaction Engineering',
-      icon: <Atom className="w-6 h-6 text-violet-600" />,
+      icon: <Atom className="w-6 h-6 text-violet-300" />,
       active: true,
       experimentsCount: 1,
       category: 'Kinetics & Reactor Design',
@@ -73,7 +73,7 @@ export function SubjectSelectPage({ onNavigate }) {
     {
       id: 'mechanical_ops',
       name: 'Particle Science and Technology',
-      icon: <Cog className="w-6 h-6 text-stone-500" />,
+      icon: <Cog className="w-6 h-6 text-amber-200" />,
       active: false,
       category: 'Solid Processing',
       desc: 'Ball mill size reduction, screen effectiveness, froth flotation, and sedimentation clarifiers.',
@@ -89,125 +89,68 @@ export function SubjectSelectPage({ onNavigate }) {
     s.desc.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const activeCount = rawSubjects.filter(s => s.active).length;
+  const totalCount = rawSubjects.length;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-slate-900">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-slate-100">
       
       {/* Dashboard Greeting Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#EDEEF1] pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
         <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white tracking-tight">
             Hi, {studentName} 👋
           </h1>
-          <p className="text-sm text-slate-500 font-sans mt-1">
+          <p className="text-sm text-slate-400 font-sans mt-1">
             Here's your virtual chemical engineering lab progress & experiment workspace overview.
           </p>
         </div>
         {hasStudentDetails && (
           <div className="flex items-center gap-3">
-            <span className="text-xs font-mono font-semibold px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-200">
+            <span className="text-xs font-mono font-semibold px-3.5 py-1.5 rounded-xl bg-violet-950/60 text-violet-300 border border-violet-500/30 shadow-sm">
               Field: Chemical Engineering (CH23331 / CH23722)
             </span>
           </div>
         )}
       </div>
 
-      {/* Lab Course Header & Search */}
+      {/* Lab Course Header & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
-          <h2 className="font-heading text-xl font-bold text-slate-900">
-            Lab Course
-          </h2>
-          <p className="text-xs text-slate-500 font-sans mt-0.5">
+          <div className="flex items-center gap-3">
+            <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
+              Lab Course
+            </h2>
+            <span className="text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+              {activeCount}/{totalCount} Active
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 font-sans mt-1">
             Select a chemical engineering laboratory discipline to launch experiment modules.
           </p>
         </div>
 
         <div className="relative max-w-xs w-full">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Filter subjects..."
-            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 shadow-sm"
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 shadow-inner transition-all"
           />
         </div>
       </div>
 
-      {/* Subject Cards Grid */}
+      {/* Subject Cards Grid with Liquid Dark Glass Panels */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSubjects.map((sub) => {
-          const theme = sub.theme || {};
-          return (
-            <GlassCard
-              key={sub.id}
-              interactive={sub.active}
-              onClick={() => {
-                if (sub.active) {
-                  handleSelectSubject(sub.id);
-                }
-              }}
-              className={`flex flex-col justify-between h-[260px] relative overflow-hidden transition-all duration-300 ${
-                sub.active
-                  ? `cursor-pointer ${theme.cardBg || 'bg-white'} ${theme.cardBorderHover || 'hover:border-violet-400 hover:shadow-md'}`
-                  : 'opacity-75 grayscale-[20%] cursor-not-allowed bg-slate-50/80 border-slate-200'
-              }`}
-            >
-              {/* Atmospheric Per-Subject Visual Theme Background */}
-              <SubjectCardTheme themeConfig={theme} active={sub.active} />
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${theme.iconBg || 'bg-violet-50 border-violet-100 text-violet-600'}`}>
-                    {sub.icon}
-                  </div>
-                  {sub.active ? (
-                    <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border flex items-center gap-1 ${theme.badgeActiveBg || 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-                      <CheckCircle2 className="w-3 h-3" />
-                      Active Lab
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100/90 text-slate-500 border border-slate-200 flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-slate-400" />
-                      Locked
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-4">
-                  <span
-                    className="text-[10px] font-mono font-bold uppercase tracking-wider block"
-                    style={{ color: theme.accentColor || '#8B5CF6' }}
-                  >
-                    {sub.category}
-                  </span>
-                  <h3 className="font-heading text-lg font-bold text-slate-900 mt-0.5">
-                    {sub.name}
-                  </h3>
-                </div>
-
-                <p className="text-xs text-slate-600 font-sans leading-relaxed mt-2 line-clamp-2">
-                  {sub.desc}
-                </p>
-              </div>
-
-              <div className="relative z-10 pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-600 font-semibold">
-                  {sub.active ? `${sub.experimentsCount} Experiments Available` : 'Module coming soon'}
-                </span>
-                {sub.active && (
-                  <span
-                    className="font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform"
-                    style={{ color: theme.accentColor || '#8B5CF6' }}
-                  >
-                    <span>Enter</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </span>
-                )}
-              </div>
-            </GlassCard>
-          );
-        })}
+        {filteredSubjects.map((sub) => (
+          <ThemedSubjectCard
+            key={sub.id}
+            subject={sub}
+            onSelectSubject={handleSelectSubject}
+          />
+        ))}
       </div>
 
     </div>
