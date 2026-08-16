@@ -93,21 +93,21 @@ export function SubjectSelectPage({ onNavigate }) {
   const totalCount = rawSubjects.length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-slate-100">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-slate-900">
       
       {/* Dashboard Greeting Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
         <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Hi, {studentName} 👋
           </h1>
-          <p className="text-sm text-slate-400 font-sans mt-1">
+          <p className="text-sm text-slate-600 font-sans font-medium mt-1">
             Here's your virtual chemical engineering lab progress & experiment workspace overview.
           </p>
         </div>
         {hasStudentDetails && (
           <div className="flex items-center gap-3">
-            <span className="text-xs font-mono font-semibold px-3.5 py-1.5 rounded-xl bg-violet-950/60 text-violet-300 border border-violet-500/30 shadow-sm">
+            <span className="text-xs font-mono font-bold px-3.5 py-1.5 rounded-xl bg-violet-100/90 text-violet-800 border border-violet-200 shadow-xs">
               Field: Chemical Engineering (CH23331 / CH23722)
             </span>
           </div>
@@ -118,14 +118,14 @@ export function SubjectSelectPage({ onNavigate }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
+            <h2 className="font-heading text-2xl font-extrabold text-slate-900 tracking-tight">
               Lab Course
             </h2>
-            <span className="text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+            <span className="text-[11px] font-mono font-bold px-3 py-1 rounded-full bg-teal-100/90 text-teal-800 border border-teal-300/80 shadow-xs">
               {activeCount}/{totalCount} Active
             </span>
           </div>
-          <p className="text-xs text-slate-400 font-sans mt-1">
+          <p className="text-xs text-slate-600 font-sans font-medium mt-1">
             Select a chemical engineering laboratory discipline to launch experiment modules.
           </p>
         </div>
@@ -137,7 +137,7 @@ export function SubjectSelectPage({ onNavigate }) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Filter subjects..."
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 shadow-inner transition-all"
+            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 shadow-sm transition-all"
           />
         </div>
       </div>
