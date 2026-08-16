@@ -11,7 +11,7 @@ export function RoleSelector({ selectedRole, onSelectRole }) {
           Rajalakshmi Engineering College
         </span>
         <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          Welcome to ChemLab AI
+          Welcome to Chem Digi Lab
         </h2>
         <p className="text-sm text-slate-500 max-w-xs mx-auto">
           Select your institutional role to access the virtual laboratory

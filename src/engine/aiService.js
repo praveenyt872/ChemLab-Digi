@@ -1,5 +1,5 @@
 /**
- * AI Integration Service for ChemLab AI
+ * AI Integration Service for Chem Digi Lab
  * Supports Anthropic API (claude-3-5-sonnet), Gemini API (gemini-2.5-flash),
  * and a fully dynamic context-grounded Chemical Engineering Virtual Tutor Engine.
  */
@@ -29,7 +29,7 @@ export function buildSystemPrompt(context = {}) {
   const formulasText = (config.formulas || []).map(f => `- ${f.label} (${f.latex}): ${f.purpose || ''}`).join('\n');
   const vivaText = (config.viva_questions || []).map(v => `Q: ${v.question}\nA: ${v.answer}`).join('\n\n');
 
-  return `You are ChemLab AI — an expert Chemical Engineering Virtual Laboratory Teaching Assistant and Tutor.
+  return `You are Chem Digi Lab — an expert Chemical Engineering Virtual Laboratory Teaching Assistant and Tutor.
 You are assisting a student working on the following lab session:
 
 Subject: ${subjectName}
@@ -269,7 +269,7 @@ For a first-order system subjected to sinusoidal input \\(x(t) = A_1 \\sin(\\ome
   }
 
   // --- E. Default Context-Aware Response ---
-  return `### ChemLab AI Virtual Assistant
+  return `### Chem Digi Lab Virtual Assistant
 I am grounded in **${title}** (${config.short_title || partId}).
 
 Current Status:

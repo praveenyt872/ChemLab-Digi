@@ -1,6 +1,6 @@
 {
-  "name": "ChemLab AI",
-  "short_name": "ChemLab AI",
+  "name": "Chem Digi Lab",
+  "short_name": "Chem Digi Lab",
   "description": "AI-powered virtual laboratory for Chemical Engineering students",
   "start_url": "./index.html",
   "display": "standalone",

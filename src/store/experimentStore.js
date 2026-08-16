@@ -184,7 +184,7 @@ export const useExperimentStore = create((set, get) => ({
     {
       id: 'welcome',
       sender: 'ai',
-      text: 'Hello! I am your ChemLab AI Assistant. Ask me anything about formulas, derivations, observations, or troubleshooting your results!',
+      text: 'Hello! I am your Chem Digi Lab Assistant. Ask me anything about formulas, derivations, observations, or troubleshooting your results!',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ],

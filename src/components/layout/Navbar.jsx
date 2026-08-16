@@ -29,7 +29,7 @@ export function Navbar({ currentPage, onNavigate }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-heading text-lg font-bold text-white tracking-tight">
-                ChemLab<span className="text-violet-400">AI</span>
+                Chem Digi <span className="text-violet-400">Lab</span>
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                 v1.0

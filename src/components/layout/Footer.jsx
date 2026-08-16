@@ -12,7 +12,7 @@ export function Footer({ onNavigate }) {
             <FlaskConical className="w-4 h-4 text-violet-700" />
           </div>
           <div>
-            <span className="font-heading font-bold text-slate-900">ChemLab AI</span>
+            <span className="font-heading font-bold text-slate-900">Chem Digi Lab</span>
             <p className="text-xs text-slate-500 font-sans flex items-center gap-1.5 mt-0.5">
               <img src={recLogo} alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
               <span>Rajalakshmi Engineering College</span>
@@ -24,11 +24,6 @@ export function Footer({ onNavigate }) {
           <button onClick={() => onNavigate('subject')} className="hover:text-violet-700 transition-colors cursor-pointer">Dashboard</button>
           <button onClick={() => onNavigate('subject')} className="hover:text-violet-700 transition-colors cursor-pointer">Subjects</button>
           <button onClick={() => onNavigate('experiment')} className="hover:text-violet-700 transition-colors cursor-pointer">Experiments</button>
-        </div>
-
-        <div className="text-slate-500 flex items-center gap-2">
-          <span>Powered by</span>
-          <span className="text-violet-700 font-bold">Google Antigravity AI</span>
         </div>
 
       </div>

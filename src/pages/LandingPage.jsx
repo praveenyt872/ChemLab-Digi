@@ -79,7 +79,7 @@ export function LandingPage({ onNavigate }) {
             <span>Rajalakshmi Engineering College</span>
           </span>{' '}
           <span className="text-violet-600 block sm:inline">
-            Chemical Engineering Lab
+            Department of Chemical Engineering
           </span>
         </motion.h1>
 
@@ -141,7 +141,7 @@ export function LandingPage({ onNavigate }) {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-2">
           <h2 className="font-heading text-3xl font-bold text-slate-900">
-            How ChemLab AI Works
+            How Chem Digi Lab Works
           </h2>
           <p className="text-xs font-mono text-slate-500">
             Four simple steps from bench reading to verified lab report

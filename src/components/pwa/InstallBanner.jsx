@@ -49,7 +49,7 @@ export function InstallBanner() {
           </div>
           <div>
             <h4 className="font-heading text-sm font-bold text-slate-900 flex items-center gap-1.5">
-              <span>Install ChemLab AI</span>
+              <span>Install Chem Digi Lab</span>
             </h4>
             <p className="text-xs text-slate-500 font-sans">
               Add to Home Screen for 100% offline lab access.

@@ -1,5 +1,5 @@
 /**
- * Validation Engine for ChemLab AI
+ * Validation Engine for Chem Digi Lab
  * Analyzes observation readings and calculated results against physical laws,
  * fluid mechanics principles, and apparatus bounds.
  */

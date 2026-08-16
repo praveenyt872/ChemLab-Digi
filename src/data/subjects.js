@@ -46,9 +46,9 @@ export const SUBJECTS_CONFIG = {
   },
   mechanical_ops: {
     id: 'mechanical_ops',
-    name: 'Mechanical Operations',
+    name: 'Particle Science and Technology',
     courseCode: 'CH23335',
-    courseTitle: 'Mechanical Operations Lab',
+    courseTitle: 'Particle Science and Technology Lab',
     field: 'Chemical Engineering',
     semester: 'VII',
     section: 'B'
