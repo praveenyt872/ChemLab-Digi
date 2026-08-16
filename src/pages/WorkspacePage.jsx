@@ -24,6 +24,7 @@ import { LiveResultsPanel } from '../components/workspace/LiveResultsPanel';
 import { GraphPanel } from '../components/workspace/GraphPanel';
 import { FormulaCard } from '../components/workspace/FormulaCard';
 import { AIValidationPanel } from '../components/workspace/AIValidationPanel';
+import { StudentInterpretationPanel } from '../components/workspace/StudentInterpretationPanel';
 import { CodeReferenceModal } from '../components/modals/CodeReferenceModal';
 import { getSchematicDiagram } from '../utils/schematicAssets';
 import recLogo from '../assets/rec-logo.png';
@@ -313,6 +314,9 @@ export function WorkspacePage({ onNavigate }) {
               </div>
             </GlassCard>
           )}
+
+          {/* Student Interpretation & Theoretical Deviation Analysis */}
+          <StudentInterpretationPanel />
 
           {/* Result & Precautions Section */}
           <GlassCard className="border-l-4 border-l-amber-500 space-y-4">

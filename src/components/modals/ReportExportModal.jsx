@@ -31,13 +31,22 @@ export function ReportExportModal() {
     calculatedRows,
     headlineResult,
     studentDetails,
-    currentSubject
+    currentSubject,
+    currentExperimentId,
+    studentInterpretations,
+    setStudentInterpretation
   } = useExperimentStore();
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isEditingInterp, setIsEditingInterp] = useState(false);
   const reportRef = useRef(null);
 
   if (!isReportModalOpen || !experimentConfig) return null;
+
+  const currentExpId = currentExperimentId || experimentConfig?.experiment_id || 'rotameter_calibration';
+  const studentInterpText = studentInterpretations[currentExpId] || '';
+  const interpWordCount = studentInterpText.trim() ? studentInterpText.trim().split(/\s+/).filter(Boolean).length : 0;
+  const isInterpMet = interpWordCount >= 100;
 
   const subjectInfo = SUBJECTS_CONFIG[currentSubject] || SUBJECTS_CONFIG[experimentConfig?.subject] || SUBJECTS_CONFIG.fluid_mechanics;
   const config = activePartConfig || experimentConfig;
@@ -424,6 +433,27 @@ export function ReportExportModal() {
           </div>
         )}
 
+        {/* DISCUSSION OF RESULTS & THEORETICAL DEVIATIONS (STUDENT INTERPRETATION) */}
+        <div className="printable-section pt-1 border-t border-gray-300 space-y-1">
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">
+              DISCUSSION OF RESULTS & THEORETICAL DEVIATIONS (STUDENT INTERPRETATION):
+            </h3>
+            <span className="text-[10px] font-mono font-bold text-gray-700">
+              Word Count: {interpWordCount} / 100 minimum
+            </span>
+          </div>
+          <div className="p-2.5 rounded border border-black bg-gray-50 text-xs font-sans text-gray-900 leading-relaxed whitespace-pre-wrap">
+            {studentInterpText.trim() ? (
+              studentInterpText
+            ) : (
+              <span className="text-red-700 italic font-mono font-bold">
+                [No interpretation written by student. Please write discussion of theoretical deviations in the experiment workspace.]
+              </span>
+            )}
+          </div>
+        </div>
+
         {/* RESULT */}
         <div className="printable-section pt-1 border-t border-gray-300">
           <span className="font-bold text-xs uppercase tracking-wider text-black font-mono underline block mb-1">RESULT:</span>
@@ -510,6 +540,40 @@ export function ReportExportModal() {
               <X className="w-5 h-5" />
             </button>
           </div>
+        </div>
+
+        {/* Interpretation Status & Quick Edit Drawer (no-print) */}
+        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono no-print space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-200">Student Interpretation Status:</span>
+              {isInterpMet ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                  ✓ {interpWordCount} / 100 Words (Met)
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                  ⚠️ {interpWordCount} / 100 Words (100 Minimum Required)
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setIsEditingInterp(!isEditingInterp)}
+              className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+            >
+              {isEditingInterp ? 'Close Quick Editor' : 'Edit Interpretation Text'}
+            </button>
+          </div>
+
+          {isEditingInterp && (
+            <textarea
+              rows={4}
+              value={studentInterpText}
+              onChange={(e) => setStudentInterpretation(currentExpId, e.target.value)}
+              placeholder="Type or edit student interpretation here..."
+              className="w-full p-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 shadow-inner"
+            />
+          )}
         </div>
 
         {/* Compact Printable Report Sheet */}

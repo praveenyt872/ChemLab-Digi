@@ -132,6 +132,16 @@ const loadInitialStudentDetails = () => {
   };
 };
 
+const loadInitialInterpretations = () => {
+  try {
+    const saved = localStorage.getItem('labflow_student_interpretations');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.error('Error loading student interpretations:', e);
+  }
+  return {};
+};
+
 const initialStudentDetails = loadInitialStudentDetails();
 
 export const useExperimentStore = create((set, get) => ({
@@ -142,9 +152,10 @@ export const useExperimentStore = create((set, get) => ({
   activePartId: 'partA',
   activePartConfig: rotameterConfig,
 
-  // Student Identification State
+  // Student Identification & Interpretation State
   studentDetails: initialStudentDetails,
   isStudentGateOpen: false,
+  studentInterpretations: loadInitialInterpretations(),
 
   // Standardization Tables State (for RTD CSTR)
   stdTableA: defaultStdA,
@@ -510,6 +521,19 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   setStudentGateOpen: (isOpen) => set({ isStudentGateOpen: isOpen }),
+  setStudentInterpretation: (expId, text) => {
+    const { studentInterpretations } = get();
+    const updated = {
+      ...studentInterpretations,
+      [expId]: text
+    };
+    try {
+      localStorage.setItem('labflow_student_interpretations', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error saving student interpretation:', e);
+    }
+    set({ studentInterpretations: updated });
+  },
   saveStudentDetails: (details) => {
     try {
       localStorage.setItem('labflow_student_details', JSON.stringify(details));
