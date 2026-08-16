@@ -56,18 +56,6 @@ export function LandingPage({ onNavigate }) {
       {/* Hero Section */}
       <section className="relative min-h-[70vh] flex flex-col items-center justify-center text-center px-4">
         
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="mb-6"
-        >
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 text-xs font-mono font-bold tracking-tight shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-violet-600" />
-            <span>Department of Chemical Engineering • AI Virtual Lab</span>
-          </span>
-        </motion.div>
-
         <motion.h1
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -89,7 +77,7 @@ export function LandingPage({ onNavigate }) {
           transition={{ duration: 0.4, delay: 0.2 }}
           className="mt-6 text-base sm:text-lg text-slate-600 max-w-2xl font-sans leading-relaxed"
         >
-          Eliminate manual calculation errors and lab report friction. Enter physical bench observations to calculate results, plot calibration curves, and receive real-time AI physics validation.
+          A comprehensive digital laboratory platform for chemical engineering students. Enter physical bench observations to generate instant calculations, plot precision calibration curves, and export verified lab reports.
         </motion.p>
 
         <motion.div
