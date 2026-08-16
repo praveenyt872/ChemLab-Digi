@@ -440,15 +440,15 @@ export function ReportExportModal() {
               DISCUSSION OF RESULTS & THEORETICAL DEVIATIONS (STUDENT INTERPRETATION):
             </h3>
             <span className="text-[10px] font-mono font-bold text-gray-700">
-              Word Count: {interpWordCount} / 100 minimum
+              Word Count: {interpWordCount} {interpWordCount === 1 ? 'word' : 'words'}
             </span>
           </div>
           <div className="p-2.5 rounded border border-black bg-gray-50 text-xs font-sans text-gray-900 leading-relaxed whitespace-pre-wrap">
             {studentInterpText.trim() ? (
               studentInterpText
             ) : (
-              <span className="text-red-700 italic font-mono font-bold">
-                [No interpretation written by student. Please write discussion of theoretical deviations in the experiment workspace.]
+              <span className="text-gray-500 italic font-mono">
+                [No interpretation written by student.]
               </span>
             )}
           </div>
@@ -546,16 +546,10 @@ export function ReportExportModal() {
         <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono no-print space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-200">Student Interpretation Status:</span>
-              {isInterpMet ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
-                  ✓ {interpWordCount} / 100 Words (Met)
-                </span>
-              ) : (
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
-                  ⚠️ {interpWordCount} / 100 Words (100 Minimum Required)
-                </span>
-              )}
+              <span className="font-bold text-slate-200">Student Interpretation:</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold">
+                {interpWordCount} {interpWordCount === 1 ? 'word' : 'words'}
+              </span>
             </div>
             <button
               onClick={() => setIsEditingInterp(!isEditingInterp)}

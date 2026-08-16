@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, AlertTriangle, CheckCircle2, Sparkles, BookOpen } from 'lucide-react';
+import { FileText, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { GlassCard } from '../common/GlassCard';
 
@@ -17,7 +17,6 @@ export function StudentInterpretationPanel() {
   // Calculate word count
   const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean) : [];
   const wordCount = words.length;
-  const isMinimumMet = wordCount >= 100;
 
   const handleTextChange = (e) => {
     setStudentInterpretation(expId, e.target.value);
@@ -43,24 +42,17 @@ export function StudentInterpretationPanel() {
               Discussion of Results & Theoretical Deviations
             </h3>
             <span className="text-xs text-slate-500 font-mono">
-              Student Interpretation & Engineering Analysis (Minimum 100 words)
+              Student Interpretation & Engineering Analysis
             </span>
           </div>
         </div>
 
         {/* Word Count Indicator Badge */}
         <div className="flex items-center gap-2">
-          {isMinimumMet ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-bold shadow-xs">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{wordCount} / 100 Words (Met)</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-300 text-xs font-mono font-bold shadow-xs">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-              <span>{wordCount} / 100 Words Required</span>
-            </span>
-          )}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-200 text-xs font-mono font-bold shadow-xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-violet-600" />
+            <span>Word Count: {wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+          </span>
         </div>
       </div>
 
@@ -86,32 +78,20 @@ export function StudentInterpretationPanel() {
       {/* Main Interpretation Textarea */}
       <div className="relative">
         <textarea
-          rows={7}
+          rows={6}
           value={text}
           onChange={handleTextChange}
-          placeholder="Write your detailed student interpretation here (minimum 100 words required for official report export)... Explain physical reasons for variance from theoretical values."
-          className={`w-full p-4 rounded-xl text-xs font-sans leading-relaxed text-slate-900 placeholder-slate-400 bg-white border focus:outline-none transition-all shadow-inner ${
-            isMinimumMet
-              ? 'border-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-              : 'border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
-          }`}
+          placeholder="Write your student interpretation here... Explain physical reasons for variance between experimental measurements and theoretical values."
+          className="w-full p-4 rounded-xl text-xs font-sans leading-relaxed text-slate-900 placeholder-slate-400 bg-white border border-slate-200 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all shadow-inner"
         />
 
-        {/* Live Word Progress Footer */}
+        {/* Live Word Count Footer */}
         <div className="mt-2 flex items-center justify-between text-xs font-mono text-slate-500">
-          <span>
-            {isMinimumMet ? (
-              <span className="text-emerald-700 font-bold">
-                ✓ Comprehensive interpretation entered. Ready for report export.
-              </span>
-            ) : (
-              <span className="text-amber-700 font-semibold">
-                ⚠️ Please write at least {100 - wordCount} more words before exporting report.
-              </span>
-            )}
+          <span className="text-slate-600 font-medium">
+            Student interpretation will be included in the official report export.
           </span>
           <span className="font-bold text-slate-700">
-            {wordCount} words
+            {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </span>
         </div>
       </div>
