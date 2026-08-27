@@ -18,6 +18,7 @@ import { useExperimentStore } from '../store/experimentStore';
 import { formatScientific, formatResultString } from '../engine/formulaEngine';
 import { GlassCard } from '../components/common/GlassCard';
 import { ObservationTable } from '../components/workspace/ObservationTable';
+import { ManualCalculationPanel } from '../components/workspace/ManualCalculationPanel';
 import { SampleCalculationPanel } from '../components/workspace/SampleCalculationPanel';
 import { StandardizationTables } from '../components/workspace/StandardizationTables';
 import { LiveResultsPanel } from '../components/workspace/LiveResultsPanel';
@@ -284,10 +285,14 @@ export function WorkspacePage({ onNavigate }) {
             <ObservationTable />
           </GlassCard>
 
-          {/* Step-by-Step Sample Calculation Panel */}
-          <GlassCard className="space-y-4">
-            <SampleCalculationPanel />
-          </GlassCard>
+          {/* Manual Calculation Tasks Panel (Gated by manual_calculation_mode) */}
+          {config.manual_calculation_mode ? (
+            <ManualCalculationPanel />
+          ) : (
+            <GlassCard className="space-y-4">
+              <SampleCalculationPanel />
+            </GlassCard>
+          )}
 
           {/* Graph Panel (gated by config.show_graph !== false && config.graph) */}
           {config.show_graph !== false && Boolean(config.graph) && (

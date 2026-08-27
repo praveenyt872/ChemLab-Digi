@@ -35,8 +35,18 @@ export function calculateRow(row, calculations = {}, fixedInputs = []) {
 
   const results = {};
 
-  Object.keys(calculations).forEach(calcId => {
-    const expr = calculations[calcId];
+  const calcObj = !Array.isArray(calculations) && typeof calculations === 'object' && Object.keys(calculations).length > 0
+    ? calculations
+    : {
+        q: "V * I",
+        As: "pi * D * L",
+        Ts: "(T1 + T2 + T3 + T4 + T5 + T6 + T7) / 7",
+        Ta: "T8",
+        h: "(Ts > Ta) ? (V * I) / (pi * D * L * (Ts - Ta)) : null"
+      };
+
+  Object.keys(calcObj).forEach(calcId => {
+    const expr = typeof calcObj[calcId] === 'string' ? calcObj[calcId] : calcObj[calcId]?.formula_expression;
     if (!expr) return;
 
     try {
@@ -55,6 +65,67 @@ export function calculateRow(row, calculations = {}, fixedInputs = []) {
   });
 
   return results;
+}
+
+/**
+ * Silently validates student manual calculation variable inputs and final result.
+ * Does NOT throw errors or reveal true answers.
+ */
+export function validateManualCalculation(studentVariables = {}, studentResult = '', trueRowValues = {}, calcConfigItem = {}) {
+  const tolerancePercent = calcConfigItem.tolerance_percent || 5;
+  const variables = calcConfigItem.variables || [];
+  
+  let isFlagged = false;
+  const variableStatus = {};
+
+  variables.forEach(varDef => {
+    const symbol = varDef.symbol;
+    const sourceField = varDef.source_field;
+    const studentVal = parseFloat(studentVariables[symbol]);
+    const trueVal = parseFloat(trueRowValues[sourceField] !== undefined ? trueRowValues[sourceField] : trueRowValues[symbol]);
+
+    if (isNaN(studentVal) || isNaN(trueVal)) {
+      variableStatus[symbol] = false;
+      isFlagged = true;
+      return;
+    }
+
+    let isWithinTolerance = false;
+    if (Math.abs(trueVal) < 1e-6) {
+      isWithinTolerance = Math.abs(studentVal - trueVal) <= 0.001;
+    } else {
+      const diffPercent = (Math.abs(studentVal - trueVal) / Math.abs(trueVal)) * 100;
+      isWithinTolerance = diffPercent <= tolerancePercent;
+    }
+
+    variableStatus[symbol] = isWithinTolerance;
+    if (!isWithinTolerance) {
+      isFlagged = true;
+    }
+  });
+
+  const studentResultNum = parseFloat(studentResult);
+  const trueResultNum = parseFloat(trueRowValues.h !== undefined ? trueRowValues.h : trueRowValues.result);
+
+  let resultStatus = false;
+  if (!isNaN(studentResultNum) && !isNaN(trueResultNum)) {
+    if (Math.abs(trueResultNum) < 1e-6) {
+      resultStatus = Math.abs(studentResultNum - trueResultNum) <= 0.001;
+    } else {
+      const diffPercent = (Math.abs(studentResultNum - trueResultNum) / Math.abs(trueResultNum)) * 100;
+      resultStatus = diffPercent <= tolerancePercent;
+    }
+  }
+
+  if (!resultStatus) {
+    isFlagged = true;
+  }
+
+  return {
+    flagged_for_review: isFlagged,
+    variableStatus,
+    resultStatus
+  };
 }
 
 /**

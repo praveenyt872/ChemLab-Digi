@@ -49,13 +49,32 @@
     { "id": "T7", "label": "Surface temperature T7",    "unit": "°C", "type": "number", "placeholder": "e.g. 52", "tooltip": "Thermocouple sensor 7 reading" },
     { "id": "T8", "label": "Ambient temperature (duct)", "unit": "°C", "type": "number", "placeholder": "e.g. 28", "tooltip": "Ambient duct temperature sensor T8" }
   ],
-  "calculations": {
+  "manual_calculation_mode": true,
+  "calculation_expressions": {
     "q": "V * I",
     "As": "pi * D * L",
     "Ts": "(T1 + T2 + T3 + T4 + T5 + T6 + T7) / 7",
     "Ta": "T8",
     "h": "(Ts > Ta) ? (V * I) / (pi * D * L * (Ts - Ta)) : null"
   },
+  "calculations": [
+    {
+      "id": "h_calc",
+      "label": "Heat Transfer Coefficient (h)",
+      "formula_latex": "h = \\frac{V \\times I}{\\pi \\times D \\times L \\times (T_s - T_a)}",
+      "substitution_template": "h = \\frac{{V} \\times {I}}{\\pi \\times {D} \\times {L} \\times ({Ts} - {Ta})}",
+      "variables": [
+        { "symbol": "V", "label": "Voltmeter reading", "source_field": "V", "unit": "V" },
+        { "symbol": "I", "label": "Ammeter reading", "source_field": "I", "unit": "A" },
+        { "symbol": "D", "label": "Tube Diameter", "source_field": "D", "unit": "m" },
+        { "symbol": "L", "label": "Tube Length", "source_field": "L", "unit": "m" },
+        { "symbol": "T_s", "label": "Average Surface Temperature", "source_field": "Ts", "unit": "°C" },
+        { "symbol": "T_a", "label": "Ambient Temperature", "source_field": "Ta", "unit": "°C" }
+      ],
+      "result_unit": "W/m²·K",
+      "tolerance_percent": 5
+    }
+  ],
   "calculated_columns": [
     { "id": "q", "label": "Heat Input (q)", "unit": "W", "format": "decimal" },
     { "id": "Ts", "label": "Surface Temp (Ts)", "unit": "°C", "format": "decimal" },

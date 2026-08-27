@@ -34,7 +34,8 @@ export function ReportExportModal() {
     currentSubject,
     currentExperimentId,
     studentInterpretations,
-    setStudentInterpretation
+    setStudentInterpretation,
+    manualCalculationData
   } = useExperimentStore();
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -51,6 +52,27 @@ export function ReportExportModal() {
   const subjectInfo = SUBJECTS_CONFIG[currentSubject] || SUBJECTS_CONFIG[experimentConfig?.subject] || SUBJECTS_CONFIG.fluid_mechanics;
   const config = activePartConfig || experimentConfig;
   const isMultiPart = Array.isArray(experimentConfig?.parts) && experimentConfig.parts.length > 0;
+  const isManualMode = config?.manual_calculation_mode || experimentConfig?.manual_calculation_mode;
+
+  const checkManualCalcComplete = () => {
+    if (!isManualMode) return true;
+    if (!observationRows || observationRows.length <= 1) return true;
+    const expData = manualCalculationData[currentExpId] || {};
+    const calcItem = Array.isArray(config.calculations) ? config.calculations[0] : {};
+    const vars = calcItem.variables || [];
+
+    for (let i = 1; i < observationRows.length; i++) {
+      const trialData = expData[i];
+      if (!trialData || !trialData.result || trialData.result === '') return false;
+      const trialVars = trialData.variables || {};
+      for (const v of vars) {
+        if (trialVars[v.symbol] === undefined || trialVars[v.symbol] === '') return false;
+      }
+    }
+    return true;
+  };
+
+  const isManualComplete = checkManualCalcComplete();
 
   const handlePrint = () => {
     window.print();
@@ -307,9 +329,18 @@ export function ReportExportModal() {
                     {partTrialInputs.map(inp => (
                       <td key={inp.id} className="py-1 px-2 border-r border-black">{row[inp.id] || '—'}</td>
                     ))}
-                    {partCalcColumns.map(col => (
-                      <td key={col.id} className="py-1 px-2 border-r border-black font-bold text-black">{formatValue(row[col.id], col.format)}</td>
-                    ))}
+                    {partCalcColumns.map(col => {
+                      const isManualMode = config?.manual_calculation_mode || experimentConfig?.manual_calculation_mode;
+                      const isTrial1 = rIdx === 0;
+                      const valStr = formatValue(row[col.id], col.format);
+                      const isHeadlineCol = col.id === (config?.headline_output?.resultKey || 'h') || col.id === 'h';
+                      const suffix = isManualMode && isTrial1 && isHeadlineCol ? ' (Example)' : '';
+                      return (
+                        <td key={col.id} className="py-1 px-2 border-r border-black font-bold text-black">
+                          {valStr !== '—' ? `${valStr}${suffix}` : '—'}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -518,8 +549,9 @@ export function ReportExportModal() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.3)]"
+              disabled={isGeneratingPdf || !isManualComplete}
+              title={!isManualComplete ? 'Complete all Trial 2+ manual calculation fields before downloading report' : 'Download PDF File'}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.3)] disabled:cursor-not-allowed"
             >
               {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               <span>Download PDF File</span>

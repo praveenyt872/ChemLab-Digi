@@ -5,7 +5,7 @@ import orificeConfig from '../data/experiments/orifice.json';
 import processControlConfig from '../data/experiments/process_control_first_order.json';
 import freeConvectionConfig from '../data/experiments/free_convection.json';
 import rtdCstrConfig from '../data/experiments/rtd_cstr.json';
-import { calculateTable, calculateSummary } from '../engine/formulaEngine';
+import { calculateTable, calculateSummary, validateManualCalculation } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
 import { saveSessionToDb, loadSessionFromDb } from '../utils/indexedDbStore';
@@ -142,6 +142,30 @@ const loadInitialInterpretations = () => {
   return {};
 };
 
+const loadInitialManualCalcData = () => {
+  try {
+    const saved = localStorage.getItem('labflow_manual_calc_data');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.error('Error loading manual calculation data:', e);
+  }
+  return {};
+};
+
+const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isManualMode) => {
+  if (!isManualMode || !computedRows) return computedRows;
+  const expManuals = manualCalcData[expId] || {};
+  return computedRows.map((row, idx) => {
+    if (idx === 0) return row;
+    const studentResStr = expManuals[idx]?.result;
+    const studentResNum = parseFloat(studentResStr);
+    return {
+      ...row,
+      h: !isNaN(studentResNum) && isFinite(studentResNum) ? studentResNum : null
+    };
+  });
+};
+
 const initialStudentDetails = loadInitialStudentDetails();
 
 export const useExperimentStore = create((set, get) => ({
@@ -156,6 +180,7 @@ export const useExperimentStore = create((set, get) => ({
   studentDetails: initialStudentDetails,
   isStudentGateOpen: false,
   studentInterpretations: loadInitialInterpretations(),
+  manualCalculationData: loadInitialManualCalcData(),
 
   // Standardization Tables State (for RTD CSTR)
   stdTableA: defaultStdA,
@@ -533,6 +558,71 @@ export const useExperimentStore = create((set, get) => ({
       console.error('Error saving student interpretation:', e);
     }
     set({ studentInterpretations: updated });
+  },
+
+  updateManualVariable: (trialIdx, symbol, val) => {
+    const { currentExperimentId, manualCalculationData, observationRows, activePartConfig } = get();
+    const expData = { ...(manualCalculationData[currentExperimentId] || {}) };
+    const trialData = { ...(expData[trialIdx] || { variables: {}, result: '', flagged_for_review: false }) };
+    const variables = { ...(trialData.variables || {}), [symbol]: val };
+    
+    const trueRows = calculateTable(observationRows, activePartConfig.calculation_expressions || activePartConfig.calculations, activePartConfig.fixed_inputs);
+    const trueRow = trueRows[trialIdx] || {};
+    const calcConfigItem = Array.isArray(activePartConfig.calculations) ? activePartConfig.calculations[0] : {};
+    const validation = validateManualCalculation(variables, trialData.result, trueRow, calcConfigItem);
+
+    trialData.variables = variables;
+    trialData.flagged_for_review = validation.flagged_for_review;
+    expData[trialIdx] = trialData;
+
+    const updatedManualData = { ...manualCalculationData, [currentExperimentId]: expData };
+
+    try {
+      localStorage.setItem('labflow_manual_calc_data', JSON.stringify(updatedManualData));
+    } catch (e) {}
+
+    set({ manualCalculationData: updatedManualData });
+  },
+
+  updateManualResult: (trialIdx, resultVal) => {
+    const { currentExperimentId, manualCalculationData, observationRows, activePartConfig, calculatedRows } = get();
+    const expData = { ...(manualCalculationData[currentExperimentId] || {}) };
+    const trialData = { ...(expData[trialIdx] || { variables: {}, result: '', flagged_for_review: false }) };
+    
+    trialData.result = resultVal;
+
+    const trueRows = calculateTable(observationRows, activePartConfig.calculation_expressions || activePartConfig.calculations, activePartConfig.fixed_inputs);
+    const trueRow = trueRows[trialIdx] || {};
+    const calcConfigItem = Array.isArray(activePartConfig.calculations) ? activePartConfig.calculations[0] : {};
+    const validation = validateManualCalculation(trialData.variables, resultVal, trueRow, calcConfigItem);
+    trialData.flagged_for_review = validation.flagged_for_review;
+    expData[trialIdx] = trialData;
+
+    const updatedManualData = { ...manualCalculationData, [currentExperimentId]: expData };
+
+    try {
+      localStorage.setItem('labflow_manual_calc_data', JSON.stringify(updatedManualData));
+    } catch (e) {}
+
+    const newCalculatedRows = (calculatedRows || []).map((row, rIdx) => {
+      if (rIdx === trialIdx && rIdx > 0) {
+        const parsedRes = parseFloat(resultVal);
+        return {
+          ...row,
+          h: !isNaN(parsedRes) && isFinite(parsedRes) ? parsedRes : null
+        };
+      }
+      return row;
+    });
+
+    const primaryKey = getPrimaryKey(currentExperimentId, 'partA');
+    const summary = calculateSummary(newCalculatedRows, primaryKey);
+
+    set({
+      manualCalculationData: updatedManualData,
+      calculatedRows: newCalculatedRows,
+      headlineResult: summary
+    });
   },
   saveStudentDetails: (details) => {
     try {
