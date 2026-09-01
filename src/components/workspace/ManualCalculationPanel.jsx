@@ -1,6 +1,7 @@
 import React from 'react';
-import { Lock, Calculator, AlertCircle, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Lock, Calculator, CheckCircle2, BookOpen } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
+import { calculateTable, formatValue } from '../../engine/formulaEngine';
 import { KaTeXRenderer } from '../common/KaTeXRenderer';
 import { GlassCard } from '../common/GlassCard';
 
@@ -13,7 +14,8 @@ export function ManualCalculationPanel() {
     manualCalculationData,
     updateStepManualVariable,
     updateStepManualResult,
-    setWorkedExampleOpen
+    stdTableA,
+    stdTableB
   } = useExperimentStore();
 
   const config = activePartConfig || experimentConfig;
@@ -22,40 +24,118 @@ export function ManualCalculationPanel() {
   const calcDefs = Array.isArray(config.calculations) ? config.calculations : [];
   const expManualData = manualCalculationData[currentExperimentId] || {};
 
+  // Compute true auto-calculated rows for Trial 1 reference example
+  const trueRows = calculateTable(
+    observationRows,
+    config.calculation_expressions || config.calculations,
+    config.fixed_inputs || []
+  );
+
+  const trial1Obs = observationRows?.[0] || {};
+  const trial1TrueRow = trueRows?.[0] || {};
+
+  const getSubstitutedLatex = (templateStr, row) => {
+    if (!templateStr || !row) return '';
+    const h1 = parseFloat(row.h1);
+    const h2 = parseFloat(row.h2);
+    const h_diff = !isNaN(h1) && !isNaN(h2) ? Math.abs(h1 - h2) : null;
+    const h_diff_cm = h_diff !== null ? h_diff.toFixed(1) : '';
+
+    let res = templateStr.replace(/\{h_diff_cm\}/g, h_diff_cm);
+
+    res = res.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, varName) => {
+      const val = row[varName];
+      if (val === undefined || val === null) return match;
+      if (typeof val === 'number') {
+        if (Math.abs(val) < 0.0001 && val !== 0) return val.toExponential(4);
+        return Number.isInteger(val) ? val.toString() : val.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+      }
+      return String(val);
+    });
+    return res;
+  };
+
   return (
     <div className="space-y-6">
       
-      {/* 1. Trial 1 Reference Banner with Pop-up Button */}
-      <GlassCard className="border-l-4 border-l-cyan-500 bg-slate-50/90 space-y-3 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+      {/* 1. Trial 1 — Inline Worked Example Card (Locked Reference) */}
+      <GlassCard className="border-l-4 border-l-cyan-600 bg-slate-50/90 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center font-bold shrink-0">
-              <Lock className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-800 flex items-center justify-center font-bold">
+              <Lock className="w-4 h-4" />
             </div>
             <div>
               <h3 className="font-heading text-base font-bold text-slate-800 flex items-center gap-2">
-                <span>Trial 1 Worked Example & Reference Formulae</span>
+                <span>Worked Example – Trial 1 (Locked Reference)</span>
               </h3>
               <p className="text-xs text-slate-500 font-mono">
-                Auto-calculated reference trial with full formula substitutions
+                Auto-calculated reference trial with step-by-step formula substitutions
               </p>
             </div>
           </div>
-
-          <button
-            onClick={() => setWorkedExampleOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold text-xs hover:bg-cyan-500 transition-all shadow-md cursor-pointer shrink-0"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>View Trial 1 Worked Example (Reference Pop-up)</span>
-          </button>
+          <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200">
+            Read-Only Reference
+          </span>
         </div>
-        <p className="text-xs font-sans text-slate-600 leading-normal">
-          Trial 1 serves as your reference worked example. Click the button above to view step-by-step symbolic formulas, numerical substitutions, and reference values. Use them to perform the manual calculations for Trials 2–5 below.
-        </p>
+
+        {/* Trial 1 Observations Summary */}
+        <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs font-mono space-y-1">
+          <span className="text-slate-500 font-bold uppercase text-[10px]">Trial 1 Base Observation Readings:</span>
+          <div className="flex items-center gap-3 flex-wrap text-slate-800 font-bold pt-1">
+            {(config?.trial_inputs || []).map((inp) => (
+              <span key={inp.id} className="px-2.5 py-1 rounded bg-slate-100 border border-slate-200">
+                {inp.label}: <span className="text-cyan-700">{trial1Obs[inp.id] || '—'} {inp.unit}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Trial 1 Step-by-Step Worked Solutions */}
+        <div className="space-y-3">
+          <span className="text-xs font-mono font-bold text-slate-700 uppercase tracking-wider block">
+            Step-by-Step Worked Reference Solutions (Trial 1):
+          </span>
+
+          {calcDefs.map((stepItem, stepIdx) => {
+            const rawRefVal = trial1TrueRow[stepItem.target_field || stepItem.id];
+            const refValFormatted = formatValue(rawRefVal, stepItem.format || 'decimal');
+            const subLatex = getSubstitutedLatex(stepItem.substitution_template, trial1TrueRow);
+
+            return (
+              <div key={stepItem.id} className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2 font-mono text-xs text-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span className="w-4 h-4 rounded-full bg-cyan-100 text-cyan-800 text-[10px] flex items-center justify-center font-bold">
+                      {stepIdx + 1}
+                    </span>
+                    {stepItem.label || `Step ${stepIdx + 1}`}
+                  </span>
+                  <span className="text-xs font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+                    Ref = {refValFormatted} {stepItem.result_unit && stepItem.result_unit !== 'dim' ? stepItem.result_unit : ''}
+                  </span>
+                </div>
+
+                {/* Formula */}
+                <div className="p-2 rounded bg-slate-50 border border-slate-200 overflow-x-auto flex items-baseline gap-2">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase shrink-0">Formula:</span>
+                  <KaTeXRenderer math={stepItem.formula_latex || 'y = f(x)'} block={false} />
+                </div>
+
+                {/* Numeric Substitution */}
+                {subLatex && (
+                  <div className="p-2 rounded bg-slate-50 border border-slate-200 overflow-x-auto flex items-baseline gap-2">
+                    <span className="text-[10px] text-cyan-600 font-bold uppercase shrink-0">Substituted:</span>
+                    <KaTeXRenderer math={subLatex} block={false} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </GlassCard>
 
-      {/* 2. Trial 2+ — Step-by-Step Manual Calculation Blocks */}
+      {/* 2. Trial 2+ — Step-by-Step Manual Calculation Tasks */}
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-200 pb-2">
           <h3 className="font-heading text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -63,7 +143,7 @@ export function ManualCalculationPanel() {
             <span>Manual Step-by-Step Calculation Tasks (Trial 2+)</span>
           </h3>
           <span className="text-xs font-mono text-slate-500">
-            Complete each step to fill results table
+            Fill in values to populate derived results table
           </span>
         </div>
 
@@ -97,7 +177,6 @@ export function ManualCalculationPanel() {
                   const stepState = stepsState[stepId] || { variables: {}, result: '' };
                   const stepVars = stepState.variables || {};
                   const variablesList = stepItem.variables || [];
-                  const isFlagged = Boolean(stepState.flagged_for_review);
                   const isFilled = stepState.result !== undefined && stepState.result !== '';
 
                   return (
@@ -117,7 +196,7 @@ export function ManualCalculationPanel() {
                         {isFilled && (
                           <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-mono font-bold flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            Value Entered
+                            Filled into Results Table
                           </span>
                         )}
                       </div>

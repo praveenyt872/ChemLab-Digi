@@ -173,7 +173,14 @@ const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isMa
     const stepsData = trialManualData.steps || {};
     const updatedRow = { ...row };
 
-    // Fill in values for steps entered by student
+    // Clear all calculated columns by default for Trial 2+ (must start blank)
+    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'f', 'NRe', 'h'].forEach(colKey => {
+      if (updatedRow[colKey] !== undefined) {
+        updatedRow[colKey] = null;
+      }
+    });
+
+    // Populate values for steps entered by student
     Object.keys(stepsData).forEach(stepId => {
       const studentResStr = stepsData[stepId]?.result;
       const studentResNum = parseFloat(studentResStr);
@@ -192,15 +199,6 @@ const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isMa
     } else {
       updatedRow[primaryKey] = null;
     }
-
-    // Set uncalculated derived columns for Trial 2+ to null
-    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'f', 'NRe', 'h'].forEach(fieldKey => {
-      if (updatedRow[fieldKey] !== undefined && fieldKey !== primaryKey) {
-        if (!stepsData[fieldKey] || isNaN(parseFloat(stepsData[fieldKey]?.result))) {
-          updatedRow[fieldKey] = null;
-        }
-      }
-    });
 
     return updatedRow;
   });
