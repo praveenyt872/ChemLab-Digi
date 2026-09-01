@@ -8,7 +8,6 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
   ComposedChart,
-  Scatter,
   Line,
   XAxis,
   YAxis,
@@ -20,6 +19,52 @@ import {
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
 import { getSchematicDiagram } from '../../utils/schematicAssets';
 import recLogo from '../../assets/rec-logo.png';
+
+class ModalErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ReportExportModal rendering error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 rounded-2xl bg-slate-900 border border-red-500/40 text-white space-y-4 max-w-xl mx-auto shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 className="font-heading font-bold text-red-400 text-lg">Report Preview Notice</h3>
+            <button onClick={this.props.onClose} className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-xs font-mono text-slate-300">
+            An error occurred while compiling the report graphics. You can still print or close this window:
+          </p>
+          <div className="p-3 bg-slate-950 border border-slate-800 rounded text-[11px] font-mono text-red-300 overflow-x-auto">
+            {String(this.state.error?.message || this.state.error)}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => window.print()} className="px-3 py-1.5 rounded bg-slate-800 text-xs font-mono font-bold text-white hover:bg-slate-700">
+              Print Browser View
+            </button>
+            <button onClick={this.props.onClose} className="px-4 py-1.5 rounded bg-violet-600 text-xs font-bold text-white hover:bg-violet-500">
+              Close Report Window
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 export function ReportExportModal() {
   const {
@@ -45,11 +90,18 @@ export function ReportExportModal() {
   if (!isReportModalOpen || !experimentConfig) return null;
 
   const currentExpId = currentExperimentId || experimentConfig?.experiment_id || 'rotameter_calibration';
-  const studentInterpText = studentInterpretations[currentExpId] || '';
+  const studentInterpText = (studentInterpretations && studentInterpretations[currentExpId]) || '';
   const interpWordCount = studentInterpText.trim() ? studentInterpText.trim().split(/\s+/).filter(Boolean).length : 0;
-  const isInterpMet = interpWordCount >= 100;
 
-  const subjectInfo = SUBJECTS_CONFIG[currentSubject] || SUBJECTS_CONFIG[experimentConfig?.subject] || SUBJECTS_CONFIG.fluid_mechanics;
+  const defaultSubjectInfo = {
+    courseCode: 'CH23331',
+    courseTitle: 'Fluid Mechanics Lab',
+    field: 'Chemical Engineering',
+    semester: 'VII',
+    section: 'B'
+  };
+
+  const subjectInfo = (SUBJECTS_CONFIG && (SUBJECTS_CONFIG[currentSubject] || SUBJECTS_CONFIG[experimentConfig?.subject])) || SUBJECTS_CONFIG?.fluid_mechanics || defaultSubjectInfo;
   const config = activePartConfig || experimentConfig;
   const isMultiPart = Array.isArray(experimentConfig?.parts) && experimentConfig.parts.length > 0;
   const isManualMode = config?.manual_calculation_mode || experimentConfig?.manual_calculation_mode;
@@ -57,7 +109,7 @@ export function ReportExportModal() {
   const checkManualCalcComplete = () => {
     if (!isManualMode) return true;
     if (!observationRows || observationRows.length <= 1) return true;
-    const expData = manualCalculationData[currentExpId] || {};
+    const expData = (manualCalculationData && manualCalculationData[currentExpId]) || {};
     const calcItem = Array.isArray(config.calculations) ? config.calculations[0] : {};
     const vars = calcItem.variables || [];
 
@@ -131,21 +183,37 @@ export function ReportExportModal() {
 
   // Helper to render a single experiment part section in report
   const renderPartSection = (part, isSub = false) => {
-    const partTrialInputs = part.trial_inputs || [];
-    const partCalcColumns = part.calculated_columns || [];
-    
-    const calcExprs = part.calculation_expressions || part.calculations;
-    const rowsToUse = isSub
-      ? calculateTable(part.sample_data || [], calcExprs, part.fixed_inputs, part.calculation_expressions)
-      : (calculatedRows && calculatedRows.length > 0
-          ? calculatedRows
-          : calculateTable(part.sample_data || [], calcExprs, part.fixed_inputs, part.calculation_expressions));
+    if (!part) return null;
 
-    const partRows = rowsToUse;
-    const partCalcSteps = part.calculation_steps || [];
-    const sampleTrialSteps = partRows.length > 0 && partCalcSteps.length > 0
-      ? evaluateStepCalculations(partRows[0], partCalcSteps, part.fixed_inputs)
-      : [];
+    const partTrialInputs = Array.isArray(part.trial_inputs) ? part.trial_inputs : [];
+    const partCalcColumns = Array.isArray(part.calculated_columns) ? part.calculated_columns : [];
+    const partCalcSteps = Array.isArray(part.calculation_steps) ? part.calculation_steps : [];
+    const partFormulas = Array.isArray(part.formulas) ? part.formulas : [];
+    const partProcedure = Array.isArray(part.procedure) ? part.procedure : [];
+    const partApparatus = Array.isArray(part.apparatus) ? part.apparatus : (Array.isArray(experimentConfig?.apparatus) ? experimentConfig.apparatus : []);
+
+    let partRows = [];
+    try {
+      const calcExprs = part.calculation_expressions || part.calculations || {};
+      partRows = isSub
+        ? calculateTable(part.sample_data || [], calcExprs, part.fixed_inputs || [], part.calculation_expressions)
+        : (calculatedRows && calculatedRows.length > 0
+            ? calculatedRows
+            : calculateTable(part.sample_data || [], calcExprs, part.fixed_inputs || [], part.calculation_expressions));
+    } catch (e) {
+      console.error('Error calculating partRows:', e);
+      partRows = observationRows || [];
+    }
+
+    let sampleTrialSteps = [];
+    try {
+      if (partRows && partRows.length > 0 && partCalcSteps.length > 0) {
+        sampleTrialSteps = evaluateStepCalculations(partRows[0], partCalcSteps, part.fixed_inputs || []);
+      }
+    } catch (e) {
+      console.error('Error evaluating sampleTrialSteps:', e);
+      sampleTrialSteps = [];
+    }
 
     const isStep = part.graph?.type === 'first_order_step';
     const isSinusoidal = part.graph?.type === 'first_order_sinusoidal';
@@ -164,30 +232,31 @@ export function ReportExportModal() {
                     Array.isArray(part?.viva_questions) &&
                     part.viva_questions.length > 0;
 
-    const stepData = partRows.map((r) => {
-      const t = parseFloat(r.t || 0);
-      const normHeat = parseFloat(r.norm_heat || 0);
+    const stepData = (partRows || []).map((r) => {
+      const t = parseFloat(r?.t || 0);
+      const normHeat = parseFloat(r?.norm_heat || 0);
       return {
         t,
         t_over_tau: parseFloat((t / 10).toFixed(2)),
         exp_norm: parseFloat((normHeat / 2.6).toFixed(3)),
         theo_norm: parseFloat((1 - Math.exp(-t / 10)).toFixed(3)),
-        T_rise: parseFloat(r.T_rise || 0),
-        T_fall: parseFloat(r.T_fall || 0)
+        T_rise: parseFloat(r?.T_rise || 0),
+        T_fall: parseFloat(r?.T_fall || 0)
       };
     });
 
-    const sinusoidalData = partRows.map((r) => ({
-      t: parseFloat(r.t || 0),
-      T_in: parseFloat(r.T_in || 0),
-      T_out: parseFloat(r.T_out || 0)
+    const sinusoidalData = (partRows || []).map((r) => ({
+      t: parseFloat(r?.t || 0),
+      T_in: parseFloat(r?.T_in || 0),
+      T_out: parseFloat(r?.T_out || 0)
     }));
 
     // Standard scatter plot data
-    const chartData = partRows
+    const chartData = (partRows || [])
       .map((r, idx) => {
-        const rawX = r[part.graph?.x];
-        const rawY = r[part.graph?.y];
+        if (!r || !part.graph) return null;
+        const rawX = r[part.graph.x];
+        const rawY = r[part.graph.y];
         const xVal = typeof rawX === 'number' ? rawX : parseFloat(rawX);
         const yVal = typeof rawY === 'number' ? rawY : parseFloat(rawY);
 
@@ -265,7 +334,7 @@ export function ReportExportModal() {
         {/* APPARATUS */}
         <div className="printable-section">
           <span className="font-bold text-xs uppercase tracking-wider text-black font-mono underline mr-2">APPARATUS:</span>
-          <span className="text-xs text-gray-900 font-sans">{(part.apparatus || experimentConfig.apparatus || []).join(', ')}.</span>
+          <span className="text-xs text-gray-900 font-sans">{partApparatus.join(', ')}.</span>
         </div>
 
         {/* SCHEMATIC DIAGRAM */}
@@ -288,7 +357,7 @@ export function ReportExportModal() {
           <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">THEORY:</h3>
           <p className="text-xs text-gray-900 leading-normal font-sans whitespace-pre-wrap">{part.theory}</p>
           <div className="space-y-1 pt-1 font-mono text-xs text-black">
-            {(part.formulas || []).map((formula) => (
+            {partFormulas.map((formula) => (
               <div key={formula.id} className="py-0.5 flex items-baseline gap-2 flex-wrap">
                 <span className="font-bold text-black shrink-0">{formula.label}:</span>
                 <KaTeXRenderer math={formula.latex} block={false} />
@@ -301,7 +370,7 @@ export function ReportExportModal() {
         <div className="space-y-1 printable-section">
           <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">EXPERIMENTAL PROCEDURE:</h3>
           <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-900 font-sans">
-            {(part.procedure || []).map((step, idx) => (
+            {partProcedure.map((step, idx) => (
               <li key={idx} className="leading-snug">{step}</li>
             ))}
           </ol>
@@ -331,9 +400,10 @@ export function ReportExportModal() {
                       <td key={inp.id} className="py-1 px-2 border-r border-black">{row[inp.id] || '—'}</td>
                     ))}
                     {partCalcColumns.map(col => {
+                      const valStr = formatValue(row[col.id], col.format);
                       const headlineKey = config?.headline_output?.resultKey || 'h';
                       const isHeadlineCol = col.id === headlineKey || col.id === 'h' || col.id === 'Q' || col.id === 'Cd' || col.id === 'f';
-                      const suffix = isManualMode && isTrial1 && isHeadlineCol ? ' (Example)' : '';
+                      const suffix = isManualMode && rIdx === 0 && isHeadlineCol ? ' (Example)' : '';
                       return (
                         <td key={col.id} className="py-1 px-2 border-r border-black font-bold text-black">
                           {valStr !== '—' ? `${valStr}${suffix}` : '—'}
@@ -393,11 +463,10 @@ export function ReportExportModal() {
               {isStep
                 ? 'Draw graph of T̄\'(t)/K vs time/τ and note time required to reach 63.2% of final value.'
                 : isSinusoidal
-                ? 'Draw graph comparing Input Bath and Output Thermowell temperature vs time.'
-                : `Draw graph between ${part.graph?.y_label} on Y-axis and ${part.graph?.x_label} on X-axis.`}
+                ? 'Draw graph of T_in and T_out vs time and determine phase lag and amplitude attenuation.'
+                : `Plot of ${part.graph?.y_label || 'Y'} vs ${part.graph?.x_label || 'X'}.`}
             </p>
-
-            <div className="h-[220px] w-full rounded border border-black bg-white p-2">
+            <div className="w-full h-44 my-2 border border-gray-300 rounded p-2 bg-white min-h-[170px]">
               <ResponsiveContainer width="100%" height="100%">
                 {isStep ? (
                   <ComposedChart data={stepData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
@@ -417,7 +486,7 @@ export function ReportExportModal() {
                     <Line type="monotone" dataKey="T_out" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
                   </ComposedChart>
                 ) : (
-                  <ComposedChart margin={{ top: 12, right: 20, bottom: 25, left: 20 }}>
+                  <ComposedChart data={chartData.length > 0 ? chartData : [{ x: 0, y: 0 }]} margin={{ top: 12, right: 20, bottom: 25, left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
                     <XAxis
                       dataKey="x"
@@ -512,7 +581,7 @@ export function ReportExportModal() {
             </p>
           ) : (
             <p className="text-xs font-semibold text-gray-900 font-sans">
-              The mean value is calculated to be {headlineResult.mean !== null ? headlineResult.mean.toFixed(3) : '—'}.
+              The mean value is calculated to be {headlineResult && headlineResult.mean !== null && headlineResult.mean !== undefined ? headlineResult.mean.toFixed(3) : '—'}.
             </p>
           )}
         </div>
@@ -528,160 +597,161 @@ export function ReportExportModal() {
         exit={{ opacity: 0, y: 20 }}
         className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl glass-panel border border-cyan-500/40 p-6 shadow-2xl bg-slate-950 text-slate-100 space-y-4 report-modal-content"
       >
-        {/* Top Control Bar */}
-        <div className="flex items-center justify-between pb-3 border-b border-cyan-500/20 no-print">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-              <FileDown className="w-5 h-5" />
+        <ModalErrorBoundary onClose={() => setReportModalOpen(false)}>
+          {/* Top Control Bar */}
+          <div className="flex items-center justify-between pb-3 border-b border-cyan-500/20 no-print">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <FileDown className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-heading text-base font-bold text-slate-100">
+                  Official Experiment Report Export
+                </h3>
+                <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  <img src={recLogo} alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
+                  <span>Rajalakshmi Engineering College — Manual Standard Format</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-heading text-base font-bold text-slate-100">
-                Official Experiment Report Export
-              </h3>
-              <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 mt-0.5">
-                <img src={recLogo} alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
-                <span>Rajalakshmi Engineering College — Manual Standard Format</span>
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf || !isManualComplete}
-              title={!isManualComplete ? 'Complete all Trial 2+ manual calculation fields before downloading report' : 'Download PDF File'}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.3)] disabled:cursor-not-allowed"
-            >
-              {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              <span>Download PDF File</span>
-            </button>
-
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 text-xs font-mono transition-all cursor-pointer"
-            >
-              <Printer className="w-4 h-4 text-cyan-400" />
-              <span>Print</span>
-            </button>
-
-            <button
-              onClick={() => setReportModalOpen(false)}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Interpretation Status & Quick Edit Drawer (no-print) */}
-        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono no-print space-y-2">
-          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-200">Student Interpretation:</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold">
-                {interpWordCount} {interpWordCount === 1 ? 'word' : 'words'}
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf || !isManualComplete}
+                title={!isManualComplete ? 'Complete all Trial 2+ manual calculation fields before downloading report' : 'Download PDF File'}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.3)] disabled:cursor-not-allowed"
+              >
+                {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                <span>Download PDF File</span>
+              </button>
+
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 text-xs font-mono transition-all cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-cyan-400" />
+                <span>Print</span>
+              </button>
+
+              <button
+                onClick={() => setReportModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Interpretation Status & Quick Edit Drawer (no-print) */}
+          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono no-print space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-200">Student Interpretation:</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold">
+                  {interpWordCount} {interpWordCount === 1 ? 'word' : 'words'}
+                </span>
+              </div>
+              <button
+                onClick={() => setIsEditingInterp(!isEditingInterp)}
+                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+              >
+                {isEditingInterp ? 'Close Quick Editor' : 'Edit Interpretation Text'}
+              </button>
+            </div>
+
+            {isEditingInterp && (
+              <textarea
+                rows={4}
+                value={studentInterpText}
+                onChange={(e) => setStudentInterpretation(currentExpId, e.target.value)}
+                placeholder="Type or edit student interpretation here..."
+                className="w-full p-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 shadow-inner"
+              />
+            )}
+          </div>
+
+          {/* Compact Printable Report Sheet */}
+          <div
+            ref={reportRef}
+            className="p-6 rounded-xl bg-white text-black font-sans space-y-4 printable-report-sheet shadow-xl"
+          >
+            {/* Student & Course Details Reference Header Table */}
+            <div className="printable-section border border-black text-xs font-mono">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-200 border-b border-black text-black">
+                    <th className="p-1.5 font-bold border-r border-black w-1/3">Parameter</th>
+                    <th className="p-1.5 font-bold">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black">
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Field</td>
+                    <td className="p-1.5 text-black">{GLOBAL_APP_CONFIG.field}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Course Code</td>
+                    <td className="p-1.5 text-black font-bold">{subjectInfo.courseCode}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Course Title</td>
+                    <td className="p-1.5 text-black font-bold">{subjectInfo.courseTitle}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Academic Year</td>
+                    <td className="p-1.5 text-black">{studentDetails?.academicYear || '2027-2028'}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Semester</td>
+                    <td className="p-1.5 text-black font-bold">Semester {studentDetails?.semester || subjectInfo.semester || GLOBAL_APP_CONFIG.semester}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Student Name</td>
+                    <td className="p-1.5 font-bold text-black">{studentDetails?.studentName || '—'}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Register Number</td>
+                    <td className="p-1.5 text-black font-bold">{studentDetails?.registerNumber || '—'}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Section</td>
+                    <td className="p-1.5 text-black font-bold">Section {studentDetails?.section || subjectInfo.section || GLOBAL_APP_CONFIG.section}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Main Experiment Header Title */}
+            <div className="text-center pb-1 printable-section">
+              <h1 className="text-base font-bold font-heading uppercase tracking-wide text-black border-b border-black pb-1">
+                {experimentConfig?.title?.toUpperCase()}
+              </h1>
+            </div>
+
+            {/* Render Either Combined Multi-Part Report or Single Part Report */}
+            {isMultiPart ? (
+              experimentConfig.parts.map((part) => renderPartSection(part, true))
+            ) : (
+              renderPartSection(config, false)
+            )}
+
+            {/* Running Footer with Watermark Credit */}
+            <div className="pt-3 border-t border-gray-300 flex items-center justify-between text-[10px] font-mono text-gray-600">
+              <span>
+                {experimentConfig.subject === 'instrumentation-process-control'
+                  ? 'Process Control Laboratory | CH23722'
+                  : experimentConfig.subject === 'heat_transfer'
+                  ? 'Heat Transfer Laboratory | CH23521'
+                  : 'Chemical Engineering | CH23331'}
+              </span>
+              <span className="font-bold text-black">
+                Created by Team Zynix
               </span>
             </div>
-            <button
-              onClick={() => setIsEditingInterp(!isEditingInterp)}
-              className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
-            >
-              {isEditingInterp ? 'Close Quick Editor' : 'Edit Interpretation Text'}
-            </button>
+
           </div>
-
-          {isEditingInterp && (
-            <textarea
-              rows={4}
-              value={studentInterpText}
-              onChange={(e) => setStudentInterpretation(currentExpId, e.target.value)}
-              placeholder="Type or edit student interpretation here..."
-              className="w-full p-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 shadow-inner"
-            />
-          )}
-        </div>
-
-        {/* Compact Printable Report Sheet */}
-        <div
-          ref={reportRef}
-          className="p-6 rounded-xl bg-white text-black font-sans space-y-4 printable-report-sheet shadow-xl"
-        >
-          {/* Student & Course Details Reference Header Table */}
-          <div className="printable-section border border-black text-xs font-mono">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-200 border-b border-black text-black">
-                  <th className="p-1.5 font-bold border-r border-black w-1/3">Parameter</th>
-                  <th className="p-1.5 font-bold">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black">
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Field</td>
-                  <td className="p-1.5 text-black">{GLOBAL_APP_CONFIG.field}</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Course Code</td>
-                  <td className="p-1.5 text-black font-bold">{subjectInfo.courseCode}</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Course Title</td>
-                  <td className="p-1.5 text-black font-bold">{subjectInfo.courseTitle}</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Academic Year</td>
-                  <td className="p-1.5 text-black">{studentDetails?.academicYear || '2027-2028'}</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Semester</td>
-                  <td className="p-1.5 text-black font-bold">Semester {studentDetails?.semester || subjectInfo.semester || GLOBAL_APP_CONFIG.semester}</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Student Name</td>
-                  <td className="p-1.5 font-bold text-black">{studentDetails?.studentName || '—'}</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Register Number</td>
-                  <td className="p-1.5 font-bold text-black">{studentDetails?.registerNumber || '—'}</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Section</td>
-                  <td className="p-1.5 text-black font-bold">Section {studentDetails?.section || subjectInfo.section || GLOBAL_APP_CONFIG.section}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Main Experiment Header Title */}
-          <div className="text-center pb-1 printable-section">
-            <h1 className="text-base font-bold font-heading uppercase tracking-wide text-black border-b border-black pb-1">
-              {experimentConfig?.title?.toUpperCase()}
-            </h1>
-          </div>
-
-          {/* Render Either Combined Multi-Part Report or Single Part Report */}
-          {isMultiPart ? (
-            experimentConfig.parts.map((part) => renderPartSection(part, true))
-          ) : (
-            renderPartSection(config, false)
-          )}
-
-          {/* Running Footer with Watermark Credit */}
-          <div className="pt-3 border-t border-gray-300 flex items-center justify-between text-[10px] font-mono text-gray-600">
-            <span>
-              {experimentConfig.subject === 'instrumentation-process-control'
-                ? 'Process Control Laboratory | CH23722'
-                : experimentConfig.subject === 'heat_transfer'
-                ? 'Heat Transfer Laboratory | CH23521'
-                : 'Chemical Engineering | CH23331'}
-            </span>
-            <span className="font-bold text-black">
-              Created by Team Zynix
-            </span>
-          </div>
-
-        </div>
-
+        </ModalErrorBoundary>
       </motion.div>
     </div>
   );
