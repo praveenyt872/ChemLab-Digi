@@ -38,6 +38,8 @@ export function calculateRow(row, calculations = {}, fixedInputs = [], calculati
   let calcObj = {};
   if (calculationExpressions && typeof calculationExpressions === 'object') {
     calcObj = calculationExpressions;
+  } else if (calculations && typeof calculations === 'object' && calculations.calculation_expressions) {
+    calcObj = calculations.calculation_expressions;
   } else if (!Array.isArray(calculations) && typeof calculations === 'object' && Object.keys(calculations).length > 0) {
     calcObj = calculations;
   } else if (Array.isArray(calculations)) {
