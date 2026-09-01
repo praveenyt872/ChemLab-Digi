@@ -330,10 +330,8 @@ export function ReportExportModal() {
                       <td key={inp.id} className="py-1 px-2 border-r border-black">{row[inp.id] || '—'}</td>
                     ))}
                     {partCalcColumns.map(col => {
-                      const isManualMode = config?.manual_calculation_mode || experimentConfig?.manual_calculation_mode;
-                      const isTrial1 = rIdx === 0;
-                      const valStr = formatValue(row[col.id], col.format);
-                      const isHeadlineCol = col.id === (config?.headline_output?.resultKey || 'h') || col.id === 'h';
+                      const headlineKey = config?.headline_output?.resultKey || 'h';
+                      const isHeadlineCol = col.id === headlineKey || col.id === 'h' || col.id === 'Q' || col.id === 'Cd' || col.id === 'f';
                       const suffix = isManualMode && isTrial1 && isHeadlineCol ? ' (Example)' : '';
                       return (
                         <td key={col.id} className="py-1 px-2 border-r border-black font-bold text-black">

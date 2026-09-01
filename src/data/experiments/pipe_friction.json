@@ -1,0 +1,232 @@
+{
+  "experiment_id": "pipe_friction",
+  "subject": "fluid_mechanics",
+  "title": "Friction Losses in Fluid Flow in Pipes",
+  "short_name": "Pipe Friction Losses",
+  "aim": "To determine the Coefficient of Friction (or Friction factor f) for fluid flow through pipes.",
+  "apparatus": [
+    "17mm G.I. pipe test section",
+    "14mm Cu pipe and 14mm Al pipe",
+    "U-tube differential manometer / Piezometer",
+    "Sump tank and centrifugal pump",
+    "Measuring tank (0.4 m × 0.4 m) and stopwatch",
+    "Globe valve and pressure tappings"
+  ],
+  "theory": "The liquid flowing under pressure in a pipeline is subjected to head loss due to friction, which may be major or minor. When a fluid flows through a pipe, it experiences resistance to flow due to shear stress between the pipe wall and fluid particles as well as between adjacent fluid layers. This frictional resistance causes a loss of pressure head along the direction of flow.\n\nAccording to the Darcy-Weisbach equation for pipe friction:\n\nh_f = \\frac{2 f L V^2}{D g_c} \\implies f = \\frac{h_f \\cdot D \\cdot g_c}{2 L V^2}\n\nWhere:\nh_f = head loss due to friction (m of water)\nD = inside diameter of pipe (m)\nL = length of test pipe section (m)\nV = velocity of water in pipe = Q / A (m/s)\ng_c = acceleration due to gravity (9.81 m/s²)\n\nReynolds Number:\nN_Re = \\frac{D V ρ}{μ}\nWhere ρ = density of water (1000 kg/m³), μ = viscosity of water (0.001 Pa·s).",
+  "procedure": [
+    "Fill the sump tank with water and open the inlet valve fully.",
+    "Open the outlet valve and start the centrifugal pump.",
+    "Check for leakages by closing outlet valves for each pipe and correct any leaks if present.",
+    "Open the outlet valve of the pipe to be tested (17mm G.I. pipe).",
+    "Purge all air bubbles from the manometer tubes and connecting lines.",
+    "Adjust the outlet valve to obtain readable differential head readings on the manometer.",
+    "Record the manometer head difference (hf) and measure the time (t) taken for 10 liters (0.01 m³) of water level rise in the collecting tank.",
+    "Repeat the trial for 5 different flow rates and calculate the friction factor f and Reynolds number NRe."
+  ],
+  "headline_output": {
+    "label": "f",
+    "resultKey": "f",
+    "unit": "-"
+  },
+  "fixed_inputs": [
+    { "id": "D", "label": "Inside Pipe Diameter (D)", "value": 0.017, "unit": "m", "description": "17 mm G.I. pipe diameter" },
+    { "id": "L", "label": "Test Pipe Length (L)", "value": 1.0, "unit": "m", "description": "Length of test section (1 m)" },
+    { "id": "g", "label": "Acceleration due to Gravity (g)", "value": 9.81, "unit": "m/s²", "description": "Gravitational acceleration" },
+    { "id": "rho", "label": "Density of Water (ρ)", "value": 1000, "unit": "kg/m³", "description": "Water density at room temperature" },
+    { "id": "mu", "label": "Dynamic Viscosity (μ)", "value": 0.001, "unit": "Pa·s", "description": "Water dynamic viscosity" }
+  ],
+  "trial_inputs": [
+    { "id": "hm", "label": "Manometer Difference (hf)", "unit": "m", "type": "number", "placeholder": "e.g. 0.05", "tooltip": "Manometer head difference in meters of water" },
+    { "id": "t", "label": "Time for 10L Water Rise", "unit": "sec", "type": "number", "placeholder": "e.g. 35", "tooltip": "Stopwatch time taken for 10 liters water rise" }
+  ],
+  "manual_calculation_mode": true,
+  "calculation_expressions": {
+    "A": "pi * (D^2) / 4",
+    "Q": "0.010 / t",
+    "V": "(0.010 / t) / (pi * (D^2) / 4)",
+    "f": "(hm * D * 9.81) / (2 * L * (((0.010 / t) / (pi * (D^2) / 4))^2))",
+    "NRe": "(D * ((0.010 / t) / (pi * (D^2) / 4)) * 1000) / 0.001"
+  },
+  "calculations": [
+    {
+      "id": "f_calc",
+      "label": "Friction Factor (f)",
+      "formula_latex": "f = \\frac{h_f \\times D \\times g}{2 \\times L \\times V^2}",
+      "substitution_template": "f = \\frac{{hm} \\times {D} \\times 9.81}{2 \\times {L} \\times ({V})^2}",
+      "variables": [
+        { "symbol": "h_f", "label": "Head Loss / Manometer Diff", "source_field": "hm", "unit": "m" },
+        { "symbol": "D", "label": "Inside Pipe Diameter", "source_field": "D", "unit": "m" },
+        { "symbol": "L", "label": "Test Pipe Length", "source_field": "L", "unit": "m" },
+        { "symbol": "V", "label": "Fluid Velocity", "source_field": "V", "unit": "m/s" }
+      ],
+      "result_unit": "dim",
+      "tolerance_percent": 5
+    }
+  ],
+  "calculated_columns": [
+    { "id": "Q", "label": "Flow Rate (Q)", "unit": "m³/s", "format": "scientific" },
+    { "id": "V", "label": "Velocity (V)", "unit": "m/s", "format": "decimal" },
+    { "id": "f", "label": "Friction Factor (f)", "unit": "-", "format": "decimal" },
+    { "id": "NRe", "label": "Reynolds Number (NRe)", "unit": "-", "format": "integer" }
+  ],
+  "formulas": [
+    {
+      "id": "A",
+      "label": "Cross Sectional Area (A)",
+      "latex": "A = \\frac{\\pi D^2}{4}",
+      "derivation": "Internal cross-sectional flow area of the test pipe:\n\nA = \\frac{\\pi (0.017)^2}{4} = 2.27 \\times 10^{-4} \\text{ m²}",
+      "purpose": "Calculates internal area for fluid velocity calculation.",
+      "variables": [
+        { "symbol": "D", "meaning": "Inside pipe diameter", "unit": "m", "typical_range": "0.017 m" },
+        { "symbol": "A", "meaning": "Cross-sectional area", "unit": "m²", "typical_range": "2.27×10⁻⁴ m²" }
+      ],
+      "assumptions": ["Uniform circular pipe geometry"],
+      "practical_application": "Fundamental geometry parameter in fluid flow calculations."
+    },
+    {
+      "id": "Q",
+      "label": "Volumetric Flow Rate (Q)",
+      "latex": "Q = \\frac{\\text{Volume}}{t} = \\frac{0.010}{t}",
+      "derivation": "Volumetric flow rate calculated by measuring the time t taken to collect 10 liters (0.010 m³) of water in measuring tank:\n\nQ = \\frac{0.010}{t} \\text{ (m³/s)}",
+      "purpose": "Computes actual fluid flow rate.",
+      "variables": [
+        { "symbol": "t", "meaning": "Time for 10L water rise", "unit": "sec", "typical_range": "15 – 60 s" },
+        { "symbol": "Q", "meaning": "Flow rate", "unit": "m³/s", "typical_range": "1.6×10⁻⁴ – 6.6×10⁻⁴ m³/s" }
+      ],
+      "assumptions": ["Incompressible steady liquid flow"],
+      "practical_application": "Direct volumetric flow rate measurement."
+    },
+    {
+      "id": "V",
+      "label": "Fluid Velocity (V)",
+      "latex": "V = \\frac{Q}{A}",
+      "derivation": "Average fluid velocity in the pipe calculated from continuity equation:\n\nV = \\frac{Q}{A} \\text{ (m/s)}",
+      "purpose": "Determines mean flow velocity in test pipe.",
+      "variables": [
+        { "symbol": "Q", "meaning": "Flow rate", "unit": "m³/s", "typical_range": "1.6×10⁻⁴ – 6.6×10⁻⁴ m³/s" },
+        { "symbol": "A", "meaning": "Area", "unit": "m²", "typical_range": "2.27×10⁻⁴ m²" },
+        { "symbol": "V", "meaning": "Velocity", "unit": "m/s", "typical_range": "0.7 – 3.0 m/s" }
+      ],
+      "assumptions": ["Fully developed flow profile"],
+      "practical_application": "Determines kinetic energy head and Reynolds number."
+    },
+    {
+      "id": "f",
+      "label": "Friction Factor (f)",
+      "latex": "f = \\frac{h_f \\times D \\times g}{2 \\times L \\times V^2}",
+      "derivation": "Darcy-Weisbach equation relates frictional head loss hf to velocity V:\n\nh_f = \\frac{2 f L V^2}{D g} \\implies f = \\frac{h_f \\cdot D \\cdot g}{2 L V^2}",
+      "purpose": "Calculates experimental pipe friction factor f.",
+      "variables": [
+        { "symbol": "h_f", "label": "Head loss due to friction", "unit": "m", "typical_range": "0.02 – 0.35 m" },
+        { "symbol": "D", "label": "Pipe diameter", "unit": "m", "typical_range": "0.017 m" },
+        { "symbol": "L", "label": "Pipe length", "unit": "m", "typical_range": "1.0 m" },
+        { "symbol": "V", "label": "Fluid velocity", "unit": "m/s", "typical_range": "0.7 – 3.0 m/s" },
+        { "symbol": "f", "label": "Friction factor", "unit": "-", "typical_range": "0.002 – 0.008" }
+      ],
+      "assumptions": ["Uniform pipe roughness", "Steady flow"],
+      "practical_application": "Determines pumping power requirements and pressure drop in industrial piping systems."
+    },
+    {
+      "id": "NRe",
+      "label": "Reynolds Number (NRe)",
+      "latex": "N_{Re} = \\frac{D \\times V \\times \\rho}{\\mu}",
+      "derivation": "Ratio of inertial forces to viscous forces in fluid flow:\n\nN_{Re} = \\frac{D \\cdot V \\cdot \\rho}{\\mu}",
+      "purpose": "Classifies flow regime (laminar vs turbulent).",
+      "variables": [
+        { "symbol": "D", "meaning": "Pipe diameter", "unit": "m", "typical_range": "0.017 m" },
+        { "symbol": "V", "meaning": "Velocity", "unit": "m/s", "typical_range": "0.7 – 3.0 m/s" },
+        { "symbol": "\\rho", "meaning": "Fluid density", "unit": "kg/m³", "typical_range": "1000 kg/m³" },
+        { "symbol": "\\mu", "meaning": "Dynamic viscosity", "unit": "Pa·s", "typical_range": "0.001 Pa·s" },
+        { "symbol": "N_{Re}", "meaning": "Reynolds Number", "unit": "-", "typical_range": "10,000 – 50,000" }
+      ],
+      "assumptions": ["Constant fluid density and viscosity"],
+      "practical_application": "Fundamental dimensionless number governing momentum transport."
+    }
+  ],
+  "calculation_steps": [
+    {
+      "step_id": "A",
+      "step_number": 1,
+      "label": "Step 1: Pipe Cross-Sectional Area (A)",
+      "formula_latex": "A = \\frac{\\pi D^2}{4}",
+      "formula_expression": "pi * (D^2) / 4",
+      "substitution_template": "A = \\frac{\\pi \\times ({D})^2}{4}",
+      "depends_on": ["D"],
+      "unit": "m²",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 3: Velocity (V)"
+    },
+    {
+      "step_id": "Q",
+      "step_number": 2,
+      "label": "Step 2: Volumetric Flow Rate (Q)",
+      "formula_latex": "Q = \\frac{0.010}{t}",
+      "formula_expression": "0.010 / t",
+      "substitution_template": "Q = \\frac{0.010}{{t}}",
+      "depends_on": ["t"],
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 3: Velocity (V)"
+    },
+    {
+      "step_id": "V",
+      "step_number": 3,
+      "label": "Step 3: Fluid Velocity (V)",
+      "formula_latex": "V = \\frac{Q}{A}",
+      "formula_expression": "Q / A",
+      "substitution_template": "V = \\frac{{Q}}{{A}}",
+      "depends_on": ["Q", "A"],
+      "unit": "m/s",
+      "format": "decimal",
+      "decimal_precision": 3,
+      "feeds_into": "Step 4: Friction Factor (f)"
+    },
+    {
+      "step_id": "f",
+      "step_number": 4,
+      "label": "Step 4: Friction Factor (f)",
+      "formula_latex": "f = \\frac{h_f \\times D \\times g}{2 \\times L \\times V^2}",
+      "formula_expression": "(hm * D * 9.81) / (2 * L * (V^2))",
+      "substitution_template": "f = \\frac{{hm} \\times {D} \\times 9.81}{2 \\times {L} \\times ({V})^2}",
+      "depends_on": ["hm", "D", "L", "V"],
+      "unit": "-",
+      "format": "decimal",
+      "decimal_precision": 5
+    },
+    {
+      "step_id": "NRe",
+      "step_number": 5,
+      "label": "Step 5: Reynolds Number (NRe)",
+      "formula_latex": "N_{Re} = \\frac{D \\times V \\times \\rho}{\\mu}",
+      "formula_expression": "(D * V * 1000) / 0.001",
+      "substitution_template": "N_{Re} = \\frac{{D} \\times {V} \\times 1000}{0.001}",
+      "depends_on": ["D", "V"],
+      "unit": "-",
+      "format": "integer",
+      "decimal_precision": 0
+    }
+  ],
+  "graph": {
+    "type": "scatter_with_trend",
+    "x": "NRe",
+    "y": "f",
+    "x_label": "Reynolds Number NRe",
+    "y_label": "Friction Factor f",
+    "title": "Pipe Friction Factor vs Reynolds Number (f vs NRe)"
+  },
+  "sample_data": [
+    { "hm": 0.05, "t": 35.0 },
+    { "hm": 0.09, "t": 26.0 },
+    { "hm": 0.14, "t": 21.0 },
+    { "hm": 0.20, "t": 17.5 },
+    { "hm": 0.27, "t": 15.0 }
+  ],
+  "result_template": "The coefficient of friction for the 17mm G.I. pipe was determined to be f = {mean_h}.",
+  "precautions": [
+    "Operate the control valves gently to prevent pressure spikes.",
+    "Ensure all air bubbles are thoroughly purged from manometer lines before taking readings.",
+    "Keep the outlet flow steady while timing water rise in the measuring tank."
+  ]
+}

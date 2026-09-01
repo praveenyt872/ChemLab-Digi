@@ -16,6 +16,10 @@ export function LiveResultsPanel() {
   const primaryMetric = headlineConfig?.label
     ? headlineConfig.label === 'h'
       ? 'Heat Transfer Coefficient (h)'
+      : headlineConfig.label === 'f'
+      ? 'Friction Factor (f)'
+      : headlineConfig.label === 'Q'
+      ? 'Observed Flow Rate (Q)'
       : headlineConfig.label
     : isFreeConvection
     ? 'Heat Transfer Coefficient (h)'
@@ -25,6 +29,8 @@ export function LiveResultsPanel() {
       : 'Amplitude Ratio (AR)'
     : currentExperimentId === 'rotameter_calibration'
     ? 'Observed Flow Rate (Q)'
+    : currentExperimentId === 'pipe_friction'
+    ? 'Friction Factor (f)'
     : 'Coefficient of Discharge (Cd)';
 
   const resultUnit = headlineConfig?.unit
@@ -62,11 +68,13 @@ export function LiveResultsPanel() {
               ) : headlineResult.mean !== null ? (
                 currentExperimentId === 'rotameter_calibration'
                   ? formatScientific(headlineResult.mean, 4)
-                  : headlineResult.mean.toFixed(2)
+                  : currentExperimentId === 'pipe_friction'
+                  ? headlineResult.mean.toFixed(5)
+                  : headlineResult.mean.toFixed(3)
               ) : (
                 '—'
               )}
-              {resultUnit !== 'dim' && (
+              {resultUnit !== 'dim' && resultUnit !== '-' && (
                 <span className="text-sm text-violet-700 font-mono ml-2">{resultUnit}</span>
               )}
             </div>
@@ -124,7 +132,7 @@ export function LiveResultsPanel() {
                   </td>
                   {calcColumns.map(col => {
                     const val = row[col.id];
-                    const isPrimary = col.id === (headlineConfig?.resultKey || 'Cd') || col.id === 'Q' || col.id === 'h';
+                    const isPrimary = col.id === (headlineConfig?.resultKey || 'Cd') || col.id === 'Q' || col.id === 'h' || col.id === 'f';
 
                     return (
                       <td

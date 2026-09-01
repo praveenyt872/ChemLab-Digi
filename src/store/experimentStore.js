@@ -5,6 +5,7 @@ import orificeConfig from '../data/experiments/orifice.json';
 import processControlConfig from '../data/experiments/process_control_first_order.json';
 import freeConvectionConfig from '../data/experiments/free_convection.json';
 import rtdCstrConfig from '../data/experiments/rtd_cstr.json';
+import pipeFrictionConfig from '../data/experiments/pipe_friction.json';
 import { calculateTable, calculateSummary, validateManualCalculation } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
@@ -14,6 +15,7 @@ const EXPERIMENT_CONFIGS = {
   rotameter_calibration: rotameterConfig,
   venturi_meter: venturiConfig,
   orifice_meter: orificeConfig,
+  pipe_friction: pipeFrictionConfig,
   'exp1-first-order-system-response': processControlConfig,
   free_convection: freeConvectionConfig,
   rtd_cstr: rtdCstrConfig
@@ -22,6 +24,7 @@ const EXPERIMENT_CONFIGS = {
 const getPrimaryKey = (expId, activePartId = 'partA') => {
   if (expId === 'free_convection') return 'h';
   if (expId === 'rotameter_calibration') return 'Q';
+  if (expId === 'pipe_friction') return 'f';
   if (expId === 'rtd_cstr') return 't_bar';
   if (expId === 'exp1-first-order-system-response') return activePartId === 'partA' ? 'T_dev_heat' : 'T_out';
   return 'Cd';
@@ -155,13 +158,14 @@ const loadInitialManualCalcData = () => {
 const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isManualMode) => {
   if (!isManualMode || !computedRows) return computedRows;
   const expManuals = manualCalcData[expId] || {};
+  const primaryKey = getPrimaryKey(expId);
   return computedRows.map((row, idx) => {
     if (idx === 0) return row;
     const studentResStr = expManuals[idx]?.result;
     const studentResNum = parseFloat(studentResStr);
     return {
       ...row,
-      h: !isNaN(studentResNum) && isFinite(studentResNum) ? studentResNum : null
+      [primaryKey]: !isNaN(studentResNum) && isFinite(studentResNum) ? studentResNum : null
     };
   });
 };
@@ -604,18 +608,18 @@ export const useExperimentStore = create((set, get) => ({
       localStorage.setItem('labflow_manual_calc_data', JSON.stringify(updatedManualData));
     } catch (e) {}
 
+    const primaryKey = getPrimaryKey(currentExperimentId, 'partA');
     const newCalculatedRows = (calculatedRows || []).map((row, rIdx) => {
       if (rIdx === trialIdx && rIdx > 0) {
         const parsedRes = parseFloat(resultVal);
         return {
           ...row,
-          h: !isNaN(parsedRes) && isFinite(parsedRes) ? parsedRes : null
+          [primaryKey]: !isNaN(parsedRes) && isFinite(parsedRes) ? parsedRes : null
         };
       }
       return row;
     });
 
-    const primaryKey = getPrimaryKey(currentExperimentId, 'partA');
     const summary = calculateSummary(newCalculatedRows, primaryKey);
 
     set({

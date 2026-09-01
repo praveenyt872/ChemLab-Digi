@@ -32,17 +32,33 @@ export function ManualCalculationPanel() {
 
   const expManualData = manualCalculationData[currentExperimentId] || {};
 
-  // Trial 1 Worked Example Substitution Construction
+  // Dynamic Trial 1 Worked Example Substitution Construction
   const trial1Row = trueRows[0] || {};
-  const t1_V = trial1Row.V !== undefined ? trial1Row.V : 30;
-  const t1_I = trial1Row.I !== undefined ? trial1Row.I : 0.20;
-  const t1_D = trial1Row.D !== undefined ? trial1Row.D : 0.032;
-  const t1_L = trial1Row.L !== undefined ? trial1Row.L : 0.5;
-  const t1_Ts = trial1Row.Ts !== undefined ? Number(trial1Row.Ts).toFixed(2) : '44.86';
-  const t1_Ta = trial1Row.Ta !== undefined ? Number(trial1Row.Ta).toFixed(2) : '28.00';
-  const t1_h = trial1Row.h !== undefined && trial1Row.h !== null ? Number(trial1Row.h).toFixed(2) : '—';
+  const template = primaryCalc.substitution_template || primaryCalc.formula_latex || '';
 
-  const t1_substitution = `h = \\frac{${t1_V} \\times ${t1_I}}{\\pi \\times ${t1_D} \\times ${t1_L} \\times (${t1_Ts} - ${t1_Ta})}`;
+  const getSubstitutedLatex = (templateStr, row) => {
+    if (!templateStr || !row) return primaryCalc.formula_latex || '';
+    return templateStr.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, varName) => {
+      const val = row[varName];
+      if (val === undefined || val === null) return match;
+      if (typeof val === 'number') {
+        if (Math.abs(val) < 0.0001 && val !== 0) return val.toExponential(4);
+        return Number.isInteger(val) ? val.toString() : val.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+      }
+      return String(val);
+    });
+  };
+
+  const t1_substitution = getSubstitutedLatex(template, trial1Row);
+
+  const headlineKey = config?.headline_output?.resultKey || (currentExperimentId === 'free_convection' ? 'h' : currentExperimentId === 'rotameter_calibration' ? 'Q' : currentExperimentId === 'pipe_friction' ? 'f' : 'Cd');
+
+  const rawResultVal = trial1Row[headlineKey];
+  const t1_result_formatted = rawResultVal !== undefined && rawResultVal !== null
+    ? (typeof rawResultVal === 'number'
+        ? (Math.abs(rawResultVal) < 0.001 && rawResultVal !== 0 ? rawResultVal.toExponential(4) : rawResultVal.toFixed(4).replace(/0+$/, '').replace(/\.$/, ''))
+        : String(rawResultVal))
+    : '—';
 
   return (
     <div className="space-y-6">
@@ -73,7 +89,7 @@ export function ManualCalculationPanel() {
           <div>
             <span className="text-slate-500 font-bold block mb-1">1. SYMBOLIC FORMULA</span>
             <div className="p-2 rounded bg-slate-50 border border-slate-200 overflow-x-auto">
-              <KaTeXRenderer math={primaryCalc.formula_latex || "h = \\frac{V \\times I}{\\pi \\times D \\times L \\times (T_s - T_a)}"} block={false} />
+              <KaTeXRenderer math={primaryCalc.formula_latex || "y = f(x)"} block={false} />
             </div>
           </div>
 
@@ -85,9 +101,9 @@ export function ManualCalculationPanel() {
           </div>
 
           <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-            <span className="font-bold text-slate-700 uppercase">Computed Result (h)</span>
+            <span className="font-bold text-slate-700 uppercase">Computed Result ({primaryCalc.label || headlineKey})</span>
             <span className="text-sm font-bold text-violet-700">
-              {t1_h} {primaryCalc.result_unit || 'W/m²·K'}
+              {t1_result_formatted} {primaryCalc.result_unit && primaryCalc.result_unit !== 'dim' ? primaryCalc.result_unit : ''}
             </span>
           </div>
         </div>

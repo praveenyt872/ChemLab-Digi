@@ -57,9 +57,24 @@
     { "id": "t", "label": "Time Taken", "unit": "sec", "type": "number", "placeholder": "e.g. 20", "tooltip": "Stopwatch duration for collecting volume V" }
   ],
   "fixed_inputs": [],
-  "calculations": {
+  "manual_calculation_mode": true,
+  "calculation_expressions": {
     "Q": "V / t"
   },
+  "calculations": [
+    {
+      "id": "Q_calc",
+      "label": "Observed Flow Rate (Q)",
+      "formula_latex": "Q = \\frac{V}{t}",
+      "substitution_template": "Q = \\frac{{V}}{{t}}",
+      "variables": [
+        { "symbol": "V", "label": "Volume Collected", "source_field": "V", "unit": "m³" },
+        { "symbol": "t", "label": "Time Taken", "source_field": "t", "unit": "sec" }
+      ],
+      "result_unit": "m³/s",
+      "tolerance_percent": 5
+    }
+  ],
   "calculated_columns": [
     { "id": "Q", "label": "Observed Flow Rate (Q)", "unit": "m³/s", "format": "scientific" }
   ],

@@ -34,6 +34,15 @@ export function ExperimentSelectPage({ onNavigate }) {
       formulaPreview: 'Qact = (A × h_rise) / t',
       calcCount: '4 Formula Steps',
       icon: <ShieldCheck className="w-6 h-6 text-violet-600" />
+    },
+    {
+      id: 'pipe_friction',
+      title: 'Friction Losses in Fluid Flow in Pipes',
+      aim: 'To determine the Coefficient of Friction (or Friction factor f) for fluid flow through pipes.',
+      schematic: '17mm G.I. Pipe + Differential Manometer + Collecting Tank',
+      formulaPreview: 'f = (hf × D × g) / (2 L V²)',
+      calcCount: '5 Formula Steps',
+      icon: <Gauge className="w-6 h-6 text-violet-600" />
     }
   ];
 

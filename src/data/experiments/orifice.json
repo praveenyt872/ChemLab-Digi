@@ -162,7 +162,8 @@
     { "id": "rise", "label": "Water Rise (rise)", "value": 10, "unit": "cm", "description": "Fixed rise of water level per trial (cm)" },
     { "id": "g", "label": "Gravity Acceleration (g)", "value": 9.81, "unit": "m/s²", "description": "Standard gravitational acceleration" }
   ],
-  "calculations": {
+  "manual_calculation_mode": true,
+  "calculation_expressions": {
     "d1_m": "d1 / 1000",
     "d2_m": "d2 / 1000",
     "a1": "(pi / 4) * (d1_m ^ 2)",
@@ -176,6 +177,20 @@
     "Qth": "(a1 * a2 * sqrt(2 * g * ((abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6))) / sqrt(a1^2 - a2^2)",
     "Cd": "(tank_area * (rise / 100) / t) / ((a1 * a2 * sqrt(2 * g * ((abs(h1 - h2) > 1.5 ? abs(h1 - h2) / 100 : abs(h1 - h2)) * 12.6))) / sqrt(a1^2 - a2^2))"
   },
+  "calculations": [
+    {
+      "id": "Cd_calc",
+      "label": "Coefficient of Discharge (Cd)",
+      "formula_latex": "C_d = \\frac{Q_{act}}{Q_{th}}",
+      "substitution_template": "C_d = \\frac{{Qact}}{{Qth}}",
+      "variables": [
+        { "symbol": "Q_{act}", "label": "Actual Flow Rate", "source_field": "Qact", "unit": "m³/s" },
+        { "symbol": "Q_{th}", "label": "Theoretical Flow Rate", "source_field": "Qth", "unit": "m³/s" }
+      ],
+      "result_unit": "dim",
+      "tolerance_percent": 5
+    }
+  ],
   "calculated_columns": [
     { "id": "h", "label": "Diff. Head (h)", "unit": "m", "format": "decimal" },
     { "id": "H", "label": "Water Head (H)", "unit": "m", "format": "decimal" },
