@@ -27,6 +27,7 @@ import { FormulaCard } from '../components/workspace/FormulaCard';
 import { AIValidationPanel } from '../components/workspace/AIValidationPanel';
 import { StudentInterpretationPanel } from '../components/workspace/StudentInterpretationPanel';
 import { CodeReferenceModal } from '../components/modals/CodeReferenceModal';
+import { WorkedExampleModal } from '../components/modals/WorkedExampleModal';
 import { getSchematicDiagram } from '../utils/schematicAssets';
 import recLogo from '../assets/rec-logo.png';
 
@@ -417,6 +418,9 @@ export function WorkspacePage({ onNavigate }) {
           experimentTitle={config.title}
         />
       )}
+
+      {/* Worked Example Reference Pop-up Modal */}
+      <WorkedExampleModal />
     </div>
   );
 }

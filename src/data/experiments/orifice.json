@@ -179,15 +179,57 @@
   },
   "calculations": [
     {
-      "id": "Cd_calc",
-      "label": "Coefficient of Discharge (Cd)",
+      "id": "H",
+      "step_number": 1,
+      "label": "Step 1: Equivalent Water Head (H)",
+      "formula_latex": "H = \\frac{(h_1 - h_2) \\times 12.6}{100}",
+      "substitution_template": "H = \\frac{({h_diff_cm}) \\times 12.6}{100}",
+      "variables": [
+        { "symbol": "h_1", "label": "Upstream Reading (h1)", "source_field": "h1", "unit": "cm" },
+        { "symbol": "h_2", "label": "Downstream Reading (h2)", "source_field": "h2", "unit": "cm" }
+      ],
+      "result_unit": "m H₂O",
+      "target_field": "H",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Qact",
+      "step_number": 2,
+      "label": "Step 2: Actual Flow Rate (Qact)",
+      "formula_latex": "Q_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.025}{t}",
+      "substitution_template": "Q_{act} = \\frac{0.025}{{t}}",
+      "variables": [
+        { "symbol": "t", "label": "Time for 10cm Rise (t)", "source_field": "t", "unit": "sec" }
+      ],
+      "result_unit": "m³/s",
+      "target_field": "Qact",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Qth",
+      "step_number": 3,
+      "label": "Step 3: Theoretical Flow Rate (Qth)",
+      "formula_latex": "Q_{th} = \\frac{a_1 a_2 \\sqrt{2 g H}}{\\sqrt{a_1^2 - a_2^2}}",
+      "substitution_template": "Q_{th} = \\frac{3.142 \\times 10^{-4} \\times 1.767 \\times 10^{-4} \\times \\sqrt{19.62 \\times {H}}}{2.60 \\times 10^{-4}}",
+      "variables": [
+        { "symbol": "H", "label": "Equivalent Water Head (H)", "source_field": "H", "unit": "m H₂O" }
+      ],
+      "result_unit": "m³/s",
+      "target_field": "Qth",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Cd",
+      "step_number": 4,
+      "label": "Step 4: Coefficient of Discharge (Cd)",
       "formula_latex": "C_d = \\frac{Q_{act}}{Q_{th}}",
       "substitution_template": "C_d = \\frac{{Qact}}{{Qth}}",
       "variables": [
-        { "symbol": "Q_{act}", "label": "Actual Flow Rate", "source_field": "Qact", "unit": "m³/s" },
-        { "symbol": "Q_{th}", "label": "Theoretical Flow Rate", "source_field": "Qth", "unit": "m³/s" }
+        { "symbol": "Q_{act}", "label": "Actual Flow Rate (Qact)", "source_field": "Qact", "unit": "m³/s" },
+        { "symbol": "Q_{th}", "label": "Theoretical Flow Rate (Qth)", "source_field": "Qth", "unit": "m³/s" }
       ],
       "result_unit": "dim",
+      "target_field": "Cd",
       "tolerance_percent": 5
     }
   ],

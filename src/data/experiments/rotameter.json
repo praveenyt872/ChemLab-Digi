@@ -63,15 +63,17 @@
   },
   "calculations": [
     {
-      "id": "Q_calc",
-      "label": "Observed Flow Rate (Q)",
+      "id": "Q",
+      "step_number": 1,
+      "label": "Step 1: Volumetric Flow Rate (Q)",
       "formula_latex": "Q = \\frac{V}{t}",
       "substitution_template": "Q = \\frac{{V}}{{t}}",
       "variables": [
-        { "symbol": "V", "label": "Volume Collected", "source_field": "V", "unit": "m³" },
-        { "symbol": "t", "label": "Time Taken", "source_field": "t", "unit": "sec" }
+        { "symbol": "V", "label": "Volume Collected (V)", "source_field": "V", "unit": "m³" },
+        { "symbol": "t", "label": "Time Taken (t)", "source_field": "t", "unit": "sec" }
       ],
       "result_unit": "m³/s",
+      "target_field": "Q",
       "tolerance_percent": 5
     }
   ],

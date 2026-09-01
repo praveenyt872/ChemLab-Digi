@@ -49,17 +49,56 @@
   },
   "calculations": [
     {
-      "id": "f_calc",
-      "label": "Friction Factor (f)",
+      "id": "Q",
+      "step_number": 1,
+      "label": "Step 1: Volumetric Flow Rate (Q)",
+      "formula_latex": "Q = \\frac{\\text{Volume}}{t} = \\frac{0.010}{t}",
+      "substitution_template": "Q = \\frac{0.010}{{t}}",
+      "variables": [
+        { "symbol": "t", "label": "Time for 10L Collection (t)", "source_field": "t", "unit": "sec" }
+      ],
+      "result_unit": "m³/s",
+      "target_field": "Q",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "V",
+      "step_number": 2,
+      "label": "Step 2: Fluid Velocity (V)",
+      "formula_latex": "V = \\frac{Q}{A} = \\frac{Q}{2.27 \\times 10^{-4}}",
+      "substitution_template": "V = \\frac{{Q}}{2.27 \\times 10^{-4}}",
+      "variables": [
+        { "symbol": "Q", "label": "Volumetric Flow Rate (Q)", "source_field": "Q", "unit": "m³/s" }
+      ],
+      "result_unit": "m/s",
+      "target_field": "V",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "f",
+      "step_number": 3,
+      "label": "Step 3: Friction Factor (f)",
       "formula_latex": "f = \\frac{h_f \\times D \\times g}{2 \\times L \\times V^2}",
-      "substitution_template": "f = \\frac{{hm} \\times {D} \\times 9.81}{2 \\times {L} \\times ({V})^2}",
+      "substitution_template": "f = \\frac{{hm} \\times 0.017 \\times 9.81}{2 \\times 1.0 \\times ({V})^2}",
       "variables": [
         { "symbol": "h_f", "label": "Head Loss / Manometer Diff", "source_field": "hm", "unit": "m" },
-        { "symbol": "D", "label": "Inside Pipe Diameter", "source_field": "D", "unit": "m" },
-        { "symbol": "L", "label": "Test Pipe Length", "source_field": "L", "unit": "m" },
-        { "symbol": "V", "label": "Fluid Velocity", "source_field": "V", "unit": "m/s" }
+        { "symbol": "V", "label": "Fluid Velocity (V)", "source_field": "V", "unit": "m/s" }
       ],
       "result_unit": "dim",
+      "target_field": "f",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "NRe",
+      "step_number": 4,
+      "label": "Step 4: Reynolds Number (NRe)",
+      "formula_latex": "N_{Re} = \\frac{D \\times V \\times \\rho}{\\mu}",
+      "substitution_template": "N_{Re} = \\frac{0.017 \\times {V} \\times 1000}{0.001}",
+      "variables": [
+        { "symbol": "V", "label": "Fluid Velocity (V)", "source_field": "V", "unit": "m/s" }
+      ],
+      "result_unit": "dim",
+      "target_field": "NRe",
       "tolerance_percent": 5
     }
   ],

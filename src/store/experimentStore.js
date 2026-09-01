@@ -165,14 +165,44 @@ const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isMa
   if (!isManualMode || !computedRows) return computedRows;
   const expManuals = manualCalcData[expId] || {};
   const primaryKey = getPrimaryKey(expId);
+
   return computedRows.map((row, idx) => {
-    if (idx === 0) return row;
-    const studentResStr = expManuals[idx]?.result;
-    const studentResNum = parseFloat(studentResStr);
-    return {
-      ...row,
-      [primaryKey]: !isNaN(studentResNum) && isFinite(studentResNum) ? studentResNum : null
-    };
+    if (idx === 0) return row; // Trial 1 is worked example reference row
+
+    const trialManualData = expManuals[idx] || {};
+    const stepsData = trialManualData.steps || {};
+    const updatedRow = { ...row };
+
+    // Fill in values for steps entered by student
+    Object.keys(stepsData).forEach(stepId => {
+      const studentResStr = stepsData[stepId]?.result;
+      const studentResNum = parseFloat(studentResStr);
+      if (!isNaN(studentResNum) && isFinite(studentResNum)) {
+        updatedRow[stepId] = studentResNum;
+      } else {
+        updatedRow[stepId] = null;
+      }
+    });
+
+    // Primary result key check
+    const primaryStr = stepsData[primaryKey]?.result || trialManualData.result;
+    const primaryNum = parseFloat(primaryStr);
+    if (!isNaN(primaryNum) && isFinite(primaryNum)) {
+      updatedRow[primaryKey] = primaryNum;
+    } else {
+      updatedRow[primaryKey] = null;
+    }
+
+    // Set uncalculated derived columns for Trial 2+ to null
+    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'f', 'NRe', 'h'].forEach(fieldKey => {
+      if (updatedRow[fieldKey] !== undefined && fieldKey !== primaryKey) {
+        if (!stepsData[fieldKey] || isNaN(parseFloat(stepsData[fieldKey]?.result))) {
+          updatedRow[fieldKey] = null;
+        }
+      }
+    });
+
+    return updatedRow;
   });
 };
 
@@ -614,6 +644,71 @@ export const useExperimentStore = create((set, get) => ({
       return row;
     });
 
+    const summary = calculateSummary(newCalculatedRows, primaryKey);
+
+    set({
+      manualCalculationData: updatedManualData,
+      calculatedRows: newCalculatedRows,
+      headlineResult: summary
+    });
+  },
+
+  isWorkedExampleOpen: false,
+  setWorkedExampleOpen: (isOpen) => set({ isWorkedExampleOpen: isOpen }),
+
+  updateStepManualVariable: (trialIdx, stepId, varSymbol, varVal) => {
+    const { currentExperimentId, manualCalculationData } = get();
+    const expData = { ...(manualCalculationData[currentExperimentId] || {}) };
+    const trialData = { ...(expData[trialIdx] || {}) };
+    const steps = { ...(trialData.steps || {}) };
+    const stepData = { ...(steps[stepId] || { variables: {}, result: '', flagged_for_review: false }) };
+    const variables = { ...(stepData.variables || {}) };
+
+    variables[varSymbol] = varVal;
+    stepData.variables = variables;
+    steps[stepId] = stepData;
+    trialData.steps = steps;
+    expData[trialIdx] = trialData;
+
+    const updatedManualData = { ...manualCalculationData, [currentExperimentId]: expData };
+
+    try {
+      localStorage.setItem('labflow_manual_calc_data', JSON.stringify(updatedManualData));
+    } catch (e) {}
+
+    set({ manualCalculationData: updatedManualData });
+  },
+
+  updateStepManualResult: (trialIdx, stepId, resultVal) => {
+    const { currentExperimentId, manualCalculationData, observationRows, activePartConfig, stdTableA, stdTableB } = get();
+    const expData = { ...(manualCalculationData[currentExperimentId] || {}) };
+    const trialData = { ...(expData[trialIdx] || {}) };
+    const steps = { ...(trialData.steps || {}) };
+    const stepData = { ...(steps[stepId] || { variables: {}, result: '', flagged_for_review: false }) };
+
+    stepData.result = resultVal;
+
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
+    const trueRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed);
+    const trueRow = trueRows[trialIdx] || {};
+    const calcDefs = Array.isArray(activePartConfig.calculations) ? activePartConfig.calculations : [];
+    const calcConfigItem = calcDefs.find(c => c.id === stepId) || calcDefs[0] || {};
+
+    const validation = validateManualCalculation(stepData.variables, resultVal, trueRow, calcConfigItem);
+    stepData.flagged_for_review = validation.flagged_for_review;
+    steps[stepId] = stepData;
+    trialData.steps = steps;
+    expData[trialIdx] = trialData;
+
+    const updatedManualData = { ...manualCalculationData, [currentExperimentId]: expData };
+
+    try {
+      localStorage.setItem('labflow_manual_calc_data', JSON.stringify(updatedManualData));
+    } catch (e) {}
+
+    const isManualMode = activePartConfig?.manual_calculation_mode || false;
+    const newCalculatedRows = applyManualCalculationsToRows(trueRows, currentExperimentId, updatedManualData, isManualMode);
+    const primaryKey = getPrimaryKey(currentExperimentId, 'partA');
     const summary = calculateSummary(newCalculatedRows, primaryKey);
 
     set({
