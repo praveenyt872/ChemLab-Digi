@@ -13,7 +13,7 @@ import { evaluate } from 'mathjs';
  * @param {Array} fixedInputs - Optional array of fixed constants [{ id: "g", value: 9.81 }]
  * @returns {Object} Object containing calculated values
  */
-export function calculateRow(row, calculations = {}, fixedInputs = []) {
+export function calculateRow(row, calculations = {}, fixedInputs = [], calculationExpressions = null) {
   if (!row || typeof row !== 'object') return {};
 
   const scope = {};
@@ -35,15 +35,18 @@ export function calculateRow(row, calculations = {}, fixedInputs = []) {
 
   const results = {};
 
-  const calcObj = !Array.isArray(calculations) && typeof calculations === 'object' && Object.keys(calculations).length > 0
-    ? calculations
-    : {
-        q: "V * I",
-        As: "pi * D * L",
-        Ts: "(T1 + T2 + T3 + T4 + T5 + T6 + T7) / 7",
-        Ta: "T8",
-        h: "(Ts > Ta) ? (V * I) / (pi * D * L * (Ts - Ta)) : null"
-      };
+  let calcObj = {};
+  if (calculationExpressions && typeof calculationExpressions === 'object') {
+    calcObj = calculationExpressions;
+  } else if (!Array.isArray(calculations) && typeof calculations === 'object' && Object.keys(calculations).length > 0) {
+    calcObj = calculations;
+  } else if (Array.isArray(calculations)) {
+    calculations.forEach(item => {
+      if (item && item.id && item.formula_expression) {
+        calcObj[item.id] = item.formula_expression;
+      }
+    });
+  }
 
   Object.keys(calcObj).forEach(calcId => {
     const expr = typeof calcObj[calcId] === 'string' ? calcObj[calcId] : calcObj[calcId]?.formula_expression;
@@ -267,9 +270,9 @@ export function evaluateStepCalculations(trialRow = {}, calculationSteps = [], f
 /**
  * Calculates results for an entire table of observation rows.
  */
-export function calculateTable(rows = [], calculations = {}, fixedInputs = []) {
+export function calculateTable(rows = [], calculations = {}, fixedInputs = [], calculationExpressions = null) {
   const firstPass = rows.map((row, index) => {
-    const calculated = calculateRow(row, calculations, fixedInputs);
+    const calculated = calculateRow(row, calculations, fixedInputs, calculationExpressions);
     return {
       rowIndex: index + 1,
       ...row,
@@ -298,7 +301,7 @@ export function calculateTable(rows = [], calculations = {}, fixedInputs = []) {
       scopeRow.sum_CDt = sum_CDt;
       scopeRow.sum_tCDt = sum_tCDt;
     }
-    const secondPassCalc = calculateRow(scopeRow, calculations, fixedInputs);
+    const secondPassCalc = calculateRow(scopeRow, calculations, fixedInputs, calculationExpressions);
     const t_bar = hasValidCDt && sum_CDt > 0 ? sum_tCDt / sum_CDt : null;
     return {
       ...row,

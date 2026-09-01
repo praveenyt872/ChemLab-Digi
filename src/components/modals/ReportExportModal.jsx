@@ -134,11 +134,12 @@ export function ReportExportModal() {
     const partTrialInputs = part.trial_inputs || [];
     const partCalcColumns = part.calculated_columns || [];
     
+    const calcExprs = part.calculation_expressions || part.calculations;
     const rowsToUse = isSub
-      ? calculateTable(part.sample_data || [], part.calculations, part.fixed_inputs)
+      ? calculateTable(part.sample_data || [], calcExprs, part.fixed_inputs, part.calculation_expressions)
       : (calculatedRows && calculatedRows.length > 0
           ? calculatedRows
-          : calculateTable(part.sample_data || [], part.calculations, part.fixed_inputs));
+          : calculateTable(part.sample_data || [], calcExprs, part.fixed_inputs, part.calculation_expressions));
 
     const partRows = rowsToUse;
     const partCalcSteps = part.calculation_steps || [];
