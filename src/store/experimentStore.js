@@ -174,7 +174,7 @@ const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isMa
     const updatedRow = { ...row };
 
     // Clear all calculated columns by default for Trial 2+ (must start blank)
-    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'f', 'NRe', 'h'].forEach(colKey => {
+    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'f', 'NRe', 'h', 'dh', 'hf'].forEach(colKey => {
       if (updatedRow[colKey] !== undefined) {
         updatedRow[colKey] = null;
       }
