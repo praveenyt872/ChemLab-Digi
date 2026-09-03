@@ -31,6 +31,8 @@ export function LiveResultsPanel() {
     ? 'Observed Flow Rate (Q)'
     : currentExperimentId === 'pipe_friction'
     ? 'Friction Factor (f)'
+    : currentExperimentId === 'minor_losses'
+    ? 'Loss Coefficient (K)'
     : 'Coefficient of Discharge (Cd)';
 
   const resultUnit = headlineConfig?.unit
@@ -70,6 +72,8 @@ export function LiveResultsPanel() {
                   ? formatScientific(headlineResult.mean, 4)
                   : currentExperimentId === 'pipe_friction'
                   ? headlineResult.mean.toFixed(5)
+                  : currentExperimentId === 'minor_losses'
+                  ? headlineResult.mean.toFixed(2)
                   : headlineResult.mean.toFixed(3)
               ) : (
                 '—'

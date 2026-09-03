@@ -38,11 +38,20 @@ export function ExperimentSelectPage({ onNavigate }) {
     {
       id: 'pipe_friction',
       title: 'Friction Losses in Fluid Flow in Pipes',
-      aim: 'To determine the Coefficient of Friction (or Friction factor f) for fluid flow through pipes.',
-      schematic: '17mm G.I. Pipe + Differential Manometer + Collecting Tank',
-      formulaPreview: 'f = (hf × D × g) / (2 L V²)',
-      calcCount: '5 Formula Steps',
+      aim: 'To determine the Frictional Head Loss (hf), Velocity (v), Reynolds Number (NRe), and Friction Factor (f) for fluid flow through pipes.',
+      schematic: '12.5mm Pipe + Differential Manometer + Collecting Tank',
+      formulaPreview: 'f = 0.079 / (NRe)^0.25',
+      calcCount: '6 Formula Steps',
       icon: <Gauge className="w-6 h-6 text-violet-600" />
+    },
+    {
+      id: 'minor_losses',
+      title: 'Minor Losses in Fluid Flow in Pipes',
+      aim: 'To determine the Loss Coefficient (K) of fluid flowing through pipe fittings (sudden contraction / enlargement).',
+      schematic: '40mm to 20mm Pipe Fitting + Differential Manometer + Measuring Tank',
+      formulaPreview: 'K = hf / ((V2² - V1²) / 2g)',
+      calcCount: '6 Formula Steps',
+      icon: <Zap className="w-6 h-6 text-violet-600" />
     }
   ];
 

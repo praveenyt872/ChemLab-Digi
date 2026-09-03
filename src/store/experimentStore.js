@@ -6,6 +6,7 @@ import processControlConfig from '../data/experiments/process_control_first_orde
 import freeConvectionConfig from '../data/experiments/free_convection.json';
 import rtdCstrConfig from '../data/experiments/rtd_cstr.json';
 import pipeFrictionConfig from '../data/experiments/pipe_friction.json';
+import minorLossesConfig from '../data/experiments/minor_losses.json';
 import { calculateTable, calculateSummary, validateManualCalculation } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
@@ -16,6 +17,7 @@ const EXPERIMENT_CONFIGS = {
   venturi_meter: venturiConfig,
   orifice_meter: orificeConfig,
   pipe_friction: pipeFrictionConfig,
+  minor_losses: minorLossesConfig,
   'exp1-first-order-system-response': processControlConfig,
   free_convection: freeConvectionConfig,
   rtd_cstr: rtdCstrConfig
@@ -25,6 +27,7 @@ const getPrimaryKey = (expId, activePartId = 'partA') => {
   if (expId === 'free_convection') return 'h';
   if (expId === 'rotameter_calibration') return 'Q';
   if (expId === 'pipe_friction') return 'f';
+  if (expId === 'minor_losses') return 'K';
   if (expId === 'rtd_cstr') return 't_bar';
   if (expId === 'exp1-first-order-system-response') return activePartId === 'partA' ? 'T_dev_heat' : 'T_out';
   return 'Cd';
@@ -174,7 +177,7 @@ const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isMa
     const updatedRow = { ...row };
 
     // Clear all calculated columns by default for Trial 2+ (must start blank)
-    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'f', 'NRe', 'h', 'dh', 'hf'].forEach(colKey => {
+    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'V1', 'V2', 'f', 'NRe', 'h', 'dh', 'hf', 'K'].forEach(colKey => {
       if (updatedRow[colKey] !== undefined) {
         updatedRow[colKey] = null;
       }

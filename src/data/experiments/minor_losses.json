@@ -1,0 +1,247 @@
+{
+  "experiment_id": "minor_losses",
+  "subject": "fluid_mechanics",
+  "title": "Minor Losses in Fluid Flow in Pipes",
+  "short_name": "Minor Losses in Pipes",
+  "aim": "To determine the Loss Coefficient (K) of a fluid flowing through pipe fittings (sudden contraction / enlargement).",
+  "apparatus": [
+    "Pipe test section with sudden contraction/enlargement (Larger D = 0.04 m, Smaller d = 0.02 m)",
+    "U-tube differential mercury manometer",
+    "Sump tank and centrifugal pump",
+    "Measuring tank (0.4 m × 0.4 m) with piezometer and stopwatch",
+    "Flow control valves and pressure tappings"
+  ],
+  "theory": "When a fluid flows through pipe fittings, bends, valves, or sudden changes in section (enlargements and contractions), it experiences local disturbances, flow separation, and eddy formation that cause additional head losses. These are termed 'minor losses'.\n\nDifferential Manometer Reading:\n\\Delta h = |h_2 - h_1| \\quad (\\text{cm})\n\nEquivalent Head Loss in meters of water:\nh_f = \\frac{\\Delta h}{100} \\times 12.6 \\quad (\\text{m})\n\nActual Volumetric Flow Rate:\nQ = \\frac{\\text{Volume}}{\\text{Time}} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.4 \\times 0.4 \\times 0.1}{t} = \\frac{0.016}{t} \\quad (\\text{m}^3/\\text{s})\n\nVelocities in Larger and Smaller Pipes:\nV_1 = \\frac{Q}{A_1} = \\frac{Q}{\\frac{\\pi D^2}{4}} = \\frac{Q}{1.256 \\times 10^{-3}} \\quad (\\text{m/s})\nV_2 = \\frac{Q}{A_2} = \\frac{Q}{\\frac{\\pi d^2}{4}} = \\frac{Q}{3.14 \\times 10^{-4}} \\quad (\\text{m/s})\n\nLoss Coefficient (K):\nh_f = K \\frac{V_2^2 - V_1^2}{2g} \\implies K = \\frac{h_f}{\\frac{V_2^2 - V_1^2}{2g}}",
+  "procedure": [
+    "Switch on the power supply and start the centrifugal pump.",
+    "Adjust the delivery flow control valve and purge all air bubbles from the manometer lines.",
+    "Record the manometer limb readings h1 and h2 in cm.",
+    "Close the drain valve of the measuring tank and note down the time taken for 10 cm (0.1 m) water level rise.",
+    "Repeat the procedure for 5 different flow rates.",
+    "Calculate Δh, hf, Q, V1, V2, and the Loss Coefficient K for each trial."
+  ],
+  "headline_output": {
+    "label": "K",
+    "resultKey": "K",
+    "unit": "-"
+  },
+  "fixed_inputs": [
+    { "id": "D", "label": "Larger Pipe Diameter (D)", "value": 0.04, "unit": "m", "description": "Diameter of larger pipe section (40 mm)" },
+    { "id": "d", "label": "Smaller Pipe Diameter (d)", "value": 0.02, "unit": "m", "description": "Diameter of smaller pipe section (20 mm)" },
+    { "id": "tank_length", "label": "Tank Length", "value": 0.4, "unit": "m", "description": "Collecting tank length (m)" },
+    { "id": "tank_width", "label": "Tank Width", "value": 0.4, "unit": "m", "description": "Collecting tank width (m)" },
+    { "id": "rise", "label": "Water Rise", "value": 0.1, "unit": "m", "description": "Fixed rise of water level per trial (0.1 m)" },
+    { "id": "g", "label": "Acceleration due to Gravity (g)", "value": 9.81, "unit": "m/s²", "description": "Standard gravitational acceleration" }
+  ],
+  "trial_inputs": [
+    { "id": "h1", "label": "Left Limb Reading (h1)", "unit": "cm", "type": "number", "placeholder": "e.g. 4", "tooltip": "Left limb manometer reading in cm" },
+    { "id": "h2", "label": "Right Limb Reading (h2)", "unit": "cm", "type": "number", "placeholder": "e.g. 21.5", "tooltip": "Right limb manometer reading in cm" },
+    { "id": "t", "label": "Time for 10L Rise (t)", "unit": "sec", "type": "number", "placeholder": "e.g. 27.57", "tooltip": "Stopwatch time taken for 10 cm water rise" }
+  ],
+  "manual_calculation_mode": true,
+  "calculation_expressions": {
+    "dh": "abs(h1 - h2)",
+    "hf": "(abs(h1 - h2) / 100) * 12.6",
+    "Q": "0.016 / t",
+    "A1": "(pi / 4) * (0.04 ^ 2)",
+    "A2": "(pi / 4) * (0.02 ^ 2)",
+    "V1": "(0.016 / t) / ((pi / 4) * (0.04 ^ 2))",
+    "V2": "(0.016 / t) / ((pi / 4) * (0.02 ^ 2))",
+    "head_term": "(((0.016 / t) / ((pi / 4) * (0.02 ^ 2))) ^ 2 - ((0.016 / t) / ((pi / 4) * (0.04 ^ 2))) ^ 2) / (2 * 9.81)",
+    "K": "((abs(h1 - h2) / 100) * 12.6) / ((((0.016 / t) / ((pi / 4) * (0.02 ^ 2))) ^ 2 - ((0.016 / t) / ((pi / 4) * (0.04 ^ 2))) ^ 2) / (2 * 9.81))"
+  },
+  "calculations": [
+    {
+      "id": "dh",
+      "step_number": 1,
+      "label": "Step 1: Differential Manometer Level (Δh)",
+      "formula_latex": "\\Delta h = |h_2 - h_1|",
+      "substitution_template": "\\Delta h = |{h2} - {h1}|",
+      "variables": [
+        { "symbol": "h_1", "label": "Manometer Reading (h1)", "source_field": "h1", "unit": "cm" },
+        { "symbol": "h_2", "label": "Manometer Reading (h2)", "source_field": "h2", "unit": "cm" }
+      ],
+      "result_unit": "cm",
+      "target_field": "dh",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "hf",
+      "step_number": 2,
+      "label": "Step 2: Manometer Head (hf)",
+      "formula_latex": "h_f = \\frac{\\Delta h}{100} \\times 12.6",
+      "substitution_template": "h_f = \\frac{{dh}}{100} \\times 12.6",
+      "variables": [
+        { "symbol": "\\Delta h", "label": "Manometer Diff (Δh)", "source_field": "dh", "unit": "cm" }
+      ],
+      "result_unit": "m",
+      "target_field": "hf",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Q",
+      "step_number": 3,
+      "label": "Step 3: Actual Discharge (Q)",
+      "formula_latex": "Q = \\frac{A_{tank} \\times rise}{t} = \\frac{0.016}{t}",
+      "substitution_template": "Q = \\frac{0.016}{{t}}",
+      "variables": [
+        { "symbol": "t", "label": "Time for 10L Rise (t)", "source_field": "t", "unit": "sec" }
+      ],
+      "result_unit": "m³/s",
+      "target_field": "Q",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "V1",
+      "step_number": 4,
+      "label": "Step 4: Flow Velocity in Larger Pipe (V1)",
+      "formula_latex": "V_1 = \\frac{Q}{A_1} = \\frac{Q}{1.256 \\times 10^{-3}}",
+      "substitution_template": "V_1 = \\frac{{Q}}{1.256 \\times 10^{-3}}",
+      "variables": [
+        { "symbol": "Q", "label": "Volumetric Flow Rate (Q)", "source_field": "Q", "unit": "m³/s" }
+      ],
+      "result_unit": "m/s",
+      "target_field": "V1",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "V2",
+      "step_number": 5,
+      "label": "Step 5: Flow Velocity in Smaller Pipe (V2)",
+      "formula_latex": "V_2 = \\frac{Q}{A_2} = \\frac{Q}{3.14 \\times 10^{-4}}",
+      "substitution_template": "V_2 = \\frac{{Q}}{3.14 \\times 10^{-4}}",
+      "variables": [
+        { "symbol": "Q", "label": "Volumetric Flow Rate (Q)", "source_field": "Q", "unit": "m³/s" }
+      ],
+      "result_unit": "m/s",
+      "target_field": "V2",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "K",
+      "step_number": 6,
+      "label": "Step 6: Loss Coefficient (K)",
+      "formula_latex": "K = \\frac{h_f \\times 2g}{V_2^2 - V_1^2}",
+      "substitution_template": "K = \\frac{{hf} \\times 19.62}{({V2})^2 - ({V1})^2}",
+      "variables": [
+        { "symbol": "h_f", "label": "Manometer Head (hf)", "source_field": "hf", "unit": "m" },
+        { "symbol": "V_1", "label": "Velocity V1", "source_field": "V1", "unit": "m/s" },
+        { "symbol": "V_2", "label": "Velocity V2", "source_field": "V2", "unit": "m/s" }
+      ],
+      "result_unit": "dim",
+      "target_field": "K",
+      "tolerance_percent": 5
+    }
+  ],
+  "calculated_columns": [
+    { "id": "dh", "label": "Δh", "unit": "cm", "format": "decimal" },
+    { "id": "hf", "label": "hf", "unit": "m", "format": "decimal" },
+    { "id": "Q", "label": "Discharge (Q)", "unit": "m³/s", "format": "scientific" },
+    { "id": "V1", "label": "Velocity (V1)", "unit": "m/s", "format": "decimal" },
+    { "id": "V2", "label": "Velocity (V2)", "unit": "m/s", "format": "decimal" },
+    { "id": "K", "label": "Loss Coeff. (K)", "unit": "-", "format": "decimal" }
+  ],
+  "formulas": [
+    {
+      "id": "dh",
+      "label": "Differential Manometer Level (Δh)",
+      "latex": "\\Delta h = |h_2 - h_1|",
+      "derivation": "Direct differential height reading between two manometer limbs:\n\n\\Delta h = |h_2 - h_1| \\text{ (cm)}",
+      "purpose": "Measures limb level differential.",
+      "variables": [
+        { "symbol": "h_1", "meaning": "Left limb reading", "unit": "cm", "typical_range": "4 – 8 cm" },
+        { "symbol": "h_2", "meaning": "Right limb reading", "unit": "cm", "typical_range": "17 – 22 cm" }
+      ],
+      "assumptions": ["U-tube manometer limbs are vertical"],
+      "practical_application": "Fundamental differential pressure reading."
+    },
+    {
+      "id": "hf",
+      "label": "Manometer Head Loss (hf)",
+      "latex": "h_f = \\frac{\\Delta h}{100} \\times 12.6",
+      "derivation": "Equivalent water head loss across the pipe fitting:\n\nh_f = \\frac{\\Delta h}{100} \\times (S_{Hg} - S_w) = \\frac{\\Delta h}{100} \\times 12.6 \\text{ (m)}",
+      "purpose": "Calculates head loss across pipe fitting.",
+      "variables": [
+        { "symbol": "\\Delta h", "meaning": "Manometer difference", "unit": "cm", "typical_range": "9 – 18 cm" },
+        { "symbol": "h_f", "meaning": "Head loss", "unit": "m", "typical_range": "1.1 – 2.3 m" }
+      ],
+      "assumptions": ["Mercury specific gravity = 13.6, water specific gravity = 1.0"],
+      "practical_application": "Quantifies energy head loss caused by pipe fitting."
+    },
+    {
+      "id": "Q",
+      "label": "Actual Volumetric Discharge (Q)",
+      "latex": "Q = \\frac{\\text{Volume}}{\\text{Time}} = \\frac{0.016}{t}",
+      "derivation": "Discharge measured by time t for 10 cm water level rise in 0.4 m × 0.4 m tank:\n\nQ = \\frac{0.4 \\times 0.4 \\times 0.1}{t} = \\frac{0.016}{t} \\text{ (m³/s)}",
+      "purpose": "Calculates volumetric flow rate.",
+      "variables": [
+        { "symbol": "t", "meaning": "Time for 10 cm water rise", "unit": "sec", "typical_range": "25 – 45 s" },
+        { "symbol": "Q", "meaning": "Flow rate", "unit": "m³/s", "typical_range": "3.5×10⁻⁴ – 6.0×10⁻⁴ m³/s" }
+      ],
+      "assumptions": ["Steady incompressible flow"],
+      "practical_application": "Flow rate measurement."
+    },
+    {
+      "id": "V1",
+      "label": "Velocity in Larger Pipe (V1)",
+      "latex": "V_1 = \\frac{Q}{A_1} = \\frac{Q}{1.256 \\times 10^{-3}}",
+      "derivation": "Velocity in the 40 mm pipe:\n\nA_1 = \\frac{\\pi (0.04)^2}{4} = 1.256 \\times 10^{-3} \\text{ m²}\n\nV_1 = \\frac{Q}{A_1} \\text{ (m/s)}",
+      "purpose": "Determines flow velocity in upstream larger pipe.",
+      "variables": [
+        { "symbol": "Q", "meaning": "Flow rate", "unit": "m³/s", "typical_range": "3.5×10⁻⁴ – 6.0×10⁻⁴ m³/s" },
+        { "symbol": "V_1", "meaning": "Velocity in larger pipe", "unit": "m/s", "typical_range": "0.3 – 0.5 m/s" }
+      ],
+      "assumptions": ["Uniform velocity distribution"],
+      "practical_application": "Kinetic energy head determination."
+    },
+    {
+      "id": "V2",
+      "label": "Velocity in Smaller Pipe (V2)",
+      "latex": "V_2 = \\frac{Q}{A_2} = \\frac{Q}{3.14 \\times 10^{-4}}",
+      "derivation": "Velocity in the 20 mm pipe:\n\nA_2 = \\frac{\\pi (0.02)^2}{4} = 3.14 \\times 10^{-4} \\text{ m²}\n\nV_2 = \\frac{Q}{A_2} \\text{ (m/s)}",
+      "purpose": "Determines flow velocity in downstream smaller pipe.",
+      "variables": [
+        { "symbol": "Q", "meaning": "Flow rate", "unit": "m³/s", "typical_range": "3.5×10⁻⁴ – 6.0×10⁻⁴ m³/s" },
+        { "symbol": "V_2", "meaning": "Velocity in smaller pipe", "unit": "m/s", "typical_range": "1.2 – 1.9 m/s" }
+      ],
+      "assumptions": ["Uniform velocity distribution"],
+      "practical_application": "Kinetic energy head determination."
+    },
+    {
+      "id": "K",
+      "label": "Loss Coefficient (K)",
+      "latex": "K = \\frac{h_f \\times 2g}{V_2^2 - V_1^2}",
+      "derivation": "Loss coefficient relating minor head loss to difference in velocity heads:\n\nh_f = K \\frac{V_2^2 - V_1^2}{2g} \\implies K = \\frac{h_f \\times 2g}{V_2^2 - V_1^2}",
+      "purpose": "Calculates minor loss coefficient K.",
+      "variables": [
+        { "symbol": "h_f", "meaning": "Head loss", "unit": "m", "typical_range": "1.1 – 2.3 m" },
+        { "symbol": "V_1", "meaning": "Larger pipe velocity", "unit": "m/s", "typical_range": "0.3 – 0.5 m/s" },
+        { "symbol": "V_2", "meaning": "Smaller pipe velocity", "unit": "m/s", "typical_range": "1.2 – 1.9 m/s" },
+        { "symbol": "K", "meaning": "Loss Coefficient", "unit": "-", "typical_range": "11 – 17" }
+      ],
+      "assumptions": ["Incompressible turbulent flow through fitting"],
+      "practical_application": "Crucial for sizing piping fittings and calculating pressure drop in industrial piping systems."
+    }
+  ],
+  "graph": {
+    "type": "scatter_with_trend",
+    "x": "head_term",
+    "y": "hf",
+    "x_label": "(V2² - V1²) / 2g (m)",
+    "y_label": "Head Loss hf (m)",
+    "title": "Minor Head Loss vs Velocity Head Difference (hf vs (V2² - V1²)/2g)"
+  },
+  "sample_data": [
+    { "h1": 4, "h2": 21.5, "t": 27.57 },
+    { "h1": 5, "h2": 20.4, "t": 31.10 },
+    { "h1": 6, "h2": 19.4, "t": 33.22 },
+    { "h1": 7, "h2": 18.3, "t": 37.32 },
+    { "h1": 8, "h2": 17.4, "t": 41.87 }
+  ],
+  "result_template": "The Loss Coefficient for fluid flow through pipe fittings was determined to be K = {mean_K}.",
+  "precautions": [
+    "Operate the control valves gradually to prevent air locking in the manometer tubes.",
+    "Ensure complete removal of air bubbles from the pressure tap tubing before recording limb readings.",
+    "Maintain steady water flow while timing the water rise in the measuring tank."
+  ]
+}
