@@ -217,13 +217,14 @@ export function ReportExportModal() {
 
     const isStep = part.graph?.type === 'first_order_step';
     const isSinusoidal = part.graph?.type === 'first_order_sinusoidal';
+    const isPump = experimentConfig?.experiment_id === 'centrifugal_pump' || part.graph?.type === 'centrifugal_dual_plots';
 
     const hasGraph = part?.show_graph !== false &&
                      config?.show_graph !== false &&
                      experimentConfig?.show_graph !== false &&
                      experimentConfig?.experiment_id !== 'free_convection' &&
                      Boolean(part?.graph) &&
-                     Boolean(part?.graph?.x_label || isStep || isSinusoidal);
+                     Boolean(part?.graph?.x_label || isStep || isSinusoidal || isPump);
 
     const hasViva = part?.show_viva !== false &&
                     config?.show_viva !== false &&
@@ -279,9 +280,24 @@ export function ReportExportModal() {
       .filter(Boolean)
       .sort((a, b) => a.x - b.x);
 
+    // Centrifugal pump dual plot data
+    const pumpValid = (partRows || [])
+      .map(r => ({
+        Q: parseFloat(r?.Q),
+        HT: parseFloat(r?.HT),
+        eta: parseFloat(r?.eta),
+        Ip: parseFloat(r?.Ip),
+        Op: parseFloat(r?.Op)
+      }))
+      .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0)
+      .sort((a, b) => a.Q - b.Q);
+
+    const pumpHeadEtaData = isPump ? [{ Q: 0, HT: 18.5, eta: 0 }, ...pumpValid] : [];
+    const pumpPowerData = isPump ? [{ Q: 0, Ip: 450, Op: 0 }, ...pumpValid] : [];
+
     // Linear regression trendline data
     let lineData = [];
-    if (!isStep && !isSinusoidal && chartData.length >= 2) {
+    if (!isStep && !isSinusoidal && !isPump && chartData.length >= 2) {
       const xs = chartData.map(d => d.x);
       const ys = chartData.map(d => d.y);
       const n = xs.length;
@@ -464,56 +480,101 @@ export function ReportExportModal() {
                 ? 'Draw graph of T̄\'(t)/K vs time/τ and note time required to reach 63.2% of final value.'
                 : isSinusoidal
                 ? 'Draw graph of T_in and T_out vs time and determine phase lag and amplitude attenuation.'
+                : isPump
+                ? 'Centrifugal pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with zero-origin scales.'
                 : `Plot of ${part.graph?.y_label || 'Y'} vs ${part.graph?.x_label || 'X'}.`}
             </p>
-            <div className="w-full h-44 my-2 border border-gray-300 rounded p-2 bg-white min-h-[170px]">
-              <ResponsiveContainer width="100%" height="100%">
-                {isStep ? (
-                  <ComposedChart data={stepData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                    <XAxis dataKey="t_over_tau" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'time / τ', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
-                    <YAxis domain={[0, 1.1]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: "T̄'(t) / K", angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
-                    <ReferenceLine y={0.632} stroke="#10B981" strokeDasharray="3 3" />
-                    <Line type="monotone" dataKey="exp_norm" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
-                    <Line type="monotone" dataKey="theo_norm" stroke="#3B82F6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
-                  </ComposedChart>
-                ) : isSinusoidal ? (
-                  <ComposedChart data={sinusoidalData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                    <XAxis dataKey="t" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Time (s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
-                    <YAxis domain={[25, 55]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Temp (°C)', angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
-                    <Line type="monotone" dataKey="T_in" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3.5, fill: '#3B82F6' }} />
-                    <Line type="monotone" dataKey="T_out" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
-                  </ComposedChart>
-                ) : (
-                  <ComposedChart data={chartData.length > 0 ? chartData : [{ x: 0, y: 0 }]} margin={{ top: 12, right: 20, bottom: 25, left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                    <XAxis
-                      dataKey="x"
-                      type="number"
-                      domain={['auto', 'auto']}
-                      tick={{ fill: '#0f172a', fontSize: 9 }}
-                      stroke="#000"
-                      tickFormatter={formatTickX}
-                      label={{ value: part.graph?.x_label, position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }}
-                    />
-                    <YAxis
-                      dataKey="y"
-                      type="number"
-                      domain={['auto', 'auto']}
-                      width={40}
-                      tick={{ fill: '#0f172a', fontSize: 9 }}
-                      stroke="#000"
-                      label={{ value: part.graph?.y_label, angle: -90, position: 'insideLeft', offset: 10, fill: '#000', fontSize: 9 }}
-                    />
-                    <Line data={chartData} type="monotone" dataKey="y" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 4, fill: '#8B5CF6' }} name="Experimental Curve" />
-                    {lineData.length >= 2 && (
-                      <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} name="Trendline" />
-                    )}
-                  </ComposedChart>
-                )}
-              </ResponsiveContainer>
-            </div>
+
+            {isPump ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-2">
+                {/* Graph 1: Head & Efficiency */}
+                <div className="p-2 border border-gray-300 rounded bg-white">
+                  <p className="text-[10px] font-bold text-blue-900 text-center mb-1 font-mono">
+                    Graph 1: Head (HT) & Efficiency (η) vs Discharge (Q)
+                  </p>
+                  <div className="w-full h-44">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={pumpHeadEtaData} margin={{ top: 10, right: 20, bottom: 25, left: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                        <XAxis dataKey="Q" type="number" domain={[0, 'auto']} tickFormatter={formatTickX} tick={{ fill: '#0f172a', fontSize: 8 }} stroke="#000" label={{ value: 'Discharge Q (m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }} />
+                        <YAxis yAxisId="left" domain={[0, 25]} tick={{ fill: '#0072BD', fontSize: 8 }} stroke="#0072BD" label={{ value: 'Head HT (m)', angle: -90, position: 'insideLeft', offset: 10, fill: '#0072BD', fontSize: 8 }} />
+                        <YAxis yAxisId="right" orientation="right" domain={[0, 25]} tick={{ fill: '#D95319', fontSize: 8 }} stroke="#D95319" label={{ value: 'Efficiency η (%)', angle: 90, position: 'insideRight', offset: 10, fill: '#D95319', fontSize: 8 }} />
+                        <Line yAxisId="left" type="monotone" dataKey="HT" stroke="#0072BD" strokeWidth={2} dot={{ r: 3, fill: '#0072BD' }} name="Total Head" />
+                        <Line yAxisId="right" type="monotone" dataKey="eta" stroke="#D95319" strokeWidth={2} dot={{ r: 3, fill: '#D95319' }} name="Efficiency" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Graph 2: Power Characteristics */}
+                <div className="p-2 border border-gray-300 rounded bg-white">
+                  <p className="text-[10px] font-bold text-emerald-900 text-center mb-1 font-mono">
+                    Graph 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
+                  </p>
+                  <div className="w-full h-44">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={pumpPowerData} margin={{ top: 10, right: 20, bottom: 25, left: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                        <XAxis dataKey="Q" type="number" domain={[0, 'auto']} tickFormatter={formatTickX} tick={{ fill: '#0f172a', fontSize: 8 }} stroke="#000" label={{ value: 'Discharge Q (m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }} />
+                        <YAxis yAxisId="left" domain={[0, 800]} tick={{ fill: '#7E2F8E', fontSize: 8 }} stroke="#7E2F8E" label={{ value: 'Input Power (W)', angle: -90, position: 'insideLeft', offset: 10, fill: '#7E2F8E', fontSize: 8 }} />
+                        <YAxis yAxisId="right" orientation="right" domain={[0, 120]} tick={{ fill: '#77AC30', fontSize: 8 }} stroke="#77AC30" label={{ value: 'Output Power (W)', angle: 90, position: 'insideRight', offset: 10, fill: '#77AC30', fontSize: 8 }} />
+                        <Line yAxisId="left" type="monotone" dataKey="Ip" stroke="#7E2F8E" strokeWidth={2} dot={{ r: 3, fill: '#7E2F8E' }} name="Input Power" />
+                        <Line yAxisId="right" type="monotone" dataKey="Op" stroke="#77AC30" strokeWidth={2} dot={{ r: 3, fill: '#77AC30' }} name="Output Power" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-44 my-2 border border-gray-300 rounded p-2 bg-white min-h-[170px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  {isStep ? (
+                    <ComposedChart data={stepData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                      <XAxis dataKey="t_over_tau" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'time / τ', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
+                      <YAxis domain={[0, 1.1]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: "T̄'(t) / K", angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
+                      <ReferenceLine y={0.632} stroke="#10B981" strokeDasharray="3 3" />
+                      <Line type="monotone" dataKey="exp_norm" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
+                      <Line type="monotone" dataKey="theo_norm" stroke="#3B82F6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                    </ComposedChart>
+                  ) : isSinusoidal ? (
+                    <ComposedChart data={sinusoidalData} margin={{ top: 10, right: 20, bottom: 25, left: 15 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                      <XAxis dataKey="t" tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Time (s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }} />
+                      <YAxis domain={[25, 55]} tick={{ fill: '#0f172a', fontSize: 9 }} stroke="#000" label={{ value: 'Temp (°C)', angle: -90, position: 'insideLeft', fill: '#000', fontSize: 9 }} />
+                      <Line type="monotone" dataKey="T_in" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3.5, fill: '#3B82F6' }} />
+                      <Line type="monotone" dataKey="T_out" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3.5, fill: '#8B5CF6' }} />
+                    </ComposedChart>
+                  ) : (
+                    <ComposedChart data={chartData.length > 0 ? chartData : [{ x: 0, y: 0 }]} margin={{ top: 12, right: 20, bottom: 25, left: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                      <XAxis
+                        dataKey="x"
+                        type="number"
+                        domain={['auto', 'auto']}
+                        tick={{ fill: '#0f172a', fontSize: 9 }}
+                        stroke="#000"
+                        tickFormatter={formatTickX}
+                        label={{ value: part.graph?.x_label, position: 'insideBottom', offset: -10, fill: '#000', fontSize: 9 }}
+                      />
+                      <YAxis
+                        dataKey="y"
+                        type="number"
+                        domain={['auto', 'auto']}
+                        width={40}
+                        tick={{ fill: '#0f172a', fontSize: 9 }}
+                        stroke="#000"
+                        label={{ value: part.graph?.y_label, angle: -90, position: 'insideLeft', offset: 10, fill: '#000', fontSize: 9 }}
+                      />
+                      <Line data={chartData} type="monotone" dataKey="y" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 4, fill: '#8B5CF6' }} name="Experimental Curve" />
+                      {lineData.length >= 2 && (
+                        <Line data={lineData} type="monotone" dataKey="trend" stroke="#3B82F6" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={false} name="Trendline" />
+                      )}
+                    </ComposedChart>
+                  )}
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         )}
 

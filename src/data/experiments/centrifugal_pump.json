@@ -260,13 +260,41 @@
     }
   ],
   "graph": {
-    "type": "scatter_with_trend",
+    "type": "centrifugal_dual_plots",
     "x": "Q",
     "y": "eta",
     "x_label": "Actual Discharge Q (m³/s)",
     "y_label": "Overall Efficiency η (%)",
-    "title": "Centrifugal Pump Characteristic: Efficiency vs Flow Rate (η vs Q)"
+    "title": "Centrifugal Pump Characteristic Curves (Zero-Origin)"
   },
+  "graphs": [
+    {
+      "id": "head_efficiency",
+      "title": "Graph 1: Total Head (HT) & Overall Efficiency (η) vs Discharge (Q)",
+      "x": "Q",
+      "x_label": "Actual Discharge Q (m³/s)",
+      "y1": "HT",
+      "y1_label": "Total Head HT (m)",
+      "y2": "eta",
+      "y2_label": "Overall Efficiency η (%)",
+      "x_min": 0,
+      "y1_min": 0,
+      "y2_min": 0
+    },
+    {
+      "id": "power_characteristics",
+      "title": "Graph 2: Power Characteristics: Input Power (Ip) & Output Power (Op) vs Discharge (Q)",
+      "x": "Q",
+      "x_label": "Actual Discharge Q (m³/s)",
+      "y1": "Ip",
+      "y1_label": "Input Power Ip (Watts)",
+      "y2": "Op",
+      "y2_label": "Output Power Op (Watts)",
+      "x_min": 0,
+      "y1_min": 0,
+      "y2_min": 0
+    }
+  ],
   "sample_data": [
     { "Ps": 650, "Pd": 0.25, "t": 19.00, "T": 54.12 },
     { "Ps": 640, "Pd": 0.50, "t": 19.78, "T": 53.34 },
