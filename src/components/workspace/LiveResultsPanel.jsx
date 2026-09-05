@@ -34,7 +34,7 @@ export function LiveResultsPanel() {
     : currentExperimentId === 'minor_losses'
     ? 'Loss Coefficient (K)'
     : currentExperimentId === 'centrifugal_pump'
-    ? 'Efficiency (μ)'
+    ? 'Efficiency (η)'
     : 'Coefficient of Discharge (Cd)';
 
   const resultUnit = headlineConfig?.unit

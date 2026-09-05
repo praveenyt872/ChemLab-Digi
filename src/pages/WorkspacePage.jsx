@@ -78,7 +78,7 @@ export function WorkspacePage({ onNavigate }) {
       headlineOutputText = `K = ${headlineResult.mean.toFixed(2)}`;
     } else if (experimentConfig.experiment_id === 'centrifugal_pump') {
       const pumpVal = headlineResult.max !== null ? headlineResult.max.toFixed(2) : headlineResult.mean.toFixed(2);
-      headlineOutputText = `μ = ${pumpVal} %`;
+      headlineOutputText = `η = ${pumpVal} %`;
     } else if (experimentConfig.experiment_id === 'exp1-first-order-system-response') {
       headlineOutputText = activePartId === 'partA' ? `τ = 10.0 s (63.2%)` : `AR = 0.375 | τ = 27 s`;
     } else if (isFreeConvection || headlineLabel === 'h') {
