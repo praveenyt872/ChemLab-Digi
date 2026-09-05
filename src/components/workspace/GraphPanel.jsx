@@ -67,13 +67,113 @@ function GraphPanelContent() {
   const isCentrifugalPump = config?.experiment_id === 'centrifugal_pump' || graphMeta.type === 'centrifugal_dual_plots';
   const [pumpTab, setPumpTab] = useState('both');
 
-  // Centrifugal Pump Dual Plots (Zero-Origin Scales)
+  /**
+   * Generates smooth, realistic centrifugal pump characteristic curves:
+   * - Scaled discharge: Q * 10^5 (so values are e.g. 48.1, 52.4, 58.9, 61.9, 64.5)
+   * - Origin blending: for efficiency (eta) and output power (Op), builds a smooth
+   *   convex ease-out cubic curve from (0, 0) directly tangentially meeting the first data point.
+   * - Shutoff blending: for total head (HT), starts at shutoff head (~18.4 m) at Q=0,
+   *   and for input power (Ip), starts at shutoff/no-load power (~460 W) at Q=0.
+   * - Right tail extension: smoothly extends past the last experimental point downwards.
+   */
+  const generateSmoothPumpCurve = (points, type) => {
+    if (!points || points.length === 0) return { curveX: [], curveY: [] };
+
+    const sorted = [...points].sort((a, b) => a.x - b.x);
+    const n = sorted.length;
+    const x1 = sorted[0].x;
+    const y1 = sorted[0].y;
+    const x2 = sorted[1]?.x ?? (x1 + 4.3);
+    const y2 = sorted[1]?.y ?? y1;
+    const m1 = (y2 - y1) / (x2 - x1);
+
+    const curveX = [];
+    const curveY = [];
+
+    // 1. Left segment: from x = 0 up to x1
+    const stepsLeft = 25;
+    if (type === 'eta' || type === 'Op') {
+      // Cubic polynomial y(t) = a*t^3 + b*t^2 + c*t where t = x / x1 in [0, 1]
+      // y(0) = 0, y(1) = y1, y'(1) = m1 * x1, initial slope c = 1.7 * y1 (convex arch)
+      const c = 1.7 * y1;
+      const a = m1 * x1 - 0.3 * y1;
+      const b = -0.7 * y1 - a;
+
+      for (let i = 0; i < stepsLeft; i++) {
+        const t = i / stepsLeft;
+        const x = t * x1;
+        const y = Math.max(0, a * t * t * t + b * t * t + c * t);
+        curveX.push(parseFloat(x.toFixed(3)));
+        curveY.push(parseFloat(y.toFixed(3)));
+      }
+    } else if (type === 'HT') {
+      // Total head at Q=0 is the pump shutoff head H0 (~18.4 m)
+      const H0 = Math.max(18.2, y1 - 0.12);
+      for (let i = 0; i < stepsLeft; i++) {
+        const t = i / stepsLeft;
+        const x = t * x1;
+        const blend = 3 * t * t - 2 * t * t * t;
+        const y = H0 + (y1 - H0) * blend;
+        curveX.push(parseFloat(x.toFixed(3)));
+        curveY.push(parseFloat(y.toFixed(3)));
+      }
+    } else if (type === 'Ip') {
+      // Input power starts at shutoff / no-load motor draw (~460 W)
+      const P0 = Math.min(470, y1 - 65);
+      for (let i = 0; i < stepsLeft; i++) {
+        const t = i / stepsLeft;
+        const x = t * x1;
+        const blend = 2 * t - t * t;
+        const y = P0 + (y1 - P0) * blend;
+        curveX.push(parseFloat(x.toFixed(3)));
+        curveY.push(parseFloat(y.toFixed(3)));
+      }
+    }
+
+    // 2. Experimental points segment (pass through all sorted data points)
+    sorted.forEach(p => {
+      curveX.push(parseFloat(p.x.toFixed(3)));
+      curveY.push(parseFloat(p.y.toFixed(3)));
+    });
+
+    // 3. Right tail extension past x_n (extending by ~2.2 units downwards)
+    const xLast = sorted[n - 1].x;
+    const yLast = sorted[n - 1].y;
+    const xPrev = sorted[n - 2]?.x ?? (xLast - 2.6);
+    const yPrev = sorted[n - 2]?.y ?? yLast;
+    const mLast = (yLast - yPrev) / (xLast - xPrev);
+
+    const stepsRight = 10;
+    const dxMax = 2.2;
+    for (let j = 1; j <= stepsRight; j++) {
+      const frac = j / stepsRight;
+      const dx = frac * dxMax;
+      const x = xLast + dx;
+      let y;
+      if (type === 'eta') {
+        y = Math.max(0, yLast + mLast * dx - 0.05 * dx * dx);
+      } else if (type === 'Op') {
+        y = Math.max(0, yLast + mLast * dx - 0.25 * dx * dx);
+      } else if (type === 'HT') {
+        y = Math.max(0, yLast + mLast * dx - 0.04 * dx * dx);
+      } else {
+        y = Math.max(0, yLast + mLast * dx);
+      }
+      curveX.push(parseFloat(x.toFixed(3)));
+      curveY.push(parseFloat(y.toFixed(3)));
+    }
+
+    return { curveX, curveY };
+  };
+
+  // Centrifugal Pump Dual Plots (Zero-Origin Scales & Smooth Interpolation)
   const pumpPlotData = useMemo(() => {
     if (!isCentrifugalPump || !calculatedRows) return null;
 
     const valid = calculatedRows
       .map(r => ({
-        Q: parseFloat(r.Q),
+        Q_raw: parseFloat(r.Q),
+        Q: parseFloat(r.Q) * 1e5, // Scaled by 10^5 (e.g. 48.1, 52.4, 58.9, 61.9, 64.5)
         HT: parseFloat(r.HT),
         eta: parseFloat(r.eta),
         Ip: parseFloat(r.Ip),
@@ -84,121 +184,252 @@ function GraphPanelContent() {
 
     if (valid.length === 0) return null;
 
-    const maxQ = Math.max(...valid.map(r => r.Q), 0.00065);
-    const xMax = Math.ceil(maxQ * 1.15 * 10000) / 10000;
+    const htPts = valid.map(r => ({ x: r.Q, y: r.HT }));
+    const etaPts = valid.map(r => ({ x: r.Q, y: r.eta }));
+    const ipPts = valid.map(r => ({ x: r.Q, y: r.Ip }));
+    const opPts = valid.map(r => ({ x: r.Q, y: r.Op }));
+
+    const htCurve = generateSmoothPumpCurve(htPts, 'HT');
+    const etaCurve = generateSmoothPumpCurve(etaPts, 'eta');
+    const ipCurve = generateSmoothPumpCurve(ipPts, 'Ip');
+    const opCurve = generateSmoothPumpCurve(opPts, 'Op');
 
     // Graph 1: Total Head (HT) & Efficiency (eta) vs Q
-    const headTrace = {
-      x: valid.map(r => r.Q),
-      y: valid.map(r => r.HT),
-      mode: 'lines+markers',
+    const headLineTrace = {
+      x: htCurve.curveX,
+      y: htCurve.curveY,
+      mode: 'lines',
       name: 'Total Head HT (m)',
       type: 'scatter',
-      line: { color: '#0072BD', width: 2.5, shape: 'spline' },
-      marker: { color: '#0072BD', size: 8, symbol: 'circle' },
+      line: { color: '#0072BD', width: 3.0, shape: 'spline' },
       yaxis: 'y1'
     };
 
-    // Overall Efficiency starts from origin (0, 0)
-    const etaTrace = {
-      x: [0, ...valid.map(r => r.Q)],
-      y: [0, ...valid.map(r => r.eta)],
-      mode: 'lines+markers',
+    const headMarkerTrace = {
+      x: valid.map(r => r.Q),
+      y: valid.map(r => r.HT),
+      mode: 'markers',
+      name: 'Head Observed',
+      type: 'scatter',
+      marker: {
+        color: '#0072BD',
+        size: 11,
+        symbol: 'circle',
+        line: { color: '#0f172a', width: 2 }
+      },
+      showlegend: false,
+      yaxis: 'y1'
+    };
+
+    const etaLineTrace = {
+      x: etaCurve.curveX,
+      y: etaCurve.curveY,
+      mode: 'lines',
       name: 'Overall Efficiency η (%)',
       type: 'scatter',
-      line: { color: '#D95319', width: 2.5, shape: 'spline' },
-      marker: { color: '#D95319', size: 8, symbol: 'square' },
+      line: { color: '#D95319', width: 3.0, shape: 'spline' },
+      yaxis: 'y2'
+    };
+
+    const etaMarkerTrace = {
+      x: valid.map(r => r.Q),
+      y: valid.map(r => r.eta),
+      mode: 'markers',
+      name: 'Efficiency Observed',
+      type: 'scatter',
+      marker: {
+        color: '#D95319',
+        size: 11,
+        symbol: 'square',
+        line: { color: '#0f172a', width: 2 }
+      },
+      showlegend: false,
       yaxis: 'y2'
     };
 
     const headEtaLayout = {
       xaxis: {
-        title: { text: '<i>Actual Discharge Q (m³/s)</i>' },
+        title: {
+          text: '<b>Actual Discharge Q (× 10⁻⁵ m³/s)</b>',
+          font: { size: 13, color: '#0f172a', family: "'Helvetica Neue', Arial, sans-serif" }
+        },
         rangemode: 'tozero',
-        range: [0, xMax],
+        range: [0, 70],
+        dtick: 5,
+        tickfont: { size: 11, color: '#0f172a', family: 'monospace' },
         showgrid: true,
+        gridcolor: '#e2e8f0',
+        gridwidth: 1,
         zeroline: true,
-        zerolinecolor: '#64748b',
-        zerolinewidth: 2
+        zerolinecolor: '#334155',
+        zerolinewidth: 2,
+        ticks: 'inside'
       },
       yaxis: {
-        title: { text: '<i>Total Head HT (m)</i>', font: { color: '#0072BD', size: 12 } },
+        title: {
+          text: '<b>Total Head HT (m)</b>',
+          font: { color: '#0072BD', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
+        },
         rangemode: 'tozero',
-        range: [0, 25],
-        tickfont: { color: '#0072BD' },
+        range: [0, 22],
+        dtick: 2,
+        tickfont: { color: '#0072BD', size: 11, family: 'monospace' },
         showgrid: true,
-        zeroline: true
+        gridcolor: '#e2e8f0',
+        gridwidth: 1,
+        zeroline: true,
+        zerolinecolor: '#334155',
+        zerolinewidth: 2,
+        ticks: 'inside'
       },
       yaxis2: {
-        title: { text: '<i>Overall Efficiency η (%)</i>', font: { color: '#D95319', size: 12 } },
+        title: {
+          text: '<b>Overall Efficiency η (%)</b>',
+          font: { color: '#D95319', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
+        },
         rangemode: 'tozero',
-        range: [0, 25],
+        range: [0, 22],
+        dtick: 2,
         overlaying: 'y',
         side: 'right',
-        tickfont: { color: '#D95319' },
+        tickfont: { color: '#D95319', size: 11, family: 'monospace' },
         showgrid: false,
-        zeroline: true
-      }
+        zeroline: true,
+        ticks: 'inside'
+      },
+      legend: {
+        x: 0.88,
+        y: 0.98,
+        xanchor: 'right',
+        yanchor: 'top',
+        bgcolor: 'rgba(255, 255, 255, 0.92)',
+        bordercolor: '#cbd5e1',
+        borderwidth: 1,
+        font: { size: 11, color: '#0f172a' }
+      },
+      margin: { l: 65, r: 65, t: 45, b: 55 }
     };
 
     // Graph 2: Power Characteristics (Ip & Op vs Q)
-    const ipTrace = {
-      x: valid.map(r => r.Q),
-      y: valid.map(r => r.Ip),
-      mode: 'lines+markers',
-      name: 'Input Power Ip (W)',
+    const ipLineTrace = {
+      x: ipCurve.curveX,
+      y: ipCurve.curveY,
+      mode: 'lines',
+      name: 'Input Power Ip (Watts)',
       type: 'scatter',
-      line: { color: '#7E2F8E', width: 2.5, shape: 'spline' },
-      marker: { color: '#7E2F8E', size: 8, symbol: 'diamond' },
+      line: { color: '#7E2F8E', width: 3.0, shape: 'spline' },
       yaxis: 'y1'
     };
 
-    // Output Power starts from origin (0, 0)
-    const opTrace = {
-      x: [0, ...valid.map(r => r.Q)],
-      y: [0, ...valid.map(r => r.Op)],
-      mode: 'lines+markers',
-      name: 'Output Power Op (W)',
+    const ipMarkerTrace = {
+      x: valid.map(r => r.Q),
+      y: valid.map(r => r.Ip),
+      mode: 'markers',
+      name: 'Input Power Observed',
       type: 'scatter',
-      line: { color: '#77AC30', width: 2.5, shape: 'spline' },
-      marker: { color: '#77AC30', size: 8, symbol: 'triangle-up' },
+      marker: {
+        color: '#7E2F8E',
+        size: 11,
+        symbol: 'diamond',
+        line: { color: '#0f172a', width: 2 }
+      },
+      showlegend: false,
+      yaxis: 'y1'
+    };
+
+    const opLineTrace = {
+      x: opCurve.curveX,
+      y: opCurve.curveY,
+      mode: 'lines',
+      name: 'Output Power Op (Watts)',
+      type: 'scatter',
+      line: { color: '#2E7D32', width: 3.0, shape: 'spline' },
+      yaxis: 'y2'
+    };
+
+    const opMarkerTrace = {
+      x: valid.map(r => r.Q),
+      y: valid.map(r => r.Op),
+      mode: 'markers',
+      name: 'Output Power Observed',
+      type: 'scatter',
+      marker: {
+        color: '#2E7D32',
+        size: 11,
+        symbol: 'triangle-up',
+        line: { color: '#0f172a', width: 2 }
+      },
+      showlegend: false,
       yaxis: 'y2'
     };
 
     const powerLayout = {
       xaxis: {
-        title: { text: '<i>Actual Discharge Q (m³/s)</i>' },
+        title: {
+          text: '<b>Actual Discharge Q (× 10⁻⁵ m³/s)</b>',
+          font: { size: 13, color: '#0f172a', family: "'Helvetica Neue', Arial, sans-serif" }
+        },
         rangemode: 'tozero',
-        range: [0, xMax],
+        range: [0, 70],
+        dtick: 5,
+        tickfont: { size: 11, color: '#0f172a', family: 'monospace' },
         showgrid: true,
+        gridcolor: '#e2e8f0',
+        gridwidth: 1,
         zeroline: true,
-        zerolinecolor: '#64748b',
-        zerolinewidth: 2
+        zerolinecolor: '#334155',
+        zerolinewidth: 2,
+        ticks: 'inside'
       },
       yaxis: {
-        title: { text: '<i>Input Power Ip (Watts)</i>', font: { color: '#7E2F8E', size: 12 } },
+        title: {
+          text: '<b>Input Power Ip (Watts)</b>',
+          font: { color: '#7E2F8E', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
+        },
         rangemode: 'tozero',
         range: [0, 800],
-        tickfont: { color: '#7E2F8E' },
+        dtick: 100,
+        tickfont: { color: '#7E2F8E', size: 11, family: 'monospace' },
         showgrid: true,
-        zeroline: true
+        gridcolor: '#e2e8f0',
+        gridwidth: 1,
+        zeroline: true,
+        zerolinecolor: '#334155',
+        zerolinewidth: 2,
+        ticks: 'inside'
       },
       yaxis2: {
-        title: { text: '<i>Output Power Op (Watts)</i>', font: { color: '#77AC30', size: 12 } },
+        title: {
+          text: '<b>Output Power Op (Watts)</b>',
+          font: { color: '#2E7D32', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
+        },
         rangemode: 'tozero',
-        range: [0, 120],
+        range: [0, 110],
+        dtick: 10,
         overlaying: 'y',
         side: 'right',
-        tickfont: { color: '#77AC30' },
+        tickfont: { color: '#2E7D32', size: 11, family: 'monospace' },
         showgrid: false,
-        zeroline: true
-      }
+        zeroline: true,
+        ticks: 'inside'
+      },
+      legend: {
+        x: 0.88,
+        y: 0.98,
+        xanchor: 'right',
+        yanchor: 'top',
+        bgcolor: 'rgba(255, 255, 255, 0.92)',
+        bordercolor: '#cbd5e1',
+        borderwidth: 1,
+        font: { size: 11, color: '#0f172a' }
+      },
+      margin: { l: 65, r: 65, t: 45, b: 55 }
     };
 
     return {
-      headEtaTraces: [headTrace, etaTrace],
+      headEtaTraces: [headLineTrace, headMarkerTrace, etaLineTrace, etaMarkerTrace],
       headEtaLayout,
-      powerTraces: [ipTrace, opTrace],
+      powerTraces: [ipLineTrace, ipMarkerTrace, opLineTrace, opMarkerTrace],
       powerLayout
     };
   }, [isCentrifugalPump, calculatedRows]);
@@ -475,40 +706,40 @@ function GraphPanelContent() {
 
             {/* Render Graph 1: Head & Efficiency */}
             {(pumpTab === 'both' || pumpTab === 'head_eta') && (
-              <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-slate-100">
-                  <span className="text-xs font-mono font-bold text-blue-900">
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
+                <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100 flex-wrap gap-2">
+                  <span className="text-xs font-mono font-bold text-blue-950">
                     FIGURE 1: Total Head (HT) & Overall Efficiency (η) vs Discharge (Q)
                   </span>
-                  <span className="text-[10px] font-mono text-slate-500">
-                    Dual-Axis • Origin at 0
+                  <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    Dual-Axis • Origin at 0 • Q (× 10⁻⁵ m³/s)
                   </span>
                 </div>
                 <MatlabStyledPlot
                   data={pumpPlotData.headEtaTraces}
                   layout={pumpPlotData.headEtaLayout}
                   title="Graph 1: Total Head (HT) & Overall Efficiency (η) vs Discharge (Q)"
-                  height={pumpTab === 'both' ? 320 : 400}
+                  height={pumpTab === 'both' ? 380 : 480}
                 />
               </div>
             )}
 
             {/* Render Graph 2: Power Characteristics */}
             {(pumpTab === 'both' || pumpTab === 'power') && (
-              <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-slate-100">
-                  <span className="text-xs font-mono font-bold text-emerald-900">
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
+                <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100 flex-wrap gap-2">
+                  <span className="text-xs font-mono font-bold text-emerald-950">
                     FIGURE 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
                   </span>
-                  <span className="text-[10px] font-mono text-slate-500">
-                    Dual-Axis • Origin at 0
+                  <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    Dual-Axis • Origin at 0 • Q (× 10⁻⁵ m³/s)
                   </span>
                 </div>
                 <MatlabStyledPlot
                   data={pumpPlotData.powerTraces}
                   layout={pumpPlotData.powerLayout}
                   title="Graph 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)"
-                  height={pumpTab === 'both' ? 320 : 400}
+                  height={pumpTab === 'both' ? 380 : 480}
                 />
               </div>
             )}
@@ -519,7 +750,7 @@ function GraphPanelContent() {
             title={graphMeta.title}
             xAxisLabel={graphConfig.x_axis?.label || graphMeta.x_label}
             yAxisLabel={graphConfig.y_axis?.label || graphMeta.y_label}
-            height={360}
+            height={400}
           />
         )}
       </FigureCard>

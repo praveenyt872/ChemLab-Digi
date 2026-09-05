@@ -280,10 +280,10 @@ export function ReportExportModal() {
       .filter(Boolean)
       .sort((a, b) => a.x - b.x);
 
-    // Centrifugal pump dual plot data
+    // Centrifugal pump dual plot data with smooth origin-blend curves and 10^5 scaling
     const pumpValid = (partRows || [])
       .map(r => ({
-        Q: parseFloat(r?.Q),
+        Q: parseFloat(r?.Q) * 1e5, // Scaled to ~48 to 65
         HT: parseFloat(r?.HT),
         eta: parseFloat(r?.eta),
         Ip: parseFloat(r?.Ip),
@@ -292,8 +292,88 @@ export function ReportExportModal() {
       .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0)
       .sort((a, b) => a.Q - b.Q);
 
-    const pumpHeadEtaData = isPump ? [{ Q: 0, HT: 18.5, eta: 0 }, ...pumpValid] : [];
-    const pumpPowerData = isPump ? [{ Q: 0, Ip: 450, Op: 0 }, ...pumpValid] : [];
+    let pumpHeadEtaData = [];
+    let pumpPowerData = [];
+
+    if (isPump && pumpValid.length > 0) {
+      const x1 = pumpValid[0].Q;
+      const x2 = pumpValid[1]?.Q ?? (x1 + 4.3);
+      const n = pumpValid.length;
+
+      // 1. Smooth interpolation from 0 to x1
+      const stepsLeft = 16;
+      for (let i = 0; i < stepsLeft; i++) {
+        const t = i / stepsLeft;
+        const qVal = parseFloat((t * x1).toFixed(2));
+
+        // eta & Op: cubic arch from 0
+        const mEta = (pumpValid[1]?.eta - pumpValid[0].eta) / (x2 - x1);
+        const cEta = 1.7 * pumpValid[0].eta;
+        const aEta = mEta * x1 - 0.3 * pumpValid[0].eta;
+        const bEta = -0.7 * pumpValid[0].eta - aEta;
+        const etaVal = Math.max(0, parseFloat((aEta * t * t * t + bEta * t * t + cEta * t).toFixed(2)));
+
+        const mOp = (pumpValid[1]?.Op - pumpValid[0].Op) / (x2 - x1);
+        const cOp = 1.7 * pumpValid[0].Op;
+        const aOp = mOp * x1 - 0.3 * pumpValid[0].Op;
+        const bOp = -0.7 * pumpValid[0].Op - aOp;
+        const opVal = Math.max(0, parseFloat((aOp * t * t * t + bOp * t * t + cOp * t).toFixed(2)));
+
+        // HT & Ip: smooth shutoff blend
+        const H0 = Math.max(18.2, pumpValid[0].HT - 0.12);
+        const htVal = parseFloat((H0 + (pumpValid[0].HT - H0) * (3 * t * t - 2 * t * t * t)).toFixed(2));
+
+        const P0 = Math.min(470, pumpValid[0].Ip - 65);
+        const ipVal = parseFloat((P0 + (pumpValid[0].Ip - P0) * (2 * t - t * t)).toFixed(2));
+
+        pumpHeadEtaData.push({ Q: qVal, HT: htVal, eta: etaVal });
+        pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
+      }
+
+      // 2. Experimental points with observed tags
+      pumpValid.forEach(r => {
+        pumpHeadEtaData.push({
+          Q: parseFloat(r.Q.toFixed(2)),
+          HT: parseFloat(r.HT.toFixed(2)),
+          eta: parseFloat(r.eta.toFixed(2)),
+          HT_obs: parseFloat(r.HT.toFixed(2)),
+          eta_obs: parseFloat(r.eta.toFixed(2))
+        });
+        pumpPowerData.push({
+          Q: parseFloat(r.Q.toFixed(2)),
+          Ip: parseFloat(r.Ip.toFixed(2)),
+          Op: parseFloat(r.Op.toFixed(2)),
+          Ip_obs: parseFloat(r.Ip.toFixed(2)),
+          Op_obs: parseFloat(r.Op.toFixed(2))
+        });
+      });
+
+      // 3. Right tail downwards past x_n
+      const xLast = pumpValid[n - 1].Q;
+      const xPrev = pumpValid[n - 2]?.Q ?? (xLast - 2.6);
+      const dxMax = 2.0;
+      const stepsRight = 6;
+      for (let j = 1; j <= stepsRight; j++) {
+        const frac = j / stepsRight;
+        const dx = frac * dxMax;
+        const qVal = parseFloat((xLast + dx).toFixed(2));
+
+        const mEta = (pumpValid[n - 1].eta - (pumpValid[n - 2]?.eta ?? pumpValid[n - 1].eta)) / (xLast - xPrev);
+        const etaVal = Math.max(0, parseFloat((pumpValid[n - 1].eta + mEta * dx - 0.05 * dx * dx).toFixed(2)));
+
+        const mOp = (pumpValid[n - 1].Op - (pumpValid[n - 2]?.Op ?? pumpValid[n - 1].Op)) / (xLast - xPrev);
+        const opVal = Math.max(0, parseFloat((pumpValid[n - 1].Op + mOp * dx - 0.25 * dx * dx).toFixed(2)));
+
+        const mHT = (pumpValid[n - 1].HT - (pumpValid[n - 2]?.HT ?? pumpValid[n - 1].HT)) / (xLast - xPrev);
+        const htVal = Math.max(0, parseFloat((pumpValid[n - 1].HT + mHT * dx - 0.04 * dx * dx).toFixed(2)));
+
+        const mIp = (pumpValid[n - 1].Ip - (pumpValid[n - 2]?.Ip ?? pumpValid[n - 1].Ip)) / (xLast - xPrev);
+        const ipVal = Math.max(0, parseFloat((pumpValid[n - 1].Ip + mIp * dx).toFixed(2)));
+
+        pumpHeadEtaData.push({ Q: qVal, HT: htVal, eta: etaVal });
+        pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
+      }
+    }
 
     // Linear regression trendline data
     let lineData = [];
@@ -489,18 +569,48 @@ export function ReportExportModal() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-2">
                 {/* Graph 1: Head & Efficiency */}
                 <div className="p-2 border border-gray-300 rounded bg-white">
-                  <p className="text-[10px] font-bold text-blue-900 text-center mb-1 font-mono">
-                    Graph 1: Head (HT) & Efficiency (η) vs Discharge (Q)
-                  </p>
-                  <div className="w-full h-44">
+                  <div className="flex items-center justify-between mb-1 px-1">
+                    <p className="text-[10px] font-bold text-blue-900 font-mono">
+                      Graph 1: Head (HT) & Efficiency (η) vs Discharge (Q)
+                    </p>
+                    <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
+                      Q (× 10⁻⁵ m³/s)
+                    </span>
+                  </div>
+                  <div className="w-full h-52">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={pumpHeadEtaData} margin={{ top: 10, right: 20, bottom: 25, left: 10 }}>
+                      <ComposedChart data={pumpHeadEtaData} margin={{ top: 10, right: 25, bottom: 25, left: 10 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                        <XAxis dataKey="Q" type="number" domain={[0, 'auto']} tickFormatter={formatTickX} tick={{ fill: '#0f172a', fontSize: 8 }} stroke="#000" label={{ value: 'Discharge Q (m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }} />
-                        <YAxis yAxisId="left" domain={[0, 25]} tick={{ fill: '#0072BD', fontSize: 8 }} stroke="#0072BD" label={{ value: 'Head HT (m)', angle: -90, position: 'insideLeft', offset: 10, fill: '#0072BD', fontSize: 8 }} />
-                        <YAxis yAxisId="right" orientation="right" domain={[0, 25]} tick={{ fill: '#D95319', fontSize: 8 }} stroke="#D95319" label={{ value: 'Efficiency η (%)', angle: 90, position: 'insideRight', offset: 10, fill: '#D95319', fontSize: 8 }} />
-                        <Line yAxisId="left" type="monotone" dataKey="HT" stroke="#0072BD" strokeWidth={2} dot={{ r: 3, fill: '#0072BD' }} name="Total Head" />
-                        <Line yAxisId="right" type="monotone" dataKey="eta" stroke="#D95319" strokeWidth={2} dot={{ r: 3, fill: '#D95319' }} name="Efficiency" />
+                        <XAxis
+                          dataKey="Q"
+                          type="number"
+                          domain={[0, 70]}
+                          ticks={[0, 10, 20, 30, 40, 50, 60, 70]}
+                          tick={{ fill: '#0f172a', fontSize: 8 }}
+                          stroke="#000"
+                          label={{ value: 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
+                        />
+                        <YAxis
+                          yAxisId="left"
+                          domain={[0, 22]}
+                          ticks={[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
+                          tick={{ fill: '#0072BD', fontSize: 8 }}
+                          stroke="#0072BD"
+                          label={{ value: 'Head HT (m)', angle: -90, position: 'insideLeft', offset: 10, fill: '#0072BD', fontSize: 8 }}
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          domain={[0, 22]}
+                          ticks={[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
+                          tick={{ fill: '#D95319', fontSize: 8 }}
+                          stroke="#D95319"
+                          label={{ value: 'Efficiency η (%)', angle: 90, position: 'insideRight', offset: 10, fill: '#D95319', fontSize: 8 }}
+                        />
+                        <Line yAxisId="left" type="monotone" dataKey="HT" stroke="#0072BD" strokeWidth={2.2} dot={false} name="Total Head" />
+                        <Line yAxisId="left" type="monotone" dataKey="HT_obs" stroke="#0072BD" strokeWidth={0} dot={{ r: 4, fill: '#0072BD', stroke: '#0f172a', strokeWidth: 1.5 }} name="Head Obs" />
+                        <Line yAxisId="right" type="monotone" dataKey="eta" stroke="#D95319" strokeWidth={2.2} dot={false} name="Efficiency" />
+                        <Line yAxisId="right" type="monotone" dataKey="eta_obs" stroke="#D95319" strokeWidth={0} dot={{ r: 4, fill: '#D95319', stroke: '#0f172a', strokeWidth: 1.5 }} name="Efficiency Obs" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
@@ -508,18 +618,48 @@ export function ReportExportModal() {
 
                 {/* Graph 2: Power Characteristics */}
                 <div className="p-2 border border-gray-300 rounded bg-white">
-                  <p className="text-[10px] font-bold text-emerald-900 text-center mb-1 font-mono">
-                    Graph 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
-                  </p>
-                  <div className="w-full h-44">
+                  <div className="flex items-center justify-between mb-1 px-1">
+                    <p className="text-[10px] font-bold text-emerald-900 font-mono">
+                      Graph 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
+                    </p>
+                    <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
+                      Q (× 10⁻⁵ m³/s)
+                    </span>
+                  </div>
+                  <div className="w-full h-52">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={pumpPowerData} margin={{ top: 10, right: 20, bottom: 25, left: 10 }}>
+                      <ComposedChart data={pumpPowerData} margin={{ top: 10, right: 25, bottom: 25, left: 10 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                        <XAxis dataKey="Q" type="number" domain={[0, 'auto']} tickFormatter={formatTickX} tick={{ fill: '#0f172a', fontSize: 8 }} stroke="#000" label={{ value: 'Discharge Q (m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }} />
-                        <YAxis yAxisId="left" domain={[0, 800]} tick={{ fill: '#7E2F8E', fontSize: 8 }} stroke="#7E2F8E" label={{ value: 'Input Power (W)', angle: -90, position: 'insideLeft', offset: 10, fill: '#7E2F8E', fontSize: 8 }} />
-                        <YAxis yAxisId="right" orientation="right" domain={[0, 120]} tick={{ fill: '#77AC30', fontSize: 8 }} stroke="#77AC30" label={{ value: 'Output Power (W)', angle: 90, position: 'insideRight', offset: 10, fill: '#77AC30', fontSize: 8 }} />
-                        <Line yAxisId="left" type="monotone" dataKey="Ip" stroke="#7E2F8E" strokeWidth={2} dot={{ r: 3, fill: '#7E2F8E' }} name="Input Power" />
-                        <Line yAxisId="right" type="monotone" dataKey="Op" stroke="#77AC30" strokeWidth={2} dot={{ r: 3, fill: '#77AC30' }} name="Output Power" />
+                        <XAxis
+                          dataKey="Q"
+                          type="number"
+                          domain={[0, 70]}
+                          ticks={[0, 10, 20, 30, 40, 50, 60, 70]}
+                          tick={{ fill: '#0f172a', fontSize: 8 }}
+                          stroke="#000"
+                          label={{ value: 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
+                        />
+                        <YAxis
+                          yAxisId="left"
+                          domain={[0, 800]}
+                          ticks={[0, 100, 200, 300, 400, 500, 600, 700, 800]}
+                          tick={{ fill: '#7E2F8E', fontSize: 8 }}
+                          stroke="#7E2F8E"
+                          label={{ value: 'Input Power Ip (W)', angle: -90, position: 'insideLeft', offset: 10, fill: '#7E2F8E', fontSize: 8 }}
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          domain={[0, 110]}
+                          ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]}
+                          tick={{ fill: '#2E7D32', fontSize: 8 }}
+                          stroke="#2E7D32"
+                          label={{ value: 'Output Power Op (W)', angle: 90, position: 'insideRight', offset: 10, fill: '#2E7D32', fontSize: 8 }}
+                        />
+                        <Line yAxisId="left" type="monotone" dataKey="Ip" stroke="#7E2F8E" strokeWidth={2.2} dot={false} name="Input Power" />
+                        <Line yAxisId="left" type="monotone" dataKey="Ip_obs" stroke="#7E2F8E" strokeWidth={0} dot={{ r: 4, fill: '#7E2F8E', stroke: '#0f172a', strokeWidth: 1.5 }} name="Input Power Obs" />
+                        <Line yAxisId="right" type="monotone" dataKey="Op" stroke="#2E7D32" strokeWidth={2.2} dot={false} name="Output Power" />
+                        <Line yAxisId="right" type="monotone" dataKey="Op_obs" stroke="#2E7D32" strokeWidth={0} dot={{ r: 4, fill: '#2E7D32', stroke: '#0f172a', strokeWidth: 1.5 }} name="Output Power Obs" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
