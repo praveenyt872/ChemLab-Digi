@@ -306,7 +306,7 @@ export function ReportExportModal() {
         const t = i / stepsLeft;
         const qVal = parseFloat((t * x1).toFixed(2));
 
-        // eta & Op: cubic arch from 0
+        // eta, Op & Ip: cubic arch from 0
         const mEta = (pumpValid[1]?.eta - pumpValid[0].eta) / (x2 - x1);
         const cEta = 1.7 * pumpValid[0].eta;
         const aEta = mEta * x1 - 0.3 * pumpValid[0].eta;
@@ -319,14 +319,14 @@ export function ReportExportModal() {
         const bOp = -0.7 * pumpValid[0].Op - aOp;
         const opVal = Math.max(0, parseFloat((aOp * t * t * t + bOp * t * t + cOp * t).toFixed(2)));
 
-        // HT & Ip: smooth shutoff blend
-        const H0 = Math.max(18.2, pumpValid[0].HT - 0.12);
-        const htVal = parseFloat((H0 + (pumpValid[0].HT - H0) * (3 * t * t - 2 * t * t * t)).toFixed(2));
+        const mIp = (pumpValid[1]?.Ip - pumpValid[0].Ip) / (x2 - x1);
+        const cIp = 1.7 * pumpValid[0].Ip;
+        const aIp = mIp * x1 - 0.3 * pumpValid[0].Ip;
+        const bIp = -0.7 * pumpValid[0].Ip - aIp;
+        const ipVal = Math.max(0, parseFloat((aIp * t * t * t + bIp * t * t + cIp * t).toFixed(2)));
 
-        const P0 = Math.min(470, pumpValid[0].Ip - 65);
-        const ipVal = parseFloat((P0 + (pumpValid[0].Ip - P0) * (2 * t - t * t)).toFixed(2));
-
-        pumpHeadEtaData.push({ Q: qVal, HT: htVal, eta: etaVal });
+        // HT does not extend to zero; only eta is defined in this segment
+        pumpHeadEtaData.push({ Q: qVal, eta: etaVal });
         pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
       }
 

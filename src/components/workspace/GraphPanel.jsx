@@ -92,7 +92,7 @@ function GraphPanelContent() {
 
     // 1. Left segment: from x = 0 up to x1
     const stepsLeft = 25;
-    if (type === 'eta' || type === 'Op') {
+    if (type === 'eta' || type === 'Op' || type === 'Ip') {
       // Cubic polynomial y(t) = a*t^3 + b*t^2 + c*t where t = x / x1 in [0, 1]
       // y(0) = 0, y(1) = y1, y'(1) = m1 * x1, initial slope c = 1.7 * y1 (convex arch)
       const c = 1.7 * y1;
@@ -107,27 +107,7 @@ function GraphPanelContent() {
         curveY.push(parseFloat(y.toFixed(3)));
       }
     } else if (type === 'HT') {
-      // Total head at Q=0 is the pump shutoff head H0 (~18.4 m)
-      const H0 = Math.max(18.2, y1 - 0.12);
-      for (let i = 0; i < stepsLeft; i++) {
-        const t = i / stepsLeft;
-        const x = t * x1;
-        const blend = 3 * t * t - 2 * t * t * t;
-        const y = H0 + (y1 - H0) * blend;
-        curveX.push(parseFloat(x.toFixed(3)));
-        curveY.push(parseFloat(y.toFixed(3)));
-      }
-    } else if (type === 'Ip') {
-      // Input power starts at shutoff / no-load motor draw (~460 W)
-      const P0 = Math.min(470, y1 - 65);
-      for (let i = 0; i < stepsLeft; i++) {
-        const t = i / stepsLeft;
-        const x = t * x1;
-        const blend = 2 * t - t * t;
-        const y = P0 + (y1 - P0) * blend;
-        curveX.push(parseFloat(x.toFixed(3)));
-        curveY.push(parseFloat(y.toFixed(3)));
-      }
+      // Total Head starts directly at the first experimental point (x1, y1), no extension to zero
     }
 
     // 2. Experimental points segment (pass through all sorted data points)
