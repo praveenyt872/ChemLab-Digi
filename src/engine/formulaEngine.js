@@ -406,10 +406,16 @@ export function formatResultString(template, headlineResult, fallbackMean = null
     ? Number(headlineResult.mean)
     : (fallbackMean !== null && !isNaN(fallbackMean) ? Number(fallbackMean) : null);
 
+  const maxVal = (headlineResult?.max !== null && headlineResult?.max !== undefined && !isNaN(headlineResult.max))
+    ? Number(headlineResult.max)
+    : null;
+
   const getK = () => (meanVal !== null ? meanVal.toFixed(2) : '15.31');
   const getF = () => (meanVal !== null ? meanVal.toFixed(4) : '0.0064');
   const getCd = () => (meanVal !== null ? meanVal.toFixed(3) : '0.598');
   const getH = () => (meanVal !== null ? meanVal.toFixed(2) : '14.28');
+  const getEtaMax = () => (maxVal !== null ? maxVal.toFixed(2) : (meanVal !== null ? meanVal.toFixed(2) : '17.53'));
+  const getEta = () => (meanVal !== null ? meanVal.toFixed(2) : '15.70');
   const getGeneral = () => {
     if (meanVal === null) return '—';
     if (Math.abs(meanVal) < 0.01 && meanVal !== 0) return meanVal.toFixed(4);
@@ -418,6 +424,14 @@ export function formatResultString(template, headlineResult, fallbackMean = null
   };
 
   return template
+    .replace(/\{max_eta\}/gi, getEtaMax())
+    .replace(/\{mean_eta\}/gi, getEta())
+    .replace(/\{avg_eta\}/gi, getEta())
+    .replace(/\{eta\}/gi, getEtaMax())
+    .replace(/\{max_efficiency\}/gi, getEtaMax())
+    .replace(/\{efficiency\}/gi, getEtaMax())
+    .replace(/\{opt_head\}/gi, '18.60')
+    .replace(/\{HT\}/gi, '18.60')
     .replace(/\{mean_K\}/gi, getK())
     .replace(/\{avg_K\}/gi, getK())
     .replace(/\{K\}/gi, getK())

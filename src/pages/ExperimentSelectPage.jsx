@@ -52,6 +52,15 @@ export function ExperimentSelectPage({ onNavigate }) {
       formulaPreview: 'K = hf / ((V2² - V1²) / 2g)',
       calcCount: '6 Formula Steps',
       icon: <Zap className="w-6 h-6 text-violet-600" />
+    },
+    {
+      id: 'centrifugal_pump',
+      title: 'Characteristics Studies of a Centrifugal Pump',
+      aim: 'To study the performance of a centrifugal pump at constant speed, determine operating heads, power, and maximum efficiency.',
+      schematic: '1.0 HP Pump + Pressure/Vacuum Gauges + Energy Meter + Collecting Tank',
+      formulaPreview: 'η = (Op / Ip) × 100',
+      calcCount: '7 Formula Steps',
+      icon: <Gauge className="w-6 h-6 text-violet-600" />
     }
   ];
 

@@ -1,0 +1,283 @@
+{
+  "experiment_id": "centrifugal_pump",
+  "subject": "fluid_mechanics",
+  "title": "Characteristics Studies of a Centrifugal Pump",
+  "short_name": "Centrifugal Pump",
+  "aim": "To study the performance characteristics of a centrifugal pump at constant speed and determine its operating heads, discharge, input power, output power, and overall efficiency.",
+  "apparatus": [
+    "Centrifugal pump coupled with 1.0 HP AC motor (1420 rpm)",
+    "Sump tank and collecting tank (0.35 m × 0.35 m)",
+    "Pressure gauge on delivery side (kg/cm²)",
+    "Vacuum gauge on suction side (mm Hg)",
+    "Energy meter (constant = 1200 rev/kWh) and stopwatch",
+    "Piezometer scale for water rise"
+  ],
+  "theory": "A centrifugal pump is a rotodynamic machine that converts mechanical energy into hydraulic energy. As the impeller rotates, fluid enters axially through the eye of the impeller and is thrown radially outward by centrifugal force into the spiral casing (volute). Kinetic energy is converted into pressure energy before discharging.\n\nSuction Head:\nH_s = \\frac{P_s \\times 133.3}{\\rho g} = P_s \\times 0.0136 \\quad (\\text{m of water})\n\nDelivery Head:\nH_d = \\frac{P_d \\times 9.81 \\times 10^4}{\\rho g} = P_d \\times 10 \\quad (\\text{m of water})\n\nTotal Operating Head:\nH_T = H_d + H_s + Z \\quad (\\text{m of water}) \\quad \\text{where } Z = 0.85\\text{ m}\n\nActual Discharge Rate:\nQ_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.35 \\times 0.35 \\times 0.1}{t} = \\frac{0.01225}{t} \\quad (\\text{m}^3/\\text{s})\n\nElectrical Input Power:\nI_p = \\frac{N \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T} \\quad (\\text{Watts})\n\nPump Hydraulic Output Power:\nO_p = \\rho \\cdot g \\cdot H_T \\cdot Q_{act} = 1000 \\times 9.81 \\times H_T \\times Q_{act} \\quad (\\text{Watts})\n\nOverall Efficiency:\n\\eta = \\frac{O_p}{I_p} \\times 100 \\quad (\\%)",
+  "procedure": [
+    "Ensure the sump tank has sufficient clean water and check for proper pump priming.",
+    "Fully open the suction valve and ensure the delivery valve is closed.",
+    "Switch on the electric motor to run the centrifugal pump at constant rated speed (1420 rpm).",
+    "Gradually open the discharge delivery valve to set the desired delivery pressure.",
+    "Record the suction vacuum gauge reading (Ps in mm Hg) and delivery pressure gauge reading (Pd in kg/cm²).",
+    "Measure the time taken (t in sec) for a 10 cm (0.1 m) water level rise in the collecting tank.",
+    "Note the time taken (T in sec) for 10 revolutions of the energy meter disc.",
+    "Repeat the observations for 5 different discharge flow rates across the operating range.",
+    "Compute Hs, Hd, HT, Qact, Ip, Op, and overall efficiency η for each trial."
+  ],
+  "headline_output": {
+    "label": "Efficiency (η)",
+    "resultKey": "eta",
+    "unit": "%"
+  },
+  "fixed_inputs": [
+    { "id": "motor_power", "label": "Motor Rated Power", "value": 1.0, "unit": "HP", "description": "Electric drive motor power" },
+    { "id": "motor_speed", "label": "Motor Speed", "value": 1420, "unit": "rpm", "description": "Rated rotational speed of pump" },
+    { "id": "energy_meter_const", "label": "Energy Meter Constant", "value": 1200, "unit": "rev/kWh", "description": "Meter constant for power measurement" },
+    { "id": "tank_length", "label": "Tank Length", "value": 0.35, "unit": "m", "description": "Collecting tank length" },
+    { "id": "tank_width", "label": "Tank Width", "value": 0.35, "unit": "m", "description": "Collecting tank width" },
+    { "id": "rise", "label": "Water Rise", "value": 0.1, "unit": "m", "description": "10 cm rise in collecting tank" },
+    { "id": "Z", "label": "Gauge Height Difference (Z)", "value": 0.85, "unit": "m", "description": "Vertical datum offset between pressure gauges" },
+    { "id": "N_rev", "label": "Energy Meter Disc Revs", "value": 10, "unit": "rev", "description": "Counted disc revolutions" },
+    { "id": "g", "label": "Gravity (g)", "value": 9.81, "unit": "m/s²", "description": "Acceleration due to gravity" },
+    { "id": "rho", "label": "Water Density", "value": 1000, "unit": "kg/m³", "description": "Density of water at room temperature" }
+  ],
+  "trial_inputs": [
+    { "id": "Ps", "label": "Suction Pressure (Ps)", "unit": "mmHg", "type": "number", "placeholder": "e.g. 650", "tooltip": "Suction vacuum gauge reading in mm Hg" },
+    { "id": "Pd", "label": "Delivery Pressure (Pd)", "unit": "kg/cm²", "type": "number", "placeholder": "e.g. 0.25", "tooltip": "Delivery pressure gauge reading in kg/cm²" },
+    { "id": "t", "label": "Time for 10cm Rise (t)", "unit": "sec", "type": "number", "placeholder": "e.g. 19.00", "tooltip": "Time for 10 cm water level rise in collecting tank" },
+    { "id": "T", "label": "Time for 10 Revs (T)", "unit": "sec", "type": "number", "placeholder": "e.g. 54.12", "tooltip": "Time taken for 10 revolutions of energy meter disc" }
+  ],
+  "manual_calculation_mode": true,
+  "calculation_expressions": {
+    "Hs": "Ps * 0.0136",
+    "Hd": "Pd * 10",
+    "HT": "(Pd * 10) + (Ps * 0.0136) + 0.85",
+    "Q": "0.01225 / t",
+    "Ip": "30000 / T",
+    "Op": "1000 * 9.81 * ((Pd * 10) + (Ps * 0.0136) + 0.85) * (0.01225 / t)",
+    "eta": "((1000 * 9.81 * ((Pd * 10) + (Ps * 0.0136) + 0.85) * (0.01225 / t)) / (30000 / T)) * 100"
+  },
+  "calculations": [
+    {
+      "id": "Hs",
+      "step_number": 1,
+      "label": "Step 1: Suction Head (Hs)",
+      "formula_latex": "H_s = P_s \\times 0.0136",
+      "substitution_template": "H_s = {Ps} \\times 0.0136",
+      "variables": [
+        { "symbol": "P_s", "label": "Suction Pressure (Ps)", "source_field": "Ps", "unit": "mmHg" }
+      ],
+      "result_unit": "m",
+      "target_field": "Hs",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Hd",
+      "step_number": 2,
+      "label": "Step 2: Delivery Head (Hd)",
+      "formula_latex": "H_d = P_d \\times 10",
+      "substitution_template": "H_d = {Pd} \\times 10",
+      "variables": [
+        { "symbol": "P_d", "label": "Delivery Pressure (Pd)", "source_field": "Pd", "unit": "kg/cm²" }
+      ],
+      "result_unit": "m",
+      "target_field": "Hd",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "HT",
+      "step_number": 3,
+      "label": "Step 3: Total Operating Head (HT)",
+      "formula_latex": "H_T = H_d + H_s + Z = H_d + H_s + 0.85",
+      "substitution_template": "H_T = {Hd} + {Hs} + 0.85",
+      "variables": [
+        { "symbol": "H_d", "label": "Delivery Head (Hd)", "source_field": "Hd", "unit": "m" },
+        { "symbol": "H_s", "label": "Suction Head (Hs)", "source_field": "Hs", "unit": "m" }
+      ],
+      "result_unit": "m",
+      "target_field": "HT",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Q",
+      "step_number": 4,
+      "label": "Step 4: Actual Discharge Rate (Qact)",
+      "formula_latex": "Q_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.01225}{t}",
+      "substitution_template": "Q_{act} = \\frac{0.01225}{{t}}",
+      "variables": [
+        { "symbol": "t", "label": "Time for 10cm Rise (t)", "source_field": "t", "unit": "sec" }
+      ],
+      "result_unit": "m³/s",
+      "target_field": "Q",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Ip",
+      "step_number": 5,
+      "label": "Step 5: Electrical Input Power (Ip)",
+      "formula_latex": "I_p = \\frac{N \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T}",
+      "substitution_template": "I_p = \\frac{30000}{{T}}",
+      "variables": [
+        { "symbol": "T", "label": "Time for 10 Revs (T)", "source_field": "T", "unit": "sec" }
+      ],
+      "result_unit": "W",
+      "target_field": "Ip",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "Op",
+      "step_number": 6,
+      "label": "Step 6: Pump Output Water Power (Op)",
+      "formula_latex": "O_p = \\rho \\cdot g \\cdot H_T \\cdot Q_{act} = 1000 \\times 9.81 \\times H_T \\times Q_{act}",
+      "substitution_template": "O_p = 1000 \\times 9.81 \\times {HT} \\times {Q}",
+      "variables": [
+        { "symbol": "H_T", "label": "Total Head (HT)", "source_field": "HT", "unit": "m" },
+        { "symbol": "Q_{act}", "label": "Discharge (Q)", "source_field": "Q", "unit": "m³/s" }
+      ],
+      "result_unit": "W",
+      "target_field": "Op",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "eta",
+      "step_number": 7,
+      "label": "Step 7: Overall Pump Efficiency (η)",
+      "formula_latex": "\\eta = \\frac{O_p}{I_p} \\times 100",
+      "substitution_template": "\\eta = \\frac{{Op}}{{Ip}} \\times 100",
+      "variables": [
+        { "symbol": "O_p", "label": "Output Power (Op)", "source_field": "Op", "unit": "W" },
+        { "symbol": "I_p", "label": "Input Power (Ip)", "source_field": "Ip", "unit": "W" }
+      ],
+      "result_unit": "%",
+      "target_field": "eta",
+      "tolerance_percent": 5
+    }
+  ],
+  "calculated_columns": [
+    { "id": "Hs", "label": "Hs", "unit": "m", "format": "decimal" },
+    { "id": "Hd", "label": "Hd", "unit": "m", "format": "decimal" },
+    { "id": "HT", "label": "HT", "unit": "m", "format": "decimal" },
+    { "id": "Q", "label": "Discharge (Q)", "unit": "m³/s", "format": "scientific" },
+    { "id": "Ip", "label": "Input Power", "unit": "W", "format": "decimal" },
+    { "id": "Op", "label": "Output Power", "unit": "W", "format": "decimal" },
+    { "id": "eta", "label": "Efficiency (η)", "unit": "%", "format": "decimal" }
+  ],
+  "formulas": [
+    {
+      "id": "Hs",
+      "label": "Suction Head (Hs)",
+      "latex": "H_s = \\frac{P_s \\times 133.3}{\\rho g} = P_s \\times 0.0136",
+      "derivation": "Conversion of suction vacuum gauge reading in mm Hg to equivalent meters of water column:\n\nH_s = \\frac{P_s \\times 133.322}{1000 \\times 9.81} = P_s \\times 0.01359 \\approx P_s \\times 0.0136 \\text{ (m)}",
+      "purpose": "Calculates suction vacuum lift in meters of water.",
+      "variables": [
+        { "symbol": "P_s", "meaning": "Suction pressure reading", "unit": "mmHg", "typical_range": "350 – 700 mmHg" },
+        { "symbol": "H_s", "meaning": "Suction head", "unit": "m", "typical_range": "5 – 9.5 m" }
+      ],
+      "assumptions": ["Standard atmospheric and liquid mercury conversion constants"],
+      "practical_application": "Assesses suction line lift capacity and NPSH limits."
+    },
+    {
+      "id": "Hd",
+      "label": "Delivery Head (Hd)",
+      "latex": "H_d = \\frac{P_d \\times 9.81 \\times 10^4}{\\rho g} = P_d \\times 10",
+      "derivation": "Conversion of delivery pressure gauge reading in kg/cm² to equivalent meters of water column:\n\n1 \\text{ kg/cm}^2 = 9.81 \\times 10^4 \\text{ N/m}^2\n\nH_d = \\frac{P_d \\times 9.81 \\times 10^4}{1000 \\times 9.81} = P_d \\times 10 \\text{ (m)}",
+      "purpose": "Calculates delivery discharge head in meters of water.",
+      "variables": [
+        { "symbol": "P_d", "meaning": "Delivery pressure reading", "unit": "kg/cm²", "typical_range": "0.2 – 1.5 kg/cm²" },
+        { "symbol": "H_d", "meaning": "Delivery head", "unit": "m", "typical_range": "2 – 15 m" }
+      ],
+      "assumptions": ["Density of water = 1000 kg/m³"],
+      "practical_application": "Measures effective delivery pressure head developed across discharge line."
+    },
+    {
+      "id": "HT",
+      "label": "Total Head (HT)",
+      "latex": "H_T = H_d + H_s + Z",
+      "derivation": "Sum of delivery head, suction head, and the vertical distance between the two pressure gauges:\n\nH_T = H_d + H_s + 0.85 \\text{ (m)}",
+      "purpose": "Determines total manometric head developed by the pump.",
+      "variables": [
+        { "symbol": "H_d", "meaning": "Delivery head", "unit": "m", "typical_range": "2 – 15 m" },
+        { "symbol": "H_s", "meaning": "Suction head", "unit": "m", "typical_range": "5 – 9.5 m" },
+        { "symbol": "Z", "meaning": "Gauge vertical datum offset", "unit": "m", "typical_range": "0.85 m" },
+        { "symbol": "H_T", "meaning": "Total head", "unit": "m", "typical_range": "10 – 20 m" }
+      ],
+      "assumptions": ["Velocity heads in suction and delivery pipe equal or negligible"],
+      "practical_application": "Governs pump sizing, head curves, and total pressure capacity."
+    },
+    {
+      "id": "Q",
+      "label": "Actual Volumetric Discharge Rate (Qact)",
+      "latex": "Q_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.35 \\times 0.35 \\times 0.1}{t} = \\frac{0.01225}{t}",
+      "derivation": "Volumetric collection in a 0.35 m × 0.35 m tank for 0.1 m water level rise:\n\n\\text{Volume} = 0.35 \\times 0.35 \\times 0.1 = 0.01225 \\text{ m}^3\n\nQ_{act} = \\frac{0.01225}{t} \\text{ (m³/s)}",
+      "purpose": "Measures pump delivered flow rate.",
+      "variables": [
+        { "symbol": "t", "meaning": "Time for 10 cm rise", "unit": "sec", "typical_range": "18 – 30 s" },
+        { "symbol": "Q_{act}", "meaning": "Flow rate", "unit": "m³/s", "typical_range": "4.5×10⁻⁴ – 7.0×10⁻⁴ m³/s" }
+      ],
+      "assumptions": ["Uniform level rise during timing interval"],
+      "practical_application": "Quantifies delivery discharge rate."
+    },
+    {
+      "id": "Ip",
+      "label": "Electrical Input Power (Ip)",
+      "latex": "I_p = \\frac{N \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T}",
+      "derivation": "Electrical power consumed by motor through an energy meter of 1200 rev/kWh:\n\nI_p = \\frac{10}{T} \\times \\frac{3600}{1200} \\times 1000 = \\frac{30000}{T} \\text{ (Watts)}",
+      "purpose": "Calculates electrical motor input power.",
+      "variables": [
+        { "symbol": "T", "meaning": "Time for 10 disc revolutions", "unit": "sec", "typical_range": "45 – 60 s" },
+        { "symbol": "I_p", "meaning": "Input power", "unit": "Watts", "typical_range": "500 – 650 W" }
+      ],
+      "assumptions": ["Energy meter disc calibration constant = 1200 rev/kWh"],
+      "practical_application": "Monitors electrical energy consumption."
+    },
+    {
+      "id": "Op",
+      "label": "Pump Hydraulic Output Power (Op)",
+      "latex": "O_p = \\rho \\cdot g \\cdot H_T \\cdot Q_{act}",
+      "derivation": "Useful fluid power delivered to the water stream:\n\nO_p = 1000 \\times 9.81 \\times H_T \\times Q_{act} \\text{ (Watts)}",
+      "purpose": "Calculates water power developed by pump.",
+      "variables": [
+        { "symbol": "H_T", "meaning": "Total head", "unit": "m", "typical_range": "10 – 20 m" },
+        { "symbol": "Q_{act}", "meaning": "Flow rate", "unit": "m³/s", "typical_range": "4.5×10⁻⁴ – 7.0×10⁻⁴ m³/s" },
+        { "symbol": "O_p", "meaning": "Output power", "unit": "Watts", "typical_range": "70 – 100 W" }
+      ],
+      "assumptions": ["Incompressible pure water fluid"],
+      "practical_application": "Direct measure of hydraulic work output."
+    },
+    {
+      "id": "eta",
+      "label": "Overall Pump Efficiency (η)",
+      "latex": "\\eta = \\frac{O_p}{I_p} \\times 100",
+      "derivation": "Ratio of useful hydraulic output power to total electric input power:\n\n\\eta = \\frac{O_p}{I_p} \\times 100 \\text{ (\\%)}",
+      "purpose": "Determines pump unit overall operating efficiency.",
+      "variables": [
+        { "symbol": "O_p", "meaning": "Output power", "unit": "Watts", "typical_range": "70 – 100 W" },
+        { "symbol": "I_p", "meaning": "Input power", "unit": "Watts", "typical_range": "500 – 650 W" },
+        { "symbol": "\\eta", "meaning": "Efficiency", "unit": "%", "typical_range": "12 – 20%" }
+      ],
+      "assumptions": ["Combined motor and pump mechanical-hydraulic system"],
+      "practical_application": "Identifies Best Efficiency Point (BEP) and design operating point."
+    }
+  ],
+  "graph": {
+    "type": "scatter_with_trend",
+    "x": "Q",
+    "y": "eta",
+    "x_label": "Actual Discharge Q (m³/s)",
+    "y_label": "Overall Efficiency η (%)",
+    "title": "Centrifugal Pump Characteristic: Efficiency vs Flow Rate (η vs Q)"
+  },
+  "sample_data": [
+    { "Ps": 650, "Pd": 0.25, "t": 19.00, "T": 54.12 },
+    { "Ps": 640, "Pd": 0.50, "t": 19.78, "T": 53.34 },
+    { "Ps": 600, "Pd": 0.75, "t": 20.81, "T": 48.81 },
+    { "Ps": 570, "Pd": 1.00, "t": 23.38, "T": 55.43 },
+    { "Ps": 380, "Pd": 1.25, "t": 25.47, "T": 56.53 }
+  ],
+  "result_template": "The maximum efficiency of the centrifugal pump was found to be {max_eta}% at an operating total head of {HT} m.",
+  "precautions": [
+    "Priming is mandatory before starting the pump; never run the pump dry.",
+    "Ensure clean water without solid debris in the sump tank.",
+    "Operate the delivery control valve smoothly and ensure vacuum gauge cocks are opened carefully."
+  ]
+}
