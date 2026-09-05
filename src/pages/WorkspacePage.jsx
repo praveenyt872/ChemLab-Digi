@@ -72,6 +72,13 @@ export function WorkspacePage({ onNavigate }) {
       headlineOutputText = `t̄ = ${headlineResult.mean.toFixed(2)} sec`;
     } else if (experimentConfig.experiment_id === 'rotameter_calibration') {
       headlineOutputText = `Q = ${formatScientific(headlineResult.mean, 4)} m³/s`;
+    } else if (experimentConfig.experiment_id === 'pipe_friction') {
+      headlineOutputText = `f = ${headlineResult.mean.toFixed(5)}`;
+    } else if (experimentConfig.experiment_id === 'minor_losses') {
+      headlineOutputText = `K = ${headlineResult.mean.toFixed(2)}`;
+    } else if (experimentConfig.experiment_id === 'centrifugal_pump') {
+      const pumpVal = headlineResult.max !== null ? headlineResult.max.toFixed(2) : headlineResult.mean.toFixed(2);
+      headlineOutputText = `μ = ${pumpVal} %`;
     } else if (experimentConfig.experiment_id === 'exp1-first-order-system-response') {
       headlineOutputText = activePartId === 'partA' ? `τ = 10.0 s (63.2%)` : `AR = 0.375 | τ = 27 s`;
     } else if (isFreeConvection || headlineLabel === 'h') {

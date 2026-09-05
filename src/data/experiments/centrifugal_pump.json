@@ -25,7 +25,8 @@
     "Compute Hs, Hd, HT, Qact, Ip, Op, and overall efficiency η for each trial."
   ],
   "headline_output": {
-    "label": "Efficiency (η)",
+    "label": "Efficiency (μ)",
+    "symbol": "μ",
     "resultKey": "eta",
     "unit": "%"
   },
@@ -141,9 +142,9 @@
     {
       "id": "eta",
       "step_number": 7,
-      "label": "Step 7: Overall Pump Efficiency (η)",
-      "formula_latex": "\\eta = \\frac{O_p}{I_p} \\times 100",
-      "substitution_template": "\\eta = \\frac{{Op}}{{Ip}} \\times 100",
+      "label": "Step 7: Overall Pump Efficiency (μ)",
+      "formula_latex": "\\mu = \\frac{O_p}{I_p} \\times 100",
+      "substitution_template": "\\mu = \\frac{{Op}}{{Ip}} \\times 100",
       "variables": [
         { "symbol": "O_p", "label": "Output Power (Op)", "source_field": "Op", "unit": "W" },
         { "symbol": "I_p", "label": "Input Power (Ip)", "source_field": "Ip", "unit": "W" }
@@ -160,7 +161,7 @@
     { "id": "Q", "label": "Discharge (Q)", "unit": "m³/s", "format": "scientific" },
     { "id": "Ip", "label": "Input Power", "unit": "W", "format": "decimal" },
     { "id": "Op", "label": "Output Power", "unit": "W", "format": "decimal" },
-    { "id": "eta", "label": "Efficiency (η)", "unit": "%", "format": "decimal" }
+    { "id": "eta", "label": "Efficiency (μ)", "unit": "%", "format": "decimal" }
   ],
   "formulas": [
     {
@@ -302,7 +303,7 @@
     { "Ps": 570, "Pd": 1.00, "t": 23.38, "T": 55.43 },
     { "Ps": 380, "Pd": 1.25, "t": 25.47, "T": 56.53 }
   ],
-  "result_template": "The maximum efficiency of the centrifugal pump was found to be {max_eta}% at an operating total head of {HT} m.",
+  "result_template": "The maximum efficiency of the centrifugal pump was found to be μ = {max_eta}% at an operating total head of {HT} m.",
   "precautions": [
     "Priming is mandatory before starting the pump; never run the pump dry.",
     "Ensure clean water without solid debris in the sump tank.",
