@@ -303,7 +303,7 @@
     { "Ps": 570, "Pd": 1.00, "t": 23.38, "T": 55.43 },
     { "Ps": 380, "Pd": 1.25, "t": 25.47, "T": 56.53 }
   ],
-  "result_template": "The maximum efficiency of the centrifugal pump was found to be η = {max_eta}% at an operating total head of {HT} m.",
+  "result_template": "The maximum efficiency of the centrifugal pump was found to be Max η = {max_eta}% (Mean η = {mean_eta}%) at an operating total head of {HT} m.",
   "precautions": [
     "Priming is mandatory before starting the pump; never run the pump dry.",
     "Ensure clean water without solid debris in the sump tank.",

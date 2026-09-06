@@ -67,7 +67,9 @@ export function LiveResultsPanel() {
 
         <div className="mt-3 flex items-baseline justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-mono font-semibold">{primaryMetric}</p>
+            <p className="text-xs text-slate-500 font-mono font-semibold">
+              {(currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump') ? 'Max Efficiency (η)' : primaryMetric}
+            </p>
             <div className="text-3xl font-heading font-bold text-violet-900">
               {isProcessControl ? (
                 activePartId === 'partA' ? '10.0' : '0.3'
@@ -88,6 +90,11 @@ export function LiveResultsPanel() {
                 <span className="text-sm text-violet-700 font-mono ml-2">{resultUnit}</span>
               )}
             </div>
+            {(currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump') && headlineResult.mean !== null && (
+              <div className="text-xs text-slate-600 font-mono font-medium mt-1">
+                Mean η = <span className="text-violet-800 font-semibold">{headlineResult.mean.toFixed(2)} %</span>
+              </div>
+            )}
           </div>
 
           <div className="text-right text-xs font-mono text-slate-500">
