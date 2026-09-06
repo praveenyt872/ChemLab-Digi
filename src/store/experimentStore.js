@@ -228,6 +228,10 @@ export const useExperimentStore = create((set, get) => ({
   studentInterpretations: loadInitialInterpretations(),
   manualCalculationData: loadInitialManualCalcData(),
 
+  // Pump Performance Curve Mode: 'origin' (Curve from 0) | 'points_only' (Points Line Only)
+  pumpCurveMode: 'origin',
+  setPumpCurveMode: (mode) => set({ pumpCurveMode: mode }),
+
   // Standardization Tables State (for RTD CSTR)
   stdTableA: defaultStdA,
   stdTableB: defaultStdB,

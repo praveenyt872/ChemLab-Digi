@@ -46,7 +46,7 @@ class GraphPanelErrorBoundary extends React.Component {
 }
 
 function GraphPanelContent() {
-  const { activePartConfig, experimentConfig, calculatedRows } = useExperimentStore();
+  const { activePartConfig, experimentConfig, calculatedRows, pumpCurveMode, setPumpCurveMode } = useExperimentStore();
   const containerRef = useRef(null);
 
   const config = activePartConfig || experimentConfig;
@@ -71,19 +71,85 @@ function GraphPanelContent() {
 
   /**
    * Generates smooth, realistic pump characteristic curves:
-   * - Scaled discharge: Q * 10^5 (centrifugal) or Q * 10^4 (reciprocating)
-   * - Origin blending: for efficiency (eta) and output power (Op) & input power (Ip), builds a smooth
-   *   convex ease-out curve from (0, 0) directly meeting the first data point.
-   * - For total head (HT), starts directly at the first experimental point (x1, y1), no extension to zero.
-   * - Right tail extension: smoothly extends past the last experimental point downwards (for centrifugal).
+   * - In 'points_only' mode: strictly marks the observed points connected by lines (no zero-origin extension).
+   * - In 'origin' mode:
+   *   - Reciprocating pump:
+   *     - Total Head (HT): does not come from zero; connects points directly.
+   *     - Efficiency (eta), Ip, Op: curve starts from (0, 0), rises to the peak at the end point (Trial 5),
+   *       and then decreases down through the points to the starting point (Trial 1) as requested.
+   *   - Centrifugal pump:
+   *     - Total Head (HT): starts directly at the first experimental point without zero extension.
+   *     - Efficiency (eta), Ip, Op: origin-blended convex curve from (0, 0) into first point with right tail extension.
    */
-  const generateSmoothPumpCurve = (points, type, isReciprocating = false) => {
+  const generateSmoothPumpCurve = (points, type, isReciprocating = false, curveMode = 'origin') => {
     if (!points || points.length === 0) return { curveX: [], curveY: [] };
 
-    const sorted = isReciprocating
-      ? [...points] // preserve trial sequence (increasing head/power/eta)
-      : [...points].sort((a, b) => a.x - b.x);
+    // In 'points_only' mode, connect the observation points in trial order without origin curve or tail
+    if (curveMode === 'points_only') {
+      return {
+        curveX: points.map(p => parseFloat(p.x.toFixed(3))),
+        curveY: points.map(p => parseFloat(p.y.toFixed(3)))
+      };
+    }
 
+    // In 'origin' mode:
+    if (isReciprocating) {
+      // Total Head (HT): starts directly at experimental points, does not come from zero
+      if (type === 'HT') {
+        return {
+          curveX: points.map(p => parseFloat(p.x.toFixed(3))),
+          curveY: points.map(p => parseFloat(p.y.toFixed(3)))
+        };
+      }
+
+      // For eta, Op, Ip:
+      // Curve starts from (0, 0), rises to the peak at the end point (Trial 5),
+      // and then decreases from the end point down through the points to the start (Trial 1).
+      const n = points.length;
+      let peakIdx = n - 1;
+      let maxY = -Infinity;
+      points.forEach((p, idx) => {
+        if (p.y > maxY) {
+          maxY = p.y;
+          peakIdx = idx;
+        }
+      });
+
+      const peakPoint = points[peakIdx];
+      const curveX = [];
+      const curveY = [];
+
+      // 1. Rising branch from (0, 0) up to the peak point
+      const stepsRise = 25;
+      for (let i = 0; i < stepsRise; i++) {
+        const t = i / stepsRise;
+        const x = t * peakPoint.x;
+        // Smooth sine ease-out: reaches peak with a rounded horizontal tangent at the summit
+        const y = Math.max(0, peakPoint.y * Math.sin((Math.PI / 2) * t));
+        curveX.push(parseFloat(x.toFixed(3)));
+        curveY.push(parseFloat(y.toFixed(3)));
+      }
+
+      // 2. The peak point
+      curveX.push(parseFloat(peakPoint.x.toFixed(3)));
+      curveY.push(parseFloat(peakPoint.y.toFixed(3)));
+
+      // 3. Decreasing branch: from peak point down through the points to Trial 1
+      const descPoints = points
+        .map((p, origIdx) => ({ ...p, origIdx }))
+        .filter((_, idx) => idx !== peakIdx)
+        .sort((a, b) => b.y - a.y); // from near-peak down to lowest (e.g. Trial 4 -> 3 -> 2 -> 1)
+
+      descPoints.forEach(p => {
+        curveX.push(parseFloat(p.x.toFixed(3)));
+        curveY.push(parseFloat(p.y.toFixed(3)));
+      });
+
+      return { curveX, curveY };
+    }
+
+    // For Centrifugal Pump in 'origin' mode:
+    const sorted = [...points].sort((a, b) => a.x - b.x);
     const n = sorted.length;
     const x1 = sorted[0].x;
     const y1 = sorted[0].y;
@@ -96,28 +162,17 @@ function GraphPanelContent() {
     // 1. Left segment: from x = 0 up to x1
     const stepsLeft = 25;
     if (type === 'eta' || type === 'Op' || type === 'Ip') {
-      if (isReciprocating) {
-        // Smooth quadratic arch: y(0) = 0, y(1) = y1, concave downward arch
-        for (let i = 0; i < stepsLeft; i++) {
-          const t = i / stepsLeft;
-          const x = t * x1;
-          const y = Math.max(0, y1 * (1.5 * t - 0.5 * t * t));
-          curveX.push(parseFloat(x.toFixed(3)));
-          curveY.push(parseFloat(y.toFixed(3)));
-        }
-      } else {
-        const m1 = (y2 - y1) / (x2 - x1);
-        const c = 1.7 * y1;
-        const a = m1 * x1 - 0.3 * y1;
-        const b = -0.7 * y1 - a;
+      const m1 = (y2 - y1) / (x2 - x1);
+      const c = 1.7 * y1;
+      const a = m1 * x1 - 0.3 * y1;
+      const b = -0.7 * y1 - a;
 
-        for (let i = 0; i < stepsLeft; i++) {
-          const t = i / stepsLeft;
-          const x = t * x1;
-          const y = Math.max(0, a * t * t * t + b * t * t + c * t);
-          curveX.push(parseFloat(x.toFixed(3)));
-          curveY.push(parseFloat(y.toFixed(3)));
-        }
+      for (let i = 0; i < stepsLeft; i++) {
+        const t = i / stepsLeft;
+        const x = t * x1;
+        const y = Math.max(0, a * t * t * t + b * t * t + c * t);
+        curveX.push(parseFloat(x.toFixed(3)));
+        curveY.push(parseFloat(y.toFixed(3)));
       }
     } else if (type === 'HT') {
       // Total Head starts directly at the first experimental point (x1, y1), no extension to zero
@@ -130,31 +185,29 @@ function GraphPanelContent() {
     });
 
     // 3. Right tail extension (for centrifugal pump)
-    if (!isReciprocating) {
-      const xLast = sorted[n - 1].x;
-      const yLast = sorted[n - 1].y;
-      const xPrev = sorted[n - 2]?.x ?? (xLast - 2.6);
-      const mLast = (yLast - (sorted[n - 2]?.y ?? yLast)) / (xLast - xPrev);
+    const xLast = sorted[n - 1].x;
+    const yLast = sorted[n - 1].y;
+    const xPrev = sorted[n - 2]?.x ?? (xLast - 2.6);
+    const mLast = (yLast - (sorted[n - 2]?.y ?? yLast)) / (xLast - xPrev);
 
-      const stepsRight = 10;
-      const dxMax = 2.2;
-      for (let j = 1; j <= stepsRight; j++) {
-        const frac = j / stepsRight;
-        const dx = frac * dxMax;
-        const x = xLast + dx;
-        let y;
-        if (type === 'eta') {
-          y = Math.max(0, yLast + mLast * dx - 0.05 * dx * dx);
-        } else if (type === 'Op') {
-          y = Math.max(0, yLast + mLast * dx - 0.25 * dx * dx);
-        } else if (type === 'HT') {
-          y = Math.max(0, yLast + mLast * dx - 0.04 * dx * dx);
-        } else {
-          y = Math.max(0, yLast + mLast * dx);
-        }
-        curveX.push(parseFloat(x.toFixed(3)));
-        curveY.push(parseFloat(y.toFixed(3)));
+    const stepsRight = 10;
+    const dxMax = 2.2;
+    for (let j = 1; j <= stepsRight; j++) {
+      const frac = j / stepsRight;
+      const dx = frac * dxMax;
+      const x = xLast + dx;
+      let y;
+      if (type === 'eta') {
+        y = Math.max(0, yLast + mLast * dx - 0.05 * dx * dx);
+      } else if (type === 'Op') {
+        y = Math.max(0, yLast + mLast * dx - 0.25 * dx * dx);
+      } else if (type === 'HT') {
+        y = Math.max(0, yLast + mLast * dx - 0.04 * dx * dx);
+      } else {
+        y = Math.max(0, yLast + mLast * dx);
       }
+      curveX.push(parseFloat(x.toFixed(3)));
+      curveY.push(parseFloat(y.toFixed(3)));
     }
 
     return { curveX, curveY };
@@ -188,10 +241,10 @@ function GraphPanelContent() {
     const ipPts = valid.map(r => ({ x: r.Q, y: r.Ip }));
     const opPts = valid.map(r => ({ x: r.Q, y: r.Op }));
 
-    const htCurve = generateSmoothPumpCurve(htPts, 'HT', isReciprocatingPump);
-    const etaCurve = generateSmoothPumpCurve(etaPts, 'eta', isReciprocatingPump);
-    const ipCurve = generateSmoothPumpCurve(ipPts, 'Ip', isReciprocatingPump);
-    const opCurve = generateSmoothPumpCurve(opPts, 'Op', isReciprocatingPump);
+    const htCurve = generateSmoothPumpCurve(htPts, 'HT', isReciprocatingPump, pumpCurveMode);
+    const etaCurve = generateSmoothPumpCurve(etaPts, 'eta', isReciprocatingPump, pumpCurveMode);
+    const ipCurve = generateSmoothPumpCurve(ipPts, 'Ip', isReciprocatingPump, pumpCurveMode);
+    const opCurve = generateSmoothPumpCurve(opPts, 'Op', isReciprocatingPump, pumpCurveMode);
 
     const qAxisTitle = isReciprocatingPump
       ? '<b>Actual Discharge Q (× 10⁻⁴ m³/s)</b>'
@@ -449,7 +502,7 @@ function GraphPanelContent() {
       powerTraces: [ipLineTrace, ipMarkerTrace, opLineTrace, opMarkerTrace],
       powerLayout
     };
-  }, [isPump, isReciprocatingPump, calculatedRows]);
+  }, [isPump, isReciprocatingPump, pumpCurveMode, calculatedRows]);
 
   // Transform calculated rows into plot points for standard scatter graph
   const chartData = useMemo(() => {
@@ -666,9 +719,13 @@ function GraphPanelContent() {
         title={graphMeta.title || 'MATLAB Figure Window'}
         subtitle={
           isReciprocatingPump
-            ? 'Reciprocating Pump Performance Curves: Dual-Part Zero-Origin Characteristics'
+            ? pumpCurveMode === 'origin'
+              ? 'Reciprocating Pump Performance Curves: Peak & Decreasing Zero-Origin Characteristics'
+              : 'Reciprocating Pump Performance Curves: Direct Observation Points Line'
             : isCentrifugalPump
-            ? 'Centrifugal Pump Performance Curves: Dual-Part Zero-Origin Characteristics'
+            ? pumpCurveMode === 'origin'
+              ? 'Centrifugal Pump Performance Curves: Dual-Part Zero-Origin Characteristics'
+              : 'Centrifugal Pump Performance Curves: Direct Observation Points Line'
             : isStepGraph
             ? 'First-Order Step Response (Observed vs Theoretical 63.2% Curve)'
             : isSinusoidalGraph
@@ -686,39 +743,67 @@ function GraphPanelContent() {
           </div>
         ) : isPump && pumpPlotData ? (
           <div className="space-y-4">
-            {/* Pump Graph Part Switcher */}
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-100 rounded-lg border border-slate-200">
-              <span className="text-xs font-mono font-bold text-slate-700">GRAPH SELECTION:</span>
+            {/* Pump Graph Controls: Part Switcher & Curve Mode */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 bg-slate-100 rounded-lg border border-slate-200">
+              {/* Part Switcher */}
               <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-mono font-bold text-slate-700 mr-1">GRAPH:</span>
                 <button
                   onClick={() => setPumpTab('both')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
                     pumpTab === 'both'
                       ? 'bg-violet-700 text-white shadow-sm ring-2 ring-violet-400/40'
                       : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
                   }`}
                 >
-                  Both Graphs (Split View)
+                  Both Graphs
                 </button>
                 <button
                   onClick={() => setPumpTab('head_eta')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
                     pumpTab === 'head_eta'
                       ? 'bg-blue-700 text-white shadow-sm ring-2 ring-blue-400/40'
                       : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
                   }`}
                 >
-                  Graph 1: Head & Efficiency
+                  Graph 1: Head & η
                 </button>
                 <button
                   onClick={() => setPumpTab('power')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
                     pumpTab === 'power'
                       ? 'bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-400/40'
                       : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
                   }`}
                 >
-                  Graph 2: Input & Output Power
+                  Graph 2: Ip & Op
+                </button>
+              </div>
+
+              {/* Curve Origin Mode Selector */}
+              <div className="flex flex-wrap items-center gap-1.5 border-t sm:border-t-0 sm:border-l border-slate-200 pt-1.5 sm:pt-0 sm:pl-2.5">
+                <span className="text-xs font-mono font-bold text-slate-700 mr-1">CURVE MODE:</span>
+                <button
+                  onClick={() => setPumpCurveMode('origin')}
+                  title="Curve comes from origin (0,0) like a smooth curve"
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
+                    pumpCurveMode === 'origin'
+                      ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-400/40'
+                      : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
+                  }`}
+                >
+                  Curve from Origin (0,0)
+                </button>
+                <button
+                  onClick={() => setPumpCurveMode('points_only')}
+                  title="Line connects observation points only without zero origin"
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
+                    pumpCurveMode === 'points_only'
+                      ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-400/40'
+                      : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
+                  }`}
+                >
+                  Points Only (No Origin)
                 </button>
               </div>
             </div>
@@ -731,7 +816,7 @@ function GraphPanelContent() {
                     FIGURE 1: Total Head (HT) & Overall Efficiency (η) vs Discharge (Q)
                   </span>
                   <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    Dual-Axis • Origin at 0 • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
+                    Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                   </span>
                 </div>
                 <MatlabStyledPlot
@@ -751,7 +836,7 @@ function GraphPanelContent() {
                     FIGURE 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
                   </span>
                   <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    Dual-Axis • Origin at 0 • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
+                    Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                   </span>
                 </div>
                 <MatlabStyledPlot

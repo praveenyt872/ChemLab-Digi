@@ -80,7 +80,9 @@ export function ReportExportModal() {
     currentExperimentId,
     studentInterpretations,
     setStudentInterpretation,
-    manualCalculationData
+    manualCalculationData,
+    pumpCurveMode,
+    setPumpCurveMode
   } = useExperimentStore();
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -302,68 +304,142 @@ export function ReportExportModal() {
     let pumpPowerData = [];
 
     if (isPump && pumpValid.length > 0) {
-      const x1 = pumpValid[0].Q;
-      const x2 = pumpValid[1]?.Q ?? (x1 + 4.3);
-      const n = pumpValid.length;
+      if (pumpCurveMode === 'points_only') {
+        // Points-only mode: strictly add experimental observation points
+        pumpValid.forEach(r => {
+          pumpHeadEtaData.push({
+            Q: parseFloat(r.Q.toFixed(2)),
+            HT: parseFloat(r.HT.toFixed(2)),
+            eta: parseFloat(r.eta.toFixed(2)),
+            HT_obs: parseFloat(r.HT.toFixed(2)),
+            eta_obs: parseFloat(r.eta.toFixed(2))
+          });
+          pumpPowerData.push({
+            Q: parseFloat(r.Q.toFixed(2)),
+            Ip: parseFloat(r.Ip.toFixed(2)),
+            Op: parseFloat(r.Op.toFixed(2)),
+            Ip_obs: parseFloat(r.Ip.toFixed(2)),
+            Op_obs: parseFloat(r.Op.toFixed(2))
+          });
+        });
+      } else if (isReciprocatingPump) {
+        // Origin mode for reciprocating pump:
+        // Curve rises from (0,0) to peak at the end point (Trial 5),
+        // and decreases down through the points to the start (Trial 1).
+        const n = pumpValid.length;
+        let peakIdx = n - 1;
+        let maxY = -Infinity;
+        pumpValid.forEach((p, idx) => {
+          if (p.eta > maxY) {
+            maxY = p.eta;
+            peakIdx = idx;
+          }
+        });
+        const peakPoint = pumpValid[peakIdx];
 
-      // 1. Smooth interpolation from 0 to x1
-      const stepsLeft = 16;
-      for (let i = 0; i < stepsLeft; i++) {
-        const t = i / stepsLeft;
-        const qVal = parseFloat((t * x1).toFixed(2));
+        // 1. Rising branch from (0,0) up to peak point
+        const stepsRise = 16;
+        for (let i = 0; i < stepsRise; i++) {
+          const t = i / stepsRise;
+          const qVal = parseFloat((t * peakPoint.Q).toFixed(2));
+          const etaVal = Math.max(0, parseFloat((peakPoint.eta * Math.sin((Math.PI / 2) * t)).toFixed(2)));
+          const opVal = Math.max(0, parseFloat((peakPoint.Op * Math.sin((Math.PI / 2) * t)).toFixed(2)));
+          const ipVal = Math.max(0, parseFloat((peakPoint.Ip * Math.sin((Math.PI / 2) * t)).toFixed(2)));
+          // HT does not extend to zero
+          pumpHeadEtaData.push({ Q: qVal, eta: etaVal });
+          pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
+        }
 
-        let etaVal, opVal, ipVal;
-        if (isReciprocatingPump) {
-          const factor = 1.5 * t - 0.5 * t * t;
-          etaVal = Math.max(0, parseFloat((pumpValid[0].eta * factor).toFixed(2)));
-          opVal = Math.max(0, parseFloat((pumpValid[0].Op * factor).toFixed(2)));
-          ipVal = Math.max(0, parseFloat((pumpValid[0].Ip * factor).toFixed(2)));
-        } else {
-          // eta, Op & Ip: cubic arch from 0
+        // 2. Peak point
+        pumpHeadEtaData.push({
+          Q: parseFloat(peakPoint.Q.toFixed(2)),
+          HT: parseFloat(peakPoint.HT.toFixed(2)),
+          eta: parseFloat(peakPoint.eta.toFixed(2)),
+          HT_obs: parseFloat(peakPoint.HT.toFixed(2)),
+          eta_obs: parseFloat(peakPoint.eta.toFixed(2))
+        });
+        pumpPowerData.push({
+          Q: parseFloat(peakPoint.Q.toFixed(2)),
+          Ip: parseFloat(peakPoint.Ip.toFixed(2)),
+          Op: parseFloat(peakPoint.Op.toFixed(2)),
+          Ip_obs: parseFloat(peakPoint.Ip.toFixed(2)),
+          Op_obs: parseFloat(peakPoint.Op.toFixed(2))
+        });
+
+        // 3. Decreasing branch: from peak point down through remaining points to Trial 1
+        const descPoints = pumpValid
+          .filter((_, idx) => idx !== peakIdx)
+          .sort((a, b) => b.eta - a.eta);
+
+        descPoints.forEach(r => {
+          pumpHeadEtaData.push({
+            Q: parseFloat(r.Q.toFixed(2)),
+            HT: parseFloat(r.HT.toFixed(2)),
+            eta: parseFloat(r.eta.toFixed(2)),
+            HT_obs: parseFloat(r.HT.toFixed(2)),
+            eta_obs: parseFloat(r.eta.toFixed(2))
+          });
+          pumpPowerData.push({
+            Q: parseFloat(r.Q.toFixed(2)),
+            Ip: parseFloat(r.Ip.toFixed(2)),
+            Op: parseFloat(r.Op.toFixed(2)),
+            Ip_obs: parseFloat(r.Ip.toFixed(2)),
+            Op_obs: parseFloat(r.Op.toFixed(2))
+          });
+        });
+      } else {
+        // Origin mode for centrifugal pump
+        const x1 = pumpValid[0].Q;
+        const x2 = pumpValid[1]?.Q ?? (x1 + 4.3);
+        const n = pumpValid.length;
+
+        // 1. Smooth interpolation from 0 to x1
+        const stepsLeft = 16;
+        for (let i = 0; i < stepsLeft; i++) {
+          const t = i / stepsLeft;
+          const qVal = parseFloat((t * x1).toFixed(2));
+
           const mEta = (pumpValid[1]?.eta - pumpValid[0].eta) / (x2 - x1);
           const cEta = 1.7 * pumpValid[0].eta;
           const aEta = mEta * x1 - 0.3 * pumpValid[0].eta;
           const bEta = -0.7 * pumpValid[0].eta - aEta;
-          etaVal = Math.max(0, parseFloat((aEta * t * t * t + bEta * t * t + cEta * t).toFixed(2)));
+          const etaVal = Math.max(0, parseFloat((aEta * t * t * t + bEta * t * t + cEta * t).toFixed(2)));
 
           const mOp = (pumpValid[1]?.Op - pumpValid[0].Op) / (x2 - x1);
           const cOp = 1.7 * pumpValid[0].Op;
           const aOp = mOp * x1 - 0.3 * pumpValid[0].Op;
           const bOp = -0.7 * pumpValid[0].Op - aOp;
-          opVal = Math.max(0, parseFloat((aOp * t * t * t + bOp * t * t + cOp * t).toFixed(2)));
+          const opVal = Math.max(0, parseFloat((aOp * t * t * t + bOp * t * t + cOp * t).toFixed(2)));
 
           const mIp = (pumpValid[1]?.Ip - pumpValid[0].Ip) / (x2 - x1);
           const cIp = 1.7 * pumpValid[0].Ip;
           const aIp = mIp * x1 - 0.3 * pumpValid[0].Ip;
           const bIp = -0.7 * pumpValid[0].Ip - aIp;
-          ipVal = Math.max(0, parseFloat((aIp * t * t * t + bIp * t * t + cIp * t).toFixed(2)));
+          const ipVal = Math.max(0, parseFloat((aIp * t * t * t + bIp * t * t + cIp * t).toFixed(2)));
+
+          pumpHeadEtaData.push({ Q: qVal, eta: etaVal });
+          pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
         }
 
-        // HT does not extend to zero; only eta is defined in this segment
-        pumpHeadEtaData.push({ Q: qVal, eta: etaVal });
-        pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
-      }
-
-      // 2. Experimental points with observed tags
-      pumpValid.forEach(r => {
-        pumpHeadEtaData.push({
-          Q: parseFloat(r.Q.toFixed(2)),
-          HT: parseFloat(r.HT.toFixed(2)),
-          eta: parseFloat(r.eta.toFixed(2)),
-          HT_obs: parseFloat(r.HT.toFixed(2)),
-          eta_obs: parseFloat(r.eta.toFixed(2))
+        // 2. Experimental points with observed tags
+        pumpValid.forEach(r => {
+          pumpHeadEtaData.push({
+            Q: parseFloat(r.Q.toFixed(2)),
+            HT: parseFloat(r.HT.toFixed(2)),
+            eta: parseFloat(r.eta.toFixed(2)),
+            HT_obs: parseFloat(r.HT.toFixed(2)),
+            eta_obs: parseFloat(r.eta.toFixed(2))
+          });
+          pumpPowerData.push({
+            Q: parseFloat(r.Q.toFixed(2)),
+            Ip: parseFloat(r.Ip.toFixed(2)),
+            Op: parseFloat(r.Op.toFixed(2)),
+            Ip_obs: parseFloat(r.Ip.toFixed(2)),
+            Op_obs: parseFloat(r.Op.toFixed(2))
+          });
         });
-        pumpPowerData.push({
-          Q: parseFloat(r.Q.toFixed(2)),
-          Ip: parseFloat(r.Ip.toFixed(2)),
-          Op: parseFloat(r.Op.toFixed(2)),
-          Ip_obs: parseFloat(r.Ip.toFixed(2)),
-          Op_obs: parseFloat(r.Op.toFixed(2))
-        });
-      });
 
-      // 3. Right tail downwards past x_n (for centrifugal pump only)
-      if (!isReciprocatingPump) {
+        // 3. Right tail downwards past x_n
         const xLast = pumpValid[n - 1].Q;
         const xPrev = pumpValid[n - 2]?.Q ?? (xLast - 2.6);
         const dxMax = 2.0;
@@ -570,16 +646,47 @@ export function ReportExportModal() {
         {/* GRAPH */}
         {hasGraph && (
           <div className="space-y-1.5 printable-section">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">GRAPH:</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">GRAPH:</h3>
+              {isPump && (
+                <div className="flex items-center gap-1 text-[10px] font-mono no-print">
+                  <span className="text-gray-500 font-bold">Curve Mode:</span>
+                  <button
+                    onClick={() => setPumpCurveMode('origin')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      pumpCurveMode === 'origin'
+                        ? 'bg-slate-800 text-white shadow-xs'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    Origin Curve (from 0)
+                  </button>
+                  <button
+                    onClick={() => setPumpCurveMode('points_only')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      pumpCurveMode === 'points_only'
+                        ? 'bg-slate-800 text-white shadow-xs'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    Points Only (No Origin)
+                  </button>
+                </div>
+              )}
+            </div>
             <p className="text-xs text-gray-900 font-sans italic">
               {isStep
                 ? 'Draw graph of T̄\'(t)/K vs time/τ and note time required to reach 63.2% of final value.'
                 : isSinusoidal
                 ? 'Draw graph of T_in and T_out vs time and determine phase lag and amplitude attenuation.'
                 : isReciprocatingPump
-                ? 'Reciprocating pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with zero-origin scales.'
+                ? pumpCurveMode === 'origin'
+                  ? 'Reciprocating pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with peak and decreasing zero-origin curves.'
+                  : 'Reciprocating pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with direct observation points line.'
                 : isPump
-                ? 'Centrifugal pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with zero-origin scales.'
+                ? pumpCurveMode === 'origin'
+                  ? 'Centrifugal pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with zero-origin scales.'
+                  : 'Centrifugal pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with direct observation points line.'
                 : `Plot of ${part.graph?.y_label || 'Y'} vs ${part.graph?.x_label || 'X'}.`}
             </p>
 
@@ -592,7 +699,7 @@ export function ReportExportModal() {
                       Graph 1: Head (HT) & Efficiency (η) vs Discharge (Q)
                     </p>
                     <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
-                      Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
+                      Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                     </span>
                   </div>
                   <div className="w-full h-52">
@@ -625,10 +732,10 @@ export function ReportExportModal() {
                           stroke="#D95319"
                           label={{ value: 'Efficiency η (%)', angle: 90, position: 'insideRight', offset: 10, fill: '#D95319', fontSize: 8 }}
                         />
-                        <Line yAxisId="left" type="monotone" dataKey="HT" stroke="#0072BD" strokeWidth={2.2} dot={false} name="Total Head" />
-                        <Line yAxisId="left" type="monotone" dataKey="HT_obs" stroke="#0072BD" strokeWidth={0} dot={{ r: 4, fill: '#0072BD', stroke: '#0f172a', strokeWidth: 1.5 }} name="Head Obs" />
-                        <Line yAxisId="right" type="monotone" dataKey="eta" stroke="#D95319" strokeWidth={2.2} dot={false} name="Efficiency" />
-                        <Line yAxisId="right" type="monotone" dataKey="eta_obs" stroke="#D95319" strokeWidth={0} dot={{ r: 4, fill: '#D95319', stroke: '#0f172a', strokeWidth: 1.5 }} name="Efficiency Obs" />
+                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="HT" stroke="#0072BD" strokeWidth={2.2} dot={false} name="Total Head" />
+                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="HT_obs" stroke="#0072BD" strokeWidth={0} dot={{ r: 4, fill: '#0072BD', stroke: '#0f172a', strokeWidth: 1.5 }} name="Head Obs" />
+                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="eta" stroke="#D95319" strokeWidth={2.2} dot={false} name="Efficiency" />
+                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="eta_obs" stroke="#D95319" strokeWidth={0} dot={{ r: 4, fill: '#D95319', stroke: '#0f172a', strokeWidth: 1.5 }} name="Efficiency Obs" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
@@ -641,7 +748,7 @@ export function ReportExportModal() {
                       Graph 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
                     </p>
                     <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
-                      Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
+                      Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                     </span>
                   </div>
                   <div className="w-full h-52">
@@ -674,10 +781,10 @@ export function ReportExportModal() {
                           stroke="#2E7D32"
                           label={{ value: 'Output Power Op (W)', angle: 90, position: 'insideRight', offset: 10, fill: '#2E7D32', fontSize: 8 }}
                         />
-                        <Line yAxisId="left" type="monotone" dataKey="Ip" stroke="#7E2F8E" strokeWidth={2.2} dot={false} name="Input Power" />
-                        <Line yAxisId="left" type="monotone" dataKey="Ip_obs" stroke="#7E2F8E" strokeWidth={0} dot={{ r: 4, fill: '#7E2F8E', stroke: '#0f172a', strokeWidth: 1.5 }} name="Input Power Obs" />
-                        <Line yAxisId="right" type="monotone" dataKey="Op" stroke="#2E7D32" strokeWidth={2.2} dot={false} name="Output Power" />
-                        <Line yAxisId="right" type="monotone" dataKey="Op_obs" stroke="#2E7D32" strokeWidth={0} dot={{ r: 4, fill: '#2E7D32', stroke: '#0f172a', strokeWidth: 1.5 }} name="Output Power Obs" />
+                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="Ip" stroke="#7E2F8E" strokeWidth={2.2} dot={false} name="Input Power" />
+                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="Ip_obs" stroke="#7E2F8E" strokeWidth={0} dot={{ r: 4, fill: '#7E2F8E', stroke: '#0f172a', strokeWidth: 1.5 }} name="Input Power Obs" />
+                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="Op" stroke="#2E7D32" strokeWidth={2.2} dot={false} name="Output Power" />
+                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="Op_obs" stroke="#2E7D32" strokeWidth={0} dot={{ r: 4, fill: '#2E7D32', stroke: '#0f172a', strokeWidth: 1.5 }} name="Output Power Obs" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
