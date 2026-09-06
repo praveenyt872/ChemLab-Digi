@@ -70,6 +70,15 @@ export function ExperimentSelectPage({ onNavigate }) {
       formulaPreview: 'η = (Op / Ip) × 100',
       calcCount: '7 Formula Steps',
       icon: <Gauge className="w-6 h-6 text-teal-600" />
+    },
+    {
+      id: 'gear_oil_pump',
+      title: 'Characteristics Studies of Gear Oil Pump',
+      aim: 'To study the performance characteristics of a gear pump and to determine operating heads, discharge, power, and maximum efficiency.',
+      schematic: '2.0 HP Gear Oil Pump + Pressure/Vacuum Gauges + Energy Meter + Collecting Tank',
+      formulaPreview: 'η = (Op / Ip) × 100',
+      calcCount: '7 Formula Steps',
+      icon: <Gauge className="w-6 h-6 text-amber-600" />
     }
   ];
 

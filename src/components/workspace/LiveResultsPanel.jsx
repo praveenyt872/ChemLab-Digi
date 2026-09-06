@@ -33,7 +33,7 @@ export function LiveResultsPanel() {
     ? 'Friction Factor (f)'
     : currentExperimentId === 'minor_losses'
     ? 'Loss Coefficient (K)'
-    : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump')
+    : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump' || currentExperimentId === 'gear_oil_pump')
     ? 'Efficiency (η)'
     : 'Coefficient of Discharge (Cd)';
 
@@ -47,7 +47,7 @@ export function LiveResultsPanel() {
       : 'dim'
     : currentExperimentId === 'rotameter_calibration'
     ? 'm³/s'
-    : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump')
+    : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump' || currentExperimentId === 'gear_oil_pump')
     ? '%'
     : 'dim';
 
@@ -68,12 +68,12 @@ export function LiveResultsPanel() {
         <div className="mt-3 flex items-baseline justify-between">
           <div>
             <p className="text-xs text-slate-500 font-mono font-semibold">
-              {(currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump') ? 'Max Efficiency (η)' : primaryMetric}
+              {(currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump' || currentExperimentId === 'gear_oil_pump') ? 'Max Efficiency (η)' : primaryMetric}
             </p>
             <div className="text-3xl font-heading font-bold text-violet-900">
               {isProcessControl ? (
                 activePartId === 'partA' ? '10.0' : '0.3'
-              ) : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump') ? (
+              ) : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump' || currentExperimentId === 'gear_oil_pump') ? (
                 headlineResult.max !== null ? headlineResult.max.toFixed(2) : (headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : '—')
               ) : headlineResult.mean !== null ? (
                 currentExperimentId === 'rotameter_calibration'
@@ -90,7 +90,7 @@ export function LiveResultsPanel() {
                 <span className="text-sm text-violet-700 font-mono ml-2">{resultUnit}</span>
               )}
             </div>
-            {(currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump') && headlineResult.mean !== null && (
+            {(currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump' || currentExperimentId === 'gear_oil_pump') && headlineResult.mean !== null && (
               <div className="text-xs text-slate-600 font-mono font-medium mt-1">
                 Mean η = <span className="text-violet-800 font-semibold">{headlineResult.mean.toFixed(2)} %</span>
               </div>

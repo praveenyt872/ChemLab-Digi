@@ -221,7 +221,8 @@ export function ReportExportModal() {
     const isSinusoidal = part.graph?.type === 'first_order_sinusoidal';
     const isReciprocatingPump = experimentConfig?.experiment_id === 'reciprocating_pump' || part.graph?.type === 'reciprocating_dual_plots';
     const isCentrifugalPump = experimentConfig?.experiment_id === 'centrifugal_pump' || part.graph?.type === 'centrifugal_dual_plots';
-    const isPump = isCentrifugalPump || isReciprocatingPump;
+    const isGearPump = experimentConfig?.experiment_id === 'gear_oil_pump' || part.graph?.type === 'gear_pump_dual_plots';
+    const isPump = isCentrifugalPump || isReciprocatingPump || isGearPump;
 
     const hasGraph = part?.show_graph !== false &&
                      config?.show_graph !== false &&
@@ -285,7 +286,7 @@ export function ReportExportModal() {
       .sort((a, b) => a.x - b.x);
 
     // Pump dual plot data with smooth origin-blend curves
-    const qMultiplier = isReciprocatingPump ? 1e4 : 1e5;
+    const qMultiplier = (isReciprocatingPump || isGearPump) ? 1e4 : 1e5;
     const pumpValid = (partRows || [])
       .map(r => ({
         Q: parseFloat(r?.Q) * qMultiplier,
@@ -296,7 +297,7 @@ export function ReportExportModal() {
       }))
       .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0);
 
-    if (!isReciprocatingPump) {
+    if (isCentrifugalPump) {
       pumpValid.sort((a, b) => a.Q - b.Q);
     }
 
@@ -322,8 +323,8 @@ export function ReportExportModal() {
             Op_obs: parseFloat(r.Op.toFixed(2))
           });
         });
-      } else if (isReciprocatingPump) {
-        // Origin mode for reciprocating pump:
+      } else if (isReciprocatingPump || isGearPump) {
+        // Origin mode for reciprocating and gear oil pump:
         // Curve rises from (0,0) to peak at the end point (Trial 5),
         // and decreases down through the points to the start (Trial 1).
         const n = pumpValid.length;
@@ -683,6 +684,10 @@ export function ReportExportModal() {
                 ? pumpCurveMode === 'origin'
                   ? 'Reciprocating pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with peak and decreasing zero-origin curves.'
                   : 'Reciprocating pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with direct observation points line.'
+                : isGearPump
+                ? pumpCurveMode === 'origin'
+                  ? 'Gear oil pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with peak and decreasing zero-origin curves.'
+                  : 'Gear oil pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with direct observation points line.'
                 : isPump
                 ? pumpCurveMode === 'origin'
                   ? 'Centrifugal pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with zero-origin scales.'
@@ -699,7 +704,7 @@ export function ReportExportModal() {
                       Graph 1: Head (HT) & Efficiency (η) vs Discharge (Q)
                     </p>
                     <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
-                      Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
+                      Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({(isReciprocatingPump || isGearPump) ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                     </span>
                   </div>
                   <div className="w-full h-52">
@@ -709,33 +714,33 @@ export function ReportExportModal() {
                         <XAxis
                           dataKey="Q"
                           type="number"
-                          domain={isReciprocatingPump ? [0, 5.0] : [0, 70]}
-                          ticks={isReciprocatingPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] : [0, 10, 20, 30, 40, 50, 60, 70]}
+                          domain={isGearPump ? [0, 6.5] : isReciprocatingPump ? [0, 5.0] : [0, 70]}
+                          ticks={isGearPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5] : isReciprocatingPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] : [0, 10, 20, 30, 40, 50, 60, 70]}
                           tick={{ fill: '#0f172a', fontSize: 8 }}
                           stroke="#000"
-                          label={{ value: isReciprocatingPump ? 'Discharge Q (× 10⁻⁴ m³/s)' : 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
+                          label={{ value: (isReciprocatingPump || isGearPump) ? 'Discharge Q (× 10⁻⁴ m³/s)' : 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
                         />
                         <YAxis
                           yAxisId="left"
-                          domain={isReciprocatingPump ? [0, 32] : [0, 22]}
-                          ticks={isReciprocatingPump ? [0, 4, 8, 12, 16, 20, 24, 28, 32] : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
+                          domain={isGearPump ? [0, 42] : isReciprocatingPump ? [0, 32] : [0, 22]}
+                          ticks={isGearPump ? [0, 5, 10, 15, 20, 25, 30, 35, 40] : isReciprocatingPump ? [0, 4, 8, 12, 16, 20, 24, 28, 32] : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
                           tick={{ fill: '#0072BD', fontSize: 8 }}
                           stroke="#0072BD"
-                          label={{ value: 'Head HT (m)', angle: -90, position: 'insideLeft', offset: 10, fill: '#0072BD', fontSize: 8 }}
+                          label={{ value: isGearPump ? 'Head HT (m of oil)' : 'Head HT (m)', angle: -90, position: 'insideLeft', offset: 10, fill: '#0072BD', fontSize: 8 }}
                         />
                         <YAxis
                           yAxisId="right"
                           orientation="right"
-                          domain={isReciprocatingPump ? [0, 25] : [0, 22]}
-                          ticks={isReciprocatingPump ? [0, 5, 10, 15, 20, 25] : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
+                          domain={isGearPump ? [0, 20] : isReciprocatingPump ? [0, 25] : [0, 22]}
+                          ticks={isGearPump ? [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20] : isReciprocatingPump ? [0, 5, 10, 15, 20, 25] : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
                           tick={{ fill: '#D95319', fontSize: 8 }}
                           stroke="#D95319"
                           label={{ value: 'Efficiency η (%)', angle: 90, position: 'insideRight', offset: 10, fill: '#D95319', fontSize: 8 }}
                         />
-                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="HT" stroke="#0072BD" strokeWidth={2.2} dot={false} name="Total Head" />
-                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="HT_obs" stroke="#0072BD" strokeWidth={0} dot={{ r: 4, fill: '#0072BD', stroke: '#0f172a', strokeWidth: 1.5 }} name="Head Obs" />
-                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="eta" stroke="#D95319" strokeWidth={2.2} dot={false} name="Efficiency" />
-                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="eta_obs" stroke="#D95319" strokeWidth={0} dot={{ r: 4, fill: '#D95319', stroke: '#0f172a', strokeWidth: 1.5 }} name="Efficiency Obs" />
+                        <Line yAxisId="left" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} connectNulls dataKey="HT" stroke="#0072BD" strokeWidth={2.2} dot={false} name="Total Head" />
+                        <Line yAxisId="left" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} dataKey="HT_obs" stroke="#0072BD" strokeWidth={0} dot={{ r: 4, fill: '#0072BD', stroke: '#0f172a', strokeWidth: 1.5 }} name="Head Obs" />
+                        <Line yAxisId="right" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} connectNulls dataKey="eta" stroke="#D95319" strokeWidth={2.2} dot={false} name="Efficiency" />
+                        <Line yAxisId="right" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} dataKey="eta_obs" stroke="#D95319" strokeWidth={0} dot={{ r: 4, fill: '#D95319', stroke: '#0f172a', strokeWidth: 1.5 }} name="Efficiency Obs" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
@@ -748,7 +753,7 @@ export function ReportExportModal() {
                       Graph 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
                     </p>
                     <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
-                      Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
+                      Dual-Axis • {pumpCurveMode === 'origin' ? 'Origin (0,0)' : 'Points Only'} • Q ({(isReciprocatingPump || isGearPump) ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                     </span>
                   </div>
                   <div className="w-full h-52">
@@ -758,16 +763,16 @@ export function ReportExportModal() {
                         <XAxis
                           dataKey="Q"
                           type="number"
-                          domain={isReciprocatingPump ? [0, 5.0] : [0, 70]}
-                          ticks={isReciprocatingPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] : [0, 10, 20, 30, 40, 50, 60, 70]}
+                          domain={isGearPump ? [0, 6.5] : isReciprocatingPump ? [0, 5.0] : [0, 70]}
+                          ticks={isGearPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5] : isReciprocatingPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] : [0, 10, 20, 30, 40, 50, 60, 70]}
                           tick={{ fill: '#0f172a', fontSize: 8 }}
                           stroke="#000"
-                          label={{ value: isReciprocatingPump ? 'Discharge Q (× 10⁻⁴ m³/s)' : 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
+                          label={{ value: (isReciprocatingPump || isGearPump) ? 'Discharge Q (× 10⁻⁴ m³/s)' : 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
                         />
                         <YAxis
                           yAxisId="left"
-                          domain={isReciprocatingPump ? [0, 700] : [0, 800]}
-                          ticks={isReciprocatingPump ? [0, 100, 200, 300, 400, 500, 600, 700] : [0, 100, 200, 300, 400, 500, 600, 700, 800]}
+                          domain={isGearPump ? [0, 1200] : isReciprocatingPump ? [0, 700] : [0, 800]}
+                          ticks={isGearPump ? [0, 200, 400, 600, 800, 1000, 1200] : isReciprocatingPump ? [0, 100, 200, 300, 400, 500, 600, 700] : [0, 100, 200, 300, 400, 500, 600, 700, 800]}
                           tick={{ fill: '#7E2F8E', fontSize: 8 }}
                           stroke="#7E2F8E"
                           label={{ value: 'Input Power Ip (W)', angle: -90, position: 'insideLeft', offset: 10, fill: '#7E2F8E', fontSize: 8 }}
@@ -775,16 +780,16 @@ export function ReportExportModal() {
                         <YAxis
                           yAxisId="right"
                           orientation="right"
-                          domain={isReciprocatingPump ? [0, 130] : [0, 110]}
-                          ticks={isReciprocatingPump ? [0, 20, 40, 60, 80, 100, 120, 130] : [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]}
+                          domain={isGearPump ? [0, 220] : isReciprocatingPump ? [0, 130] : [0, 110]}
+                          ticks={isGearPump ? [0, 25, 50, 75, 100, 125, 150, 175, 200, 220] : isReciprocatingPump ? [0, 20, 40, 60, 80, 100, 120, 130] : [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]}
                           tick={{ fill: '#2E7D32', fontSize: 8 }}
                           stroke="#2E7D32"
                           label={{ value: 'Output Power Op (W)', angle: 90, position: 'insideRight', offset: 10, fill: '#2E7D32', fontSize: 8 }}
                         />
-                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="Ip" stroke="#7E2F8E" strokeWidth={2.2} dot={false} name="Input Power" />
-                        <Line yAxisId="left" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="Ip_obs" stroke="#7E2F8E" strokeWidth={0} dot={{ r: 4, fill: '#7E2F8E', stroke: '#0f172a', strokeWidth: 1.5 }} name="Input Power Obs" />
-                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} connectNulls dataKey="Op" stroke="#2E7D32" strokeWidth={2.2} dot={false} name="Output Power" />
-                        <Line yAxisId="right" type={isReciprocatingPump ? 'linear' : 'monotone'} dataKey="Op_obs" stroke="#2E7D32" strokeWidth={0} dot={{ r: 4, fill: '#2E7D32', stroke: '#0f172a', strokeWidth: 1.5 }} name="Output Power Obs" />
+                        <Line yAxisId="left" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} connectNulls dataKey="Ip" stroke="#7E2F8E" strokeWidth={2.2} dot={false} name="Input Power" />
+                        <Line yAxisId="left" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} dataKey="Ip_obs" stroke="#7E2F8E" strokeWidth={0} dot={{ r: 4, fill: '#7E2F8E', stroke: '#0f172a', strokeWidth: 1.5 }} name="Input Power Obs" />
+                        <Line yAxisId="right" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} connectNulls dataKey="Op" stroke="#2E7D32" strokeWidth={2.2} dot={false} name="Output Power" />
+                        <Line yAxisId="right" type={(isReciprocatingPump || isGearPump) ? 'linear' : 'monotone'} dataKey="Op_obs" stroke="#2E7D32" strokeWidth={0} dot={{ r: 4, fill: '#2E7D32', stroke: '#0f172a', strokeWidth: 1.5 }} name="Output Power Obs" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>

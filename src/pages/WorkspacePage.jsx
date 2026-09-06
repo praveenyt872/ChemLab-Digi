@@ -76,7 +76,7 @@ export function WorkspacePage({ onNavigate }) {
       headlineOutputText = `f = ${headlineResult.mean.toFixed(5)}`;
     } else if (experimentConfig.experiment_id === 'minor_losses') {
       headlineOutputText = `K = ${headlineResult.mean.toFixed(2)}`;
-    } else if (experimentConfig.experiment_id === 'centrifugal_pump' || experimentConfig.experiment_id === 'reciprocating_pump') {
+    } else if (experimentConfig.experiment_id === 'centrifugal_pump' || experimentConfig.experiment_id === 'reciprocating_pump' || experimentConfig.experiment_id === 'gear_oil_pump') {
       const maxVal = headlineResult.max !== null ? headlineResult.max.toFixed(2) : (headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : '—');
       const meanVal = headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : null;
       headlineOutputText = meanVal ? `Max η = ${maxVal} % | Mean η = ${meanVal} %` : `Max η = ${maxVal} %`;

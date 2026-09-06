@@ -66,14 +66,15 @@ function GraphPanelContent() {
   const isSinusoidalGraph = graphMeta.type === 'first_order_sinusoidal';
   const isCentrifugalPump = config?.experiment_id === 'centrifugal_pump' || graphMeta.type === 'centrifugal_dual_plots';
   const isReciprocatingPump = config?.experiment_id === 'reciprocating_pump' || graphMeta.type === 'reciprocating_dual_plots';
-  const isPump = isCentrifugalPump || isReciprocatingPump;
+  const isGearPump = config?.experiment_id === 'gear_oil_pump' || graphMeta.type === 'gear_pump_dual_plots';
+  const isPump = isCentrifugalPump || isReciprocatingPump || isGearPump;
   const [pumpTab, setPumpTab] = useState('both');
 
   /**
    * Generates smooth, realistic pump characteristic curves:
    * - In 'points_only' mode: strictly marks the observed points connected by lines (no zero-origin extension).
    * - In 'origin' mode:
-   *   - Reciprocating pump:
+   *   - Reciprocating pump & Gear oil pump:
    *     - Total Head (HT): does not come from zero; connects points directly.
    *     - Efficiency (eta), Ip, Op: curve starts from (0, 0), rises to the peak at the end point (Trial 5),
    *       and then decreases down through the points to the starting point (Trial 1) as requested.
@@ -81,7 +82,7 @@ function GraphPanelContent() {
    *     - Total Head (HT): starts directly at the first experimental point without zero extension.
    *     - Efficiency (eta), Ip, Op: origin-blended convex curve from (0, 0) into first point with right tail extension.
    */
-  const generateSmoothPumpCurve = (points, type, isReciprocating = false, curveMode = 'origin') => {
+  const generateSmoothPumpCurve = (points, type, isArchPump = false, curveMode = 'origin') => {
     if (!points || points.length === 0) return { curveX: [], curveY: [] };
 
     // In 'points_only' mode, connect the observation points in trial order without origin curve or tail
@@ -93,7 +94,7 @@ function GraphPanelContent() {
     }
 
     // In 'origin' mode:
-    if (isReciprocating) {
+    if (isArchPump) {
       // Total Head (HT): starts directly at experimental points, does not come from zero
       if (type === 'HT') {
         return {
@@ -148,25 +149,23 @@ function GraphPanelContent() {
       return { curveX, curveY };
     }
 
-    // For Centrifugal Pump in 'origin' mode:
+    // Centrifugal pump logic:
     const sorted = [...points].sort((a, b) => a.x - b.x);
     const n = sorted.length;
     const x1 = sorted[0].x;
-    const y1 = sorted[0].y;
     const x2 = sorted[1]?.x ?? (x1 + 4.3);
-    const y2 = sorted[1]?.y ?? y1;
 
     const curveX = [];
     const curveY = [];
 
-    // 1. Left segment: from x = 0 up to x1
-    const stepsLeft = 25;
-    if (type === 'eta' || type === 'Op' || type === 'Ip') {
-      const m1 = (y2 - y1) / (x2 - x1);
-      const c = 1.7 * y1;
-      const a = m1 * x1 - 0.3 * y1;
-      const b = -0.7 * y1 - a;
+    // 1. Smooth, realistic curve rising from (0,0) into first point (x1, y1)
+    if (type !== 'HT') {
+      const m1 = (sorted[1]?.y - sorted[0].y) / (x2 - x1);
+      const c = 1.7 * sorted[0].y;
+      const a = m1 * x1 - 0.3 * sorted[0].y;
+      const b = -0.7 * sorted[0].y - a;
 
+      const stepsLeft = 14;
       for (let i = 0; i < stepsLeft; i++) {
         const t = i / stepsLeft;
         const x = t * x1;
@@ -174,8 +173,6 @@ function GraphPanelContent() {
         curveX.push(parseFloat(x.toFixed(3)));
         curveY.push(parseFloat(y.toFixed(3)));
       }
-    } else if (type === 'HT') {
-      // Total Head starts directly at the first experimental point (x1, y1), no extension to zero
     }
 
     // 2. Experimental points segment (pass through all sorted data points)
@@ -217,7 +214,7 @@ function GraphPanelContent() {
   const pumpPlotData = useMemo(() => {
     if (!isPump || !calculatedRows) return null;
 
-    const qMultiplier = isReciprocatingPump ? 1e4 : 1e5;
+    const qMultiplier = (isReciprocatingPump || isGearPump) ? 1e4 : 1e5;
 
     const valid = calculatedRows
       .map(r => ({
@@ -230,7 +227,7 @@ function GraphPanelContent() {
       }))
       .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0);
 
-    if (!isReciprocatingPump) {
+    if (isCentrifugalPump) {
       valid.sort((a, b) => a.Q - b.Q);
     }
 
@@ -241,28 +238,29 @@ function GraphPanelContent() {
     const ipPts = valid.map(r => ({ x: r.Q, y: r.Ip }));
     const opPts = valid.map(r => ({ x: r.Q, y: r.Op }));
 
-    const htCurve = generateSmoothPumpCurve(htPts, 'HT', isReciprocatingPump, pumpCurveMode);
-    const etaCurve = generateSmoothPumpCurve(etaPts, 'eta', isReciprocatingPump, pumpCurveMode);
-    const ipCurve = generateSmoothPumpCurve(ipPts, 'Ip', isReciprocatingPump, pumpCurveMode);
-    const opCurve = generateSmoothPumpCurve(opPts, 'Op', isReciprocatingPump, pumpCurveMode);
+    const isArchCurve = isReciprocatingPump || isGearPump;
+    const htCurve = generateSmoothPumpCurve(htPts, 'HT', isArchCurve, pumpCurveMode);
+    const etaCurve = generateSmoothPumpCurve(etaPts, 'eta', isArchCurve, pumpCurveMode);
+    const ipCurve = generateSmoothPumpCurve(ipPts, 'Ip', isArchCurve, pumpCurveMode);
+    const opCurve = generateSmoothPumpCurve(opPts, 'Op', isArchCurve, pumpCurveMode);
 
-    const qAxisTitle = isReciprocatingPump
+    const qAxisTitle = (isReciprocatingPump || isGearPump)
       ? '<b>Actual Discharge Q (× 10⁻⁴ m³/s)</b>'
       : '<b>Actual Discharge Q (× 10⁻⁵ m³/s)</b>';
-    const qRange = isReciprocatingPump ? [0, 5.0] : [0, 70];
-    const qDtick = isReciprocatingPump ? 0.5 : 5;
+    const qRange = isGearPump ? [0, 6.5] : isReciprocatingPump ? [0, 5.0] : [0, 70];
+    const qDtick = isGearPump ? 0.5 : isReciprocatingPump ? 0.5 : 5;
 
-    const headRange = isReciprocatingPump ? [0, 32] : [0, 22];
-    const headDtick = isReciprocatingPump ? 4 : 2;
+    const headRange = isGearPump ? [0, 42] : isReciprocatingPump ? [0, 32] : [0, 22];
+    const headDtick = isGearPump ? 5 : isReciprocatingPump ? 4 : 2;
 
-    const etaRange = isReciprocatingPump ? [0, 25] : [0, 22];
-    const etaDtick = isReciprocatingPump ? 5 : 2;
+    const etaRange = isGearPump ? [0, 20] : isReciprocatingPump ? [0, 25] : [0, 22];
+    const etaDtick = isGearPump ? 2 : isReciprocatingPump ? 5 : 2;
 
-    const ipRange = isReciprocatingPump ? [0, 700] : [0, 800];
-    const ipDtick = 100;
+    const ipRange = isGearPump ? [0, 1200] : isReciprocatingPump ? [0, 700] : [0, 800];
+    const ipDtick = isGearPump ? 150 : 100;
 
-    const opRange = isReciprocatingPump ? [0, 130] : [0, 110];
-    const opDtick = isReciprocatingPump ? 20 : 10;
+    const opRange = isGearPump ? [0, 220] : isReciprocatingPump ? [0, 130] : [0, 110];
+    const opDtick = isGearPump ? 25 : isReciprocatingPump ? 20 : 10;
 
     // Graph 1: Total Head (HT) & Efficiency (eta) vs Q
     const headLineTrace = {
