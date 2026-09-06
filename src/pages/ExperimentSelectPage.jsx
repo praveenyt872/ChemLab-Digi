@@ -61,6 +61,15 @@ export function ExperimentSelectPage({ onNavigate }) {
       formulaPreview: 'η = (Op / Ip) × 100',
       calcCount: '7 Formula Steps',
       icon: <Gauge className="w-6 h-6 text-violet-600" />
+    },
+    {
+      id: 'reciprocating_pump',
+      title: 'Characteristics Studies of a Reciprocating Pump',
+      aim: 'To study the performance characteristics of a reciprocating pump at constant speed, determine operating heads, power, and maximum efficiency.',
+      schematic: 'Reciprocating Pump + Pressure/Vacuum Gauges + Energy Meter + Collecting Tank',
+      formulaPreview: 'η = (Op / Ip) × 100',
+      calcCount: '7 Formula Steps',
+      icon: <Gauge className="w-6 h-6 text-teal-600" />
     }
   ];
 

@@ -8,6 +8,7 @@ import rtdCstrConfig from '../data/experiments/rtd_cstr.json';
 import pipeFrictionConfig from '../data/experiments/pipe_friction.json';
 import minorLossesConfig from '../data/experiments/minor_losses.json';
 import centrifugalPumpConfig from '../data/experiments/centrifugal_pump.json';
+import reciprocatingPumpConfig from '../data/experiments/reciprocating_pump.json';
 import { calculateTable, calculateSummary, validateManualCalculation } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
@@ -20,6 +21,7 @@ const EXPERIMENT_CONFIGS = {
   pipe_friction: pipeFrictionConfig,
   minor_losses: minorLossesConfig,
   centrifugal_pump: centrifugalPumpConfig,
+  reciprocating_pump: reciprocatingPumpConfig,
   'exp1-first-order-system-response': processControlConfig,
   free_convection: freeConvectionConfig,
   rtd_cstr: rtdCstrConfig
@@ -30,7 +32,7 @@ const getPrimaryKey = (expId, activePartId = 'partA') => {
   if (expId === 'rotameter_calibration') return 'Q';
   if (expId === 'pipe_friction') return 'f';
   if (expId === 'minor_losses') return 'K';
-  if (expId === 'centrifugal_pump') return 'eta';
+  if (expId === 'centrifugal_pump' || expId === 'reciprocating_pump') return 'eta';
   if (expId === 'rtd_cstr') return 't_bar';
   if (expId === 'exp1-first-order-system-response') return activePartId === 'partA' ? 'T_dev_heat' : 'T_out';
   return 'Cd';

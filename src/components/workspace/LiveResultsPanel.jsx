@@ -33,7 +33,7 @@ export function LiveResultsPanel() {
     ? 'Friction Factor (f)'
     : currentExperimentId === 'minor_losses'
     ? 'Loss Coefficient (K)'
-    : currentExperimentId === 'centrifugal_pump'
+    : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump')
     ? 'Efficiency (η)'
     : 'Coefficient of Discharge (Cd)';
 
@@ -47,7 +47,7 @@ export function LiveResultsPanel() {
       : 'dim'
     : currentExperimentId === 'rotameter_calibration'
     ? 'm³/s'
-    : currentExperimentId === 'centrifugal_pump'
+    : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump')
     ? '%'
     : 'dim';
 
@@ -71,7 +71,7 @@ export function LiveResultsPanel() {
             <div className="text-3xl font-heading font-bold text-violet-900">
               {isProcessControl ? (
                 activePartId === 'partA' ? '10.0' : '0.3'
-              ) : currentExperimentId === 'centrifugal_pump' ? (
+              ) : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump') ? (
                 headlineResult.max !== null ? headlineResult.max.toFixed(2) : (headlineResult.mean !== null ? headlineResult.mean.toFixed(2) : '—')
               ) : headlineResult.mean !== null ? (
                 currentExperimentId === 'rotameter_calibration'

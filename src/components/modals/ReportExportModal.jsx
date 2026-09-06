@@ -217,7 +217,9 @@ export function ReportExportModal() {
 
     const isStep = part.graph?.type === 'first_order_step';
     const isSinusoidal = part.graph?.type === 'first_order_sinusoidal';
-    const isPump = experimentConfig?.experiment_id === 'centrifugal_pump' || part.graph?.type === 'centrifugal_dual_plots';
+    const isReciprocatingPump = experimentConfig?.experiment_id === 'reciprocating_pump' || part.graph?.type === 'reciprocating_dual_plots';
+    const isCentrifugalPump = experimentConfig?.experiment_id === 'centrifugal_pump' || part.graph?.type === 'centrifugal_dual_plots';
+    const isPump = isCentrifugalPump || isReciprocatingPump;
 
     const hasGraph = part?.show_graph !== false &&
                      config?.show_graph !== false &&
@@ -280,17 +282,21 @@ export function ReportExportModal() {
       .filter(Boolean)
       .sort((a, b) => a.x - b.x);
 
-    // Centrifugal pump dual plot data with smooth origin-blend curves and 10^5 scaling
+    // Pump dual plot data with smooth origin-blend curves
+    const qMultiplier = isReciprocatingPump ? 1e4 : 1e5;
     const pumpValid = (partRows || [])
       .map(r => ({
-        Q: parseFloat(r?.Q) * 1e5, // Scaled to ~48 to 65
+        Q: parseFloat(r?.Q) * qMultiplier,
         HT: parseFloat(r?.HT),
         eta: parseFloat(r?.eta),
         Ip: parseFloat(r?.Ip),
         Op: parseFloat(r?.Op)
       }))
-      .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0)
-      .sort((a, b) => a.Q - b.Q);
+      .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0);
+
+    if (!isReciprocatingPump) {
+      pumpValid.sort((a, b) => a.Q - b.Q);
+    }
 
     let pumpHeadEtaData = [];
     let pumpPowerData = [];
@@ -306,24 +312,32 @@ export function ReportExportModal() {
         const t = i / stepsLeft;
         const qVal = parseFloat((t * x1).toFixed(2));
 
-        // eta, Op & Ip: cubic arch from 0
-        const mEta = (pumpValid[1]?.eta - pumpValid[0].eta) / (x2 - x1);
-        const cEta = 1.7 * pumpValid[0].eta;
-        const aEta = mEta * x1 - 0.3 * pumpValid[0].eta;
-        const bEta = -0.7 * pumpValid[0].eta - aEta;
-        const etaVal = Math.max(0, parseFloat((aEta * t * t * t + bEta * t * t + cEta * t).toFixed(2)));
+        let etaVal, opVal, ipVal;
+        if (isReciprocatingPump) {
+          const factor = 1.5 * t - 0.5 * t * t;
+          etaVal = Math.max(0, parseFloat((pumpValid[0].eta * factor).toFixed(2)));
+          opVal = Math.max(0, parseFloat((pumpValid[0].Op * factor).toFixed(2)));
+          ipVal = Math.max(0, parseFloat((pumpValid[0].Ip * factor).toFixed(2)));
+        } else {
+          // eta, Op & Ip: cubic arch from 0
+          const mEta = (pumpValid[1]?.eta - pumpValid[0].eta) / (x2 - x1);
+          const cEta = 1.7 * pumpValid[0].eta;
+          const aEta = mEta * x1 - 0.3 * pumpValid[0].eta;
+          const bEta = -0.7 * pumpValid[0].eta - aEta;
+          etaVal = Math.max(0, parseFloat((aEta * t * t * t + bEta * t * t + cEta * t).toFixed(2)));
 
-        const mOp = (pumpValid[1]?.Op - pumpValid[0].Op) / (x2 - x1);
-        const cOp = 1.7 * pumpValid[0].Op;
-        const aOp = mOp * x1 - 0.3 * pumpValid[0].Op;
-        const bOp = -0.7 * pumpValid[0].Op - aOp;
-        const opVal = Math.max(0, parseFloat((aOp * t * t * t + bOp * t * t + cOp * t).toFixed(2)));
+          const mOp = (pumpValid[1]?.Op - pumpValid[0].Op) / (x2 - x1);
+          const cOp = 1.7 * pumpValid[0].Op;
+          const aOp = mOp * x1 - 0.3 * pumpValid[0].Op;
+          const bOp = -0.7 * pumpValid[0].Op - aOp;
+          opVal = Math.max(0, parseFloat((aOp * t * t * t + bOp * t * t + cOp * t).toFixed(2)));
 
-        const mIp = (pumpValid[1]?.Ip - pumpValid[0].Ip) / (x2 - x1);
-        const cIp = 1.7 * pumpValid[0].Ip;
-        const aIp = mIp * x1 - 0.3 * pumpValid[0].Ip;
-        const bIp = -0.7 * pumpValid[0].Ip - aIp;
-        const ipVal = Math.max(0, parseFloat((aIp * t * t * t + bIp * t * t + cIp * t).toFixed(2)));
+          const mIp = (pumpValid[1]?.Ip - pumpValid[0].Ip) / (x2 - x1);
+          const cIp = 1.7 * pumpValid[0].Ip;
+          const aIp = mIp * x1 - 0.3 * pumpValid[0].Ip;
+          const bIp = -0.7 * pumpValid[0].Ip - aIp;
+          ipVal = Math.max(0, parseFloat((aIp * t * t * t + bIp * t * t + cIp * t).toFixed(2)));
+        }
 
         // HT does not extend to zero; only eta is defined in this segment
         pumpHeadEtaData.push({ Q: qVal, eta: etaVal });
@@ -348,30 +362,32 @@ export function ReportExportModal() {
         });
       });
 
-      // 3. Right tail downwards past x_n
-      const xLast = pumpValid[n - 1].Q;
-      const xPrev = pumpValid[n - 2]?.Q ?? (xLast - 2.6);
-      const dxMax = 2.0;
-      const stepsRight = 6;
-      for (let j = 1; j <= stepsRight; j++) {
-        const frac = j / stepsRight;
-        const dx = frac * dxMax;
-        const qVal = parseFloat((xLast + dx).toFixed(2));
+      // 3. Right tail downwards past x_n (for centrifugal pump only)
+      if (!isReciprocatingPump) {
+        const xLast = pumpValid[n - 1].Q;
+        const xPrev = pumpValid[n - 2]?.Q ?? (xLast - 2.6);
+        const dxMax = 2.0;
+        const stepsRight = 6;
+        for (let j = 1; j <= stepsRight; j++) {
+          const frac = j / stepsRight;
+          const dx = frac * dxMax;
+          const qVal = parseFloat((xLast + dx).toFixed(2));
 
-        const mEta = (pumpValid[n - 1].eta - (pumpValid[n - 2]?.eta ?? pumpValid[n - 1].eta)) / (xLast - xPrev);
-        const etaVal = Math.max(0, parseFloat((pumpValid[n - 1].eta + mEta * dx - 0.05 * dx * dx).toFixed(2)));
+          const mEta = (pumpValid[n - 1].eta - (pumpValid[n - 2]?.eta ?? pumpValid[n - 1].eta)) / (xLast - xPrev);
+          const etaVal = Math.max(0, parseFloat((pumpValid[n - 1].eta + mEta * dx - 0.05 * dx * dx).toFixed(2)));
 
-        const mOp = (pumpValid[n - 1].Op - (pumpValid[n - 2]?.Op ?? pumpValid[n - 1].Op)) / (xLast - xPrev);
-        const opVal = Math.max(0, parseFloat((pumpValid[n - 1].Op + mOp * dx - 0.25 * dx * dx).toFixed(2)));
+          const mOp = (pumpValid[n - 1].Op - (pumpValid[n - 2]?.Op ?? pumpValid[n - 1].Op)) / (xLast - xPrev);
+          const opVal = Math.max(0, parseFloat((pumpValid[n - 1].Op + mOp * dx - 0.25 * dx * dx).toFixed(2)));
 
-        const mHT = (pumpValid[n - 1].HT - (pumpValid[n - 2]?.HT ?? pumpValid[n - 1].HT)) / (xLast - xPrev);
-        const htVal = Math.max(0, parseFloat((pumpValid[n - 1].HT + mHT * dx - 0.04 * dx * dx).toFixed(2)));
+          const mHT = (pumpValid[n - 1].HT - (pumpValid[n - 2]?.HT ?? pumpValid[n - 1].HT)) / (xLast - xPrev);
+          const htVal = Math.max(0, parseFloat((pumpValid[n - 1].HT + mHT * dx - 0.04 * dx * dx).toFixed(2)));
 
-        const mIp = (pumpValid[n - 1].Ip - (pumpValid[n - 2]?.Ip ?? pumpValid[n - 1].Ip)) / (xLast - xPrev);
-        const ipVal = Math.max(0, parseFloat((pumpValid[n - 1].Ip + mIp * dx).toFixed(2)));
+          const mIp = (pumpValid[n - 1].Ip - (pumpValid[n - 2]?.Ip ?? pumpValid[n - 1].Ip)) / (xLast - xPrev);
+          const ipVal = Math.max(0, parseFloat((pumpValid[n - 1].Ip + mIp * dx).toFixed(2)));
 
-        pumpHeadEtaData.push({ Q: qVal, HT: htVal, eta: etaVal });
-        pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
+          pumpHeadEtaData.push({ Q: qVal, HT: htVal, eta: etaVal });
+          pumpPowerData.push({ Q: qVal, Ip: ipVal, Op: opVal });
+        }
       }
     }
 
@@ -560,6 +576,8 @@ export function ReportExportModal() {
                 ? 'Draw graph of T̄\'(t)/K vs time/τ and note time required to reach 63.2% of final value.'
                 : isSinusoidal
                 ? 'Draw graph of T_in and T_out vs time and determine phase lag and amplitude attenuation.'
+                : isReciprocatingPump
+                ? 'Reciprocating pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with zero-origin scales.'
                 : isPump
                 ? 'Centrifugal pump characteristic curves: Graph 1 (Head HT & Efficiency η vs Q) and Graph 2 (Input Power Ip & Output Power Op vs Q) with zero-origin scales.'
                 : `Plot of ${part.graph?.y_label || 'Y'} vs ${part.graph?.x_label || 'X'}.`}
@@ -574,7 +592,7 @@ export function ReportExportModal() {
                       Graph 1: Head (HT) & Efficiency (η) vs Discharge (Q)
                     </p>
                     <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
-                      Q (× 10⁻⁵ m³/s)
+                      Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                     </span>
                   </div>
                   <div className="w-full h-52">
@@ -584,16 +602,16 @@ export function ReportExportModal() {
                         <XAxis
                           dataKey="Q"
                           type="number"
-                          domain={[0, 70]}
-                          ticks={[0, 10, 20, 30, 40, 50, 60, 70]}
+                          domain={isReciprocatingPump ? [0, 5.0] : [0, 70]}
+                          ticks={isReciprocatingPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] : [0, 10, 20, 30, 40, 50, 60, 70]}
                           tick={{ fill: '#0f172a', fontSize: 8 }}
                           stroke="#000"
-                          label={{ value: 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
+                          label={{ value: isReciprocatingPump ? 'Discharge Q (× 10⁻⁴ m³/s)' : 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
                         />
                         <YAxis
                           yAxisId="left"
-                          domain={[0, 22]}
-                          ticks={[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
+                          domain={isReciprocatingPump ? [0, 32] : [0, 22]}
+                          ticks={isReciprocatingPump ? [0, 4, 8, 12, 16, 20, 24, 28, 32] : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
                           tick={{ fill: '#0072BD', fontSize: 8 }}
                           stroke="#0072BD"
                           label={{ value: 'Head HT (m)', angle: -90, position: 'insideLeft', offset: 10, fill: '#0072BD', fontSize: 8 }}
@@ -601,8 +619,8 @@ export function ReportExportModal() {
                         <YAxis
                           yAxisId="right"
                           orientation="right"
-                          domain={[0, 22]}
-                          ticks={[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
+                          domain={isReciprocatingPump ? [0, 25] : [0, 22]}
+                          ticks={isReciprocatingPump ? [0, 5, 10, 15, 20, 25] : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]}
                           tick={{ fill: '#D95319', fontSize: 8 }}
                           stroke="#D95319"
                           label={{ value: 'Efficiency η (%)', angle: 90, position: 'insideRight', offset: 10, fill: '#D95319', fontSize: 8 }}
@@ -623,7 +641,7 @@ export function ReportExportModal() {
                       Graph 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
                     </p>
                     <span className="text-[9px] font-mono text-gray-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200">
-                      Q (× 10⁻⁵ m³/s)
+                      Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                     </span>
                   </div>
                   <div className="w-full h-52">
@@ -633,16 +651,16 @@ export function ReportExportModal() {
                         <XAxis
                           dataKey="Q"
                           type="number"
-                          domain={[0, 70]}
-                          ticks={[0, 10, 20, 30, 40, 50, 60, 70]}
+                          domain={isReciprocatingPump ? [0, 5.0] : [0, 70]}
+                          ticks={isReciprocatingPump ? [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] : [0, 10, 20, 30, 40, 50, 60, 70]}
                           tick={{ fill: '#0f172a', fontSize: 8 }}
                           stroke="#000"
-                          label={{ value: 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
+                          label={{ value: isReciprocatingPump ? 'Discharge Q (× 10⁻⁴ m³/s)' : 'Discharge Q (× 10⁻⁵ m³/s)', position: 'insideBottom', offset: -10, fill: '#000', fontSize: 8 }}
                         />
                         <YAxis
                           yAxisId="left"
-                          domain={[0, 800]}
-                          ticks={[0, 100, 200, 300, 400, 500, 600, 700, 800]}
+                          domain={isReciprocatingPump ? [0, 700] : [0, 800]}
+                          ticks={isReciprocatingPump ? [0, 100, 200, 300, 400, 500, 600, 700] : [0, 100, 200, 300, 400, 500, 600, 700, 800]}
                           tick={{ fill: '#7E2F8E', fontSize: 8 }}
                           stroke="#7E2F8E"
                           label={{ value: 'Input Power Ip (W)', angle: -90, position: 'insideLeft', offset: 10, fill: '#7E2F8E', fontSize: 8 }}
@@ -650,8 +668,8 @@ export function ReportExportModal() {
                         <YAxis
                           yAxisId="right"
                           orientation="right"
-                          domain={[0, 110]}
-                          ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]}
+                          domain={isReciprocatingPump ? [0, 130] : [0, 110]}
+                          ticks={isReciprocatingPump ? [0, 20, 40, 60, 80, 100, 120, 130] : [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]}
                           tick={{ fill: '#2E7D32', fontSize: 8 }}
                           stroke="#2E7D32"
                           label={{ value: 'Output Power Op (W)', angle: 90, position: 'insideRight', offset: 10, fill: '#2E7D32', fontSize: 8 }}

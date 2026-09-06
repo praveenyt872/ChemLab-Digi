@@ -65,27 +65,30 @@ function GraphPanelContent() {
   const isStepGraph = graphMeta.type === 'first_order_step';
   const isSinusoidalGraph = graphMeta.type === 'first_order_sinusoidal';
   const isCentrifugalPump = config?.experiment_id === 'centrifugal_pump' || graphMeta.type === 'centrifugal_dual_plots';
+  const isReciprocatingPump = config?.experiment_id === 'reciprocating_pump' || graphMeta.type === 'reciprocating_dual_plots';
+  const isPump = isCentrifugalPump || isReciprocatingPump;
   const [pumpTab, setPumpTab] = useState('both');
 
   /**
-   * Generates smooth, realistic centrifugal pump characteristic curves:
-   * - Scaled discharge: Q * 10^5 (so values are e.g. 48.1, 52.4, 58.9, 61.9, 64.5)
-   * - Origin blending: for efficiency (eta) and output power (Op), builds a smooth
-   *   convex ease-out cubic curve from (0, 0) directly tangentially meeting the first data point.
-   * - Shutoff blending: for total head (HT), starts at shutoff head (~18.4 m) at Q=0,
-   *   and for input power (Ip), starts at shutoff/no-load power (~460 W) at Q=0.
-   * - Right tail extension: smoothly extends past the last experimental point downwards.
+   * Generates smooth, realistic pump characteristic curves:
+   * - Scaled discharge: Q * 10^5 (centrifugal) or Q * 10^4 (reciprocating)
+   * - Origin blending: for efficiency (eta) and output power (Op) & input power (Ip), builds a smooth
+   *   convex ease-out curve from (0, 0) directly meeting the first data point.
+   * - For total head (HT), starts directly at the first experimental point (x1, y1), no extension to zero.
+   * - Right tail extension: smoothly extends past the last experimental point downwards (for centrifugal).
    */
-  const generateSmoothPumpCurve = (points, type) => {
+  const generateSmoothPumpCurve = (points, type, isReciprocating = false) => {
     if (!points || points.length === 0) return { curveX: [], curveY: [] };
 
-    const sorted = [...points].sort((a, b) => a.x - b.x);
+    const sorted = isReciprocating
+      ? [...points] // preserve trial sequence (increasing head/power/eta)
+      : [...points].sort((a, b) => a.x - b.x);
+
     const n = sorted.length;
     const x1 = sorted[0].x;
     const y1 = sorted[0].y;
     const x2 = sorted[1]?.x ?? (x1 + 4.3);
     const y2 = sorted[1]?.y ?? y1;
-    const m1 = (y2 - y1) / (x2 - x1);
 
     const curveX = [];
     const curveY = [];
@@ -93,18 +96,28 @@ function GraphPanelContent() {
     // 1. Left segment: from x = 0 up to x1
     const stepsLeft = 25;
     if (type === 'eta' || type === 'Op' || type === 'Ip') {
-      // Cubic polynomial y(t) = a*t^3 + b*t^2 + c*t where t = x / x1 in [0, 1]
-      // y(0) = 0, y(1) = y1, y'(1) = m1 * x1, initial slope c = 1.7 * y1 (convex arch)
-      const c = 1.7 * y1;
-      const a = m1 * x1 - 0.3 * y1;
-      const b = -0.7 * y1 - a;
+      if (isReciprocating) {
+        // Smooth quadratic arch: y(0) = 0, y(1) = y1, concave downward arch
+        for (let i = 0; i < stepsLeft; i++) {
+          const t = i / stepsLeft;
+          const x = t * x1;
+          const y = Math.max(0, y1 * (1.5 * t - 0.5 * t * t));
+          curveX.push(parseFloat(x.toFixed(3)));
+          curveY.push(parseFloat(y.toFixed(3)));
+        }
+      } else {
+        const m1 = (y2 - y1) / (x2 - x1);
+        const c = 1.7 * y1;
+        const a = m1 * x1 - 0.3 * y1;
+        const b = -0.7 * y1 - a;
 
-      for (let i = 0; i < stepsLeft; i++) {
-        const t = i / stepsLeft;
-        const x = t * x1;
-        const y = Math.max(0, a * t * t * t + b * t * t + c * t);
-        curveX.push(parseFloat(x.toFixed(3)));
-        curveY.push(parseFloat(y.toFixed(3)));
+        for (let i = 0; i < stepsLeft; i++) {
+          const t = i / stepsLeft;
+          const x = t * x1;
+          const y = Math.max(0, a * t * t * t + b * t * t + c * t);
+          curveX.push(parseFloat(x.toFixed(3)));
+          curveY.push(parseFloat(y.toFixed(3)));
+        }
       }
     } else if (type === 'HT') {
       // Total Head starts directly at the first experimental point (x1, y1), no extension to zero
@@ -116,51 +129,57 @@ function GraphPanelContent() {
       curveY.push(parseFloat(p.y.toFixed(3)));
     });
 
-    // 3. Right tail extension past x_n (extending by ~2.2 units downwards)
-    const xLast = sorted[n - 1].x;
-    const yLast = sorted[n - 1].y;
-    const xPrev = sorted[n - 2]?.x ?? (xLast - 2.6);
-    const yPrev = sorted[n - 2]?.y ?? yLast;
-    const mLast = (yLast - yPrev) / (xLast - xPrev);
+    // 3. Right tail extension (for centrifugal pump)
+    if (!isReciprocating) {
+      const xLast = sorted[n - 1].x;
+      const yLast = sorted[n - 1].y;
+      const xPrev = sorted[n - 2]?.x ?? (xLast - 2.6);
+      const mLast = (yLast - (sorted[n - 2]?.y ?? yLast)) / (xLast - xPrev);
 
-    const stepsRight = 10;
-    const dxMax = 2.2;
-    for (let j = 1; j <= stepsRight; j++) {
-      const frac = j / stepsRight;
-      const dx = frac * dxMax;
-      const x = xLast + dx;
-      let y;
-      if (type === 'eta') {
-        y = Math.max(0, yLast + mLast * dx - 0.05 * dx * dx);
-      } else if (type === 'Op') {
-        y = Math.max(0, yLast + mLast * dx - 0.25 * dx * dx);
-      } else if (type === 'HT') {
-        y = Math.max(0, yLast + mLast * dx - 0.04 * dx * dx);
-      } else {
-        y = Math.max(0, yLast + mLast * dx);
+      const stepsRight = 10;
+      const dxMax = 2.2;
+      for (let j = 1; j <= stepsRight; j++) {
+        const frac = j / stepsRight;
+        const dx = frac * dxMax;
+        const x = xLast + dx;
+        let y;
+        if (type === 'eta') {
+          y = Math.max(0, yLast + mLast * dx - 0.05 * dx * dx);
+        } else if (type === 'Op') {
+          y = Math.max(0, yLast + mLast * dx - 0.25 * dx * dx);
+        } else if (type === 'HT') {
+          y = Math.max(0, yLast + mLast * dx - 0.04 * dx * dx);
+        } else {
+          y = Math.max(0, yLast + mLast * dx);
+        }
+        curveX.push(parseFloat(x.toFixed(3)));
+        curveY.push(parseFloat(y.toFixed(3)));
       }
-      curveX.push(parseFloat(x.toFixed(3)));
-      curveY.push(parseFloat(y.toFixed(3)));
     }
 
     return { curveX, curveY };
   };
 
-  // Centrifugal Pump Dual Plots (Zero-Origin Scales & Smooth Interpolation)
+  // Pump Dual Plots (Zero-Origin Scales & Smooth Interpolation)
   const pumpPlotData = useMemo(() => {
-    if (!isCentrifugalPump || !calculatedRows) return null;
+    if (!isPump || !calculatedRows) return null;
+
+    const qMultiplier = isReciprocatingPump ? 1e4 : 1e5;
 
     const valid = calculatedRows
       .map(r => ({
         Q_raw: parseFloat(r.Q),
-        Q: parseFloat(r.Q) * 1e5, // Scaled by 10^5 (e.g. 48.1, 52.4, 58.9, 61.9, 64.5)
+        Q: parseFloat(r.Q) * qMultiplier,
         HT: parseFloat(r.HT),
         eta: parseFloat(r.eta),
         Ip: parseFloat(r.Ip),
         Op: parseFloat(r.Op)
       }))
-      .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0)
-      .sort((a, b) => a.Q - b.Q);
+      .filter(r => !isNaN(r.Q) && !isNaN(r.HT) && !isNaN(r.eta) && !isNaN(r.Ip) && !isNaN(r.Op) && r.Q > 0);
+
+    if (!isReciprocatingPump) {
+      valid.sort((a, b) => a.Q - b.Q);
+    }
 
     if (valid.length === 0) return null;
 
@@ -169,10 +188,28 @@ function GraphPanelContent() {
     const ipPts = valid.map(r => ({ x: r.Q, y: r.Ip }));
     const opPts = valid.map(r => ({ x: r.Q, y: r.Op }));
 
-    const htCurve = generateSmoothPumpCurve(htPts, 'HT');
-    const etaCurve = generateSmoothPumpCurve(etaPts, 'eta');
-    const ipCurve = generateSmoothPumpCurve(ipPts, 'Ip');
-    const opCurve = generateSmoothPumpCurve(opPts, 'Op');
+    const htCurve = generateSmoothPumpCurve(htPts, 'HT', isReciprocatingPump);
+    const etaCurve = generateSmoothPumpCurve(etaPts, 'eta', isReciprocatingPump);
+    const ipCurve = generateSmoothPumpCurve(ipPts, 'Ip', isReciprocatingPump);
+    const opCurve = generateSmoothPumpCurve(opPts, 'Op', isReciprocatingPump);
+
+    const qAxisTitle = isReciprocatingPump
+      ? '<b>Actual Discharge Q (× 10⁻⁴ m³/s)</b>'
+      : '<b>Actual Discharge Q (× 10⁻⁵ m³/s)</b>';
+    const qRange = isReciprocatingPump ? [0, 5.0] : [0, 70];
+    const qDtick = isReciprocatingPump ? 0.5 : 5;
+
+    const headRange = isReciprocatingPump ? [0, 32] : [0, 22];
+    const headDtick = isReciprocatingPump ? 4 : 2;
+
+    const etaRange = isReciprocatingPump ? [0, 25] : [0, 22];
+    const etaDtick = isReciprocatingPump ? 5 : 2;
+
+    const ipRange = isReciprocatingPump ? [0, 700] : [0, 800];
+    const ipDtick = 100;
+
+    const opRange = isReciprocatingPump ? [0, 130] : [0, 110];
+    const opDtick = isReciprocatingPump ? 20 : 10;
 
     // Graph 1: Total Head (HT) & Efficiency (eta) vs Q
     const headLineTrace = {
@@ -230,12 +267,12 @@ function GraphPanelContent() {
     const headEtaLayout = {
       xaxis: {
         title: {
-          text: '<b>Actual Discharge Q (× 10⁻⁵ m³/s)</b>',
+          text: qAxisTitle,
           font: { size: 13, color: '#0f172a', family: "'Helvetica Neue', Arial, sans-serif" }
         },
         rangemode: 'tozero',
-        range: [0, 70],
-        dtick: 5,
+        range: qRange,
+        dtick: qDtick,
         tickfont: { size: 11, color: '#0f172a', family: 'monospace' },
         showgrid: true,
         gridcolor: '#e2e8f0',
@@ -251,8 +288,8 @@ function GraphPanelContent() {
           font: { color: '#0072BD', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
         },
         rangemode: 'tozero',
-        range: [0, 22],
-        dtick: 2,
+        range: headRange,
+        dtick: headDtick,
         tickfont: { color: '#0072BD', size: 11, family: 'monospace' },
         showgrid: true,
         gridcolor: '#e2e8f0',
@@ -268,8 +305,8 @@ function GraphPanelContent() {
           font: { color: '#D95319', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
         },
         rangemode: 'tozero',
-        range: [0, 22],
-        dtick: 2,
+        range: etaRange,
+        dtick: etaDtick,
         overlaying: 'y',
         side: 'right',
         tickfont: { color: '#D95319', size: 11, family: 'monospace' },
@@ -346,12 +383,12 @@ function GraphPanelContent() {
     const powerLayout = {
       xaxis: {
         title: {
-          text: '<b>Actual Discharge Q (× 10⁻⁵ m³/s)</b>',
+          text: qAxisTitle,
           font: { size: 13, color: '#0f172a', family: "'Helvetica Neue', Arial, sans-serif" }
         },
         rangemode: 'tozero',
-        range: [0, 70],
-        dtick: 5,
+        range: qRange,
+        dtick: qDtick,
         tickfont: { size: 11, color: '#0f172a', family: 'monospace' },
         showgrid: true,
         gridcolor: '#e2e8f0',
@@ -367,8 +404,8 @@ function GraphPanelContent() {
           font: { color: '#7E2F8E', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
         },
         rangemode: 'tozero',
-        range: [0, 800],
-        dtick: 100,
+        range: ipRange,
+        dtick: ipDtick,
         tickfont: { color: '#7E2F8E', size: 11, family: 'monospace' },
         showgrid: true,
         gridcolor: '#e2e8f0',
@@ -384,8 +421,8 @@ function GraphPanelContent() {
           font: { color: '#2E7D32', size: 13, family: "'Helvetica Neue', Arial, sans-serif" }
         },
         rangemode: 'tozero',
-        range: [0, 110],
-        dtick: 10,
+        range: opRange,
+        dtick: opDtick,
         overlaying: 'y',
         side: 'right',
         tickfont: { color: '#2E7D32', size: 11, family: 'monospace' },
@@ -412,7 +449,7 @@ function GraphPanelContent() {
       powerTraces: [ipLineTrace, ipMarkerTrace, opLineTrace, opMarkerTrace],
       powerLayout
     };
-  }, [isCentrifugalPump, calculatedRows]);
+  }, [isPump, isReciprocatingPump, calculatedRows]);
 
   // Transform calculated rows into plot points for standard scatter graph
   const chartData = useMemo(() => {
@@ -619,7 +656,7 @@ function GraphPanelContent() {
     }
   };
 
-  const hasData = isCentrifugalPump
+  const hasData = isPump
     ? Boolean(pumpPlotData)
     : Boolean(plotlyTraces && plotlyTraces.length > 0);
 
@@ -628,7 +665,9 @@ function GraphPanelContent() {
       <FigureCard
         title={graphMeta.title || 'MATLAB Figure Window'}
         subtitle={
-          isCentrifugalPump
+          isReciprocatingPump
+            ? 'Reciprocating Pump Performance Curves: Dual-Part Zero-Origin Characteristics'
+            : isCentrifugalPump
             ? 'Centrifugal Pump Performance Curves: Dual-Part Zero-Origin Characteristics'
             : isStepGraph
             ? 'First-Order Step Response (Observed vs Theoretical 63.2% Curve)'
@@ -645,9 +684,9 @@ function GraphPanelContent() {
             <RefreshCw className="w-8 h-8 text-violet-400 animate-spin" />
             <p>Enter observation readings to generate the MATLAB-styled figure.</p>
           </div>
-        ) : isCentrifugalPump && pumpPlotData ? (
+        ) : isPump && pumpPlotData ? (
           <div className="space-y-4">
-            {/* Centrifugal Pump Graph Part Switcher */}
+            {/* Pump Graph Part Switcher */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-100 rounded-lg border border-slate-200">
               <span className="text-xs font-mono font-bold text-slate-700">GRAPH SELECTION:</span>
               <div className="flex flex-wrap items-center gap-1.5">
@@ -692,7 +731,7 @@ function GraphPanelContent() {
                     FIGURE 1: Total Head (HT) & Overall Efficiency (η) vs Discharge (Q)
                   </span>
                   <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    Dual-Axis • Origin at 0 • Q (× 10⁻⁵ m³/s)
+                    Dual-Axis • Origin at 0 • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                   </span>
                 </div>
                 <MatlabStyledPlot
@@ -712,7 +751,7 @@ function GraphPanelContent() {
                     FIGURE 2: Input Power (Ip) & Output Power (Op) vs Discharge (Q)
                   </span>
                   <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    Dual-Axis • Origin at 0 • Q (× 10⁻⁵ m³/s)
+                    Dual-Axis • Origin at 0 • Q ({isReciprocatingPump ? '× 10⁻⁴ m³/s' : '× 10⁻⁵ m³/s'})
                   </span>
                 </div>
                 <MatlabStyledPlot
