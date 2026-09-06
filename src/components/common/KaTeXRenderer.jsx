@@ -4,8 +4,15 @@ import katex from 'katex';
 export function KaTeXRenderer({ math, block = false, className = '' }) {
   const html = useMemo(() => {
     if (!math) return '';
+    let sanitized = String(math);
+
+    // If string has double-escaped backslashes (\\frac, \\times, etc.), reduce them to single backslashes
+    while (sanitized.includes('\\\\')) {
+      sanitized = sanitized.replaceAll('\\\\', '\\');
+    }
+
     try {
-      return katex.renderToString(math, {
+      return katex.renderToString(sanitized, {
         displayMode: block,
         throwOnError: false,
         output: 'html'

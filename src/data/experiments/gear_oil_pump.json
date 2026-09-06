@@ -12,7 +12,7 @@
     "Energy meter (constant = 1200 rev/kWh) and stopwatch",
     "Gauge glass scale for oil level rise"
   ],
-  "theory": "The gear oil pump is a positive displacement machine consisting of two identical intermeshing spur wheels working with a fine clearance inside the casing. One gear is keyed to the driving shaft and the other revolves as the driven wheel. As the gears rotate, fluid (oil) is trapped between the tooth spaces and the casing wall, transported along the outer periphery from the suction side, and forced out into the delivery pipe under pressure.\\n\\nSuction Head:\\nH_s = \\\\frac{P_s \\\\times 133.3}{\\\\rho g} = \\\\frac{P_s \\\\times 133.3}{8770} = P_s \\\\times 0.0152 \\\\quad (\\\\text{m of oil})\\n\\nDelivery Head:\\nH_d = \\\\frac{P_d \\\\times 9.81 \\\\times 10^4}{\\\\rho g} = \\\\frac{P_d \\\\times 9.81 \\\\times 10^4}{8770} = P_d \\\\times 11.185 \\\\quad (\\\\text{m of oil})\\n\\nTotal Operating Head:\\nH_T = H_d + H_s + Z \\\\quad (\\\\text{m of oil}) \\\\quad \\\\text{where } Z = 0.15\\\\text{ m}\\n\\nActual Volumetric Discharge Rate:\\nQ_{act} = \\\\frac{A_{tank} \\\\times rise}{t} = \\\\frac{0.25 \\\\times 0.25 \\\\times 0.1}{t} = \\\\frac{0.00625}{t} \\\\quad (\\\\text{m}^3/\\\\text{s})\\n\\nElectrical Input Power:\\nI_p = \\\\frac{N \\\\times 3600 \\\\times 1000}{T \\\\times 1200} = \\\\frac{30000}{T} \\\\quad (\\\\text{Watts})\\n\\nPump Hydraulic Output Power:\\nO_p = \\\\rho \\\\cdot g \\\\cdot H_T \\\\cdot Q_{act} = 8770 \\\\times H_T \\\\times Q_{act} \\\\quad (\\\\text{Watts})\\n\\nOverall Pump Efficiency:\\n\\\\eta = \\\\frac{O_p}{I_p} \\\\times 100 \\\\quad (\\\\%)",
+  "theory": "The gear oil pump is a positive displacement machine consisting of two identical intermeshing spur wheels working with a fine clearance inside the casing. One gear is keyed to the driving shaft and the other revolves as the driven wheel. As the gears rotate, fluid (oil) is trapped between the tooth spaces and the casing wall, transported along the outer periphery from the suction side, and forced out into the delivery pipe under pressure.\\n\\nSuction Head:\\nH_s = \\frac{P_s \\times 133.3}{\\rho g} = \\frac{P_s \\times 133.3}{8770} = P_s \\times 0.0152 \\quad (\\text{m of oil})\\n\\nDelivery Head:\\nH_d = \\frac{P_d \\times 9.81 \\times 10^4}{\\rho g} = \\frac{P_d \\times 9.81 \\times 10^4}{8770} = P_d \\times 11.185 \\quad (\\text{m of oil})\\n\\nTotal Operating Head:\\nH_T = H_d + H_s + Z \\quad (\\text{m of oil}) \\quad \\text{where } Z = 0.15\\text{ m}\\n\\nActual Volumetric Discharge Rate:\\nQ_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.25 \\times 0.25 \\times 0.1}{t} = \\frac{0.00625}{t} \\quad (\\text{m}^3/\\text{s})\\n\\nElectrical Input Power:\\nI_p = \\frac{N \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T} \\quad (\\text{Watts})\\n\\nPump Hydraulic Output Power:\\nO_p = \\rho \\cdot g \\cdot H_T \\cdot Q_{act} = 8770 \\times H_T \\times Q_{act} \\quad (\\text{Watts})\\n\\nOverall Pump Efficiency:\\n\\eta = \\frac{O_p}{I_p} \\times 100 \\quad (\\%)",
   "procedure": [
     "Before starting the experiment, verify that the delivery regulating valve is completely open.",
     "Switch on the electric motor to run the gear oil pump at rated speed (1440 rpm).",
@@ -150,8 +150,8 @@
       "id": "Hs",
       "step_number": 1,
       "label": "Step 1: Suction Head (Hs)",
-      "formula_latex": "H_s = \\\\frac{P_s \\\\times 133.3}{\\\\rho g} = \\\\frac{P_s \\\\times 133.3}{8770}",
-      "substitution_template": "H_s = \\\\frac{{Ps} \\\\times 133.3}{8770}",
+      "formula_latex": "H_s = \\frac{P_s \\times 133.3}{\\rho g} = \\frac{P_s \\times 133.3}{8770}",
+      "substitution_template": "H_s = \\frac{{Ps} \\times 133.3}{8770}",
       "variables": [
         {
           "symbol": "P_s",
@@ -168,8 +168,8 @@
       "id": "Hd",
       "step_number": 2,
       "label": "Step 2: Delivery Head (Hd)",
-      "formula_latex": "H_d = \\\\frac{P_d \\\\times 9.81 \\\\times 10^4}{\\\\rho g} = \\\\frac{P_d \\\\times 98100}{8770}",
-      "substitution_template": "H_d = \\\\frac{{Pd} \\\\times 98100}{8770}",
+      "formula_latex": "H_d = \\frac{P_d \\times 9.81 \\times 10^4}{\\rho g} = \\frac{P_d \\times 98100}{8770}",
+      "substitution_template": "H_d = \\frac{{Pd} \\times 98100}{8770}",
       "variables": [
         {
           "symbol": "P_d",
@@ -210,8 +210,8 @@
       "id": "Q",
       "step_number": 4,
       "label": "Step 4: Actual Discharge Rate (Qact)",
-      "formula_latex": "Q_{act} = \\\\frac{A_{tank} \\\\times rise}{t} = \\\\frac{0.25 \\\\times 0.25 \\\\times 0.1}{t} = \\\\frac{0.00625}{t}",
-      "substitution_template": "Q_{act} = \\\\frac{0.00625}{{t}}",
+      "formula_latex": "Q_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.25 \\times 0.25 \\times 0.1}{t} = \\frac{0.00625}{t}",
+      "substitution_template": "Q_{act} = \\frac{0.00625}{{t}}",
       "variables": [
         {
           "symbol": "t",
@@ -228,8 +228,8 @@
       "id": "Ip",
       "step_number": 5,
       "label": "Step 5: Electrical Input Power (Ip)",
-      "formula_latex": "I_p = \\\\frac{N \\\\times 3600 \\\\times 1000}{T \\\\times 1200} = \\\\frac{30000}{T}",
-      "substitution_template": "I_p = \\\\frac{30000}{{T}}",
+      "formula_latex": "I_p = \\frac{N \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T}",
+      "substitution_template": "I_p = \\frac{30000}{{T}}",
       "variables": [
         {
           "symbol": "T",
@@ -246,8 +246,8 @@
       "id": "Op",
       "step_number": 6,
       "label": "Step 6: Pump Hydraulic Output Power (Op)",
-      "formula_latex": "O_p = \\\\rho g \\\\cdot H_T \\\\cdot Q_{act} = 8770 \\\\times H_T \\\\times Q_{act}",
-      "substitution_template": "O_p = 8770 \\\\times {HT} \\\\times {Q}",
+      "formula_latex": "O_p = \\rho g \\cdot H_T \\cdot Q_{act} = 8770 \\times H_T \\times Q_{act}",
+      "substitution_template": "O_p = 8770 \\times {HT} \\times {Q}",
       "variables": [
         {
           "symbol": "H_T",
@@ -270,8 +270,8 @@
       "id": "eta",
       "step_number": 7,
       "label": "Step 7: Overall Pump Efficiency (η)",
-      "formula_latex": "\\\\eta = \\\\frac{O_p}{I_p} \\\\times 100",
-      "substitution_template": "\\\\eta = \\\\frac{{Op}}{{Ip}} \\\\times 100",
+      "formula_latex": "\\eta = \\frac{O_p}{I_p} \\times 100",
+      "substitution_template": "\\eta = \\frac{{Op}}{{Ip}} \\times 100",
       "variables": [
         {
           "symbol": "O_p",
@@ -339,8 +339,8 @@
     {
       "id": "Hs",
       "label": "Suction Head (Hs)",
-      "latex": "H_s = \\\\frac{P_s \\\\times 133.3}{\\\\rho g} = \\\\frac{P_s \\\\times 133.3}{8770}",
-      "derivation": "Conversion of suction vacuum gauge reading in mm Hg to equivalent meters of oil column using specific weight of oil γ = 8770 N/m³:\\n\\nH_s = \\\\frac{P_s \\\\times 133.322}{8770} = P_s \\\\times 0.0152 \\\\text{ (m)}",
+      "latex": "H_s = \\frac{P_s \\times 133.3}{\\rho g} = \\frac{P_s \\times 133.3}{8770}",
+      "derivation": "Conversion of suction vacuum gauge reading in mm Hg to equivalent meters of oil column using specific weight of oil γ = 8770 N/m³:\\n\\nH_s = \\frac{P_s \\times 133.322}{8770} = P_s \\times 0.0152 \\text{ (m)}",
       "purpose": "Calculates suction lift head in meters of oil.",
       "variables": [
         {
@@ -364,8 +364,8 @@
     {
       "id": "Hd",
       "label": "Delivery Head (Hd)",
-      "latex": "H_d = \\\\frac{P_d \\\\times 9.81 \\\\times 10^4}{\\\\rho g} = \\\\frac{P_d \\\\times 98100}{8770}",
-      "derivation": "Conversion of delivery pressure gauge reading in kg/cm² to equivalent meters of oil column:\\n\\n1 \\\\text{ kgf/cm}^2 = 9.81 \\\\times 10^4 \\\\text{ N/m}^2\\n\\nH_d = \\\\frac{P_d \\\\times 9.81 \\\\times 10^4}{8770} = P_d \\\\times 11.1858 \\\\text{ (m of oil)}",
+      "latex": "H_d = \\frac{P_d \\times 9.81 \\times 10^4}{\\rho g} = \\frac{P_d \\times 98100}{8770}",
+      "derivation": "Conversion of delivery pressure gauge reading in kg/cm² to equivalent meters of oil column:\\n\\n1 \\text{ kgf/cm}^2 = 9.81 \\times 10^4 \\text{ N/m}^2\\n\\nH_d = \\frac{P_d \\times 9.81 \\times 10^4}{8770} = P_d \\times 11.1858 \\text{ (m of oil)}",
       "purpose": "Calculates delivery discharge head in meters of oil.",
       "variables": [
         {
@@ -390,7 +390,7 @@
       "id": "HT",
       "label": "Total Head (HT)",
       "latex": "H_T = H_d + H_s + Z",
-      "derivation": "Sum of delivery head, suction head, and gauge centerline datum difference Z = 0.15 m:\\n\\nH_T = H_d + H_s + 0.15 \\\\text{ (m)}",
+      "derivation": "Sum of delivery head, suction head, and gauge centerline datum difference Z = 0.15 m:\\n\\nH_T = H_d + H_s + 0.15 \\text{ (m)}",
       "purpose": "Determines total manometric head developed by the gear pump.",
       "variables": [
         {
@@ -426,8 +426,8 @@
     {
       "id": "Q",
       "label": "Actual Discharge Rate (Qact)",
-      "latex": "Q_{act} = \\\\frac{A_{tank} \\\\times rise}{t} = \\\\frac{0.25 \\\\times 0.25 \\\\times 0.1}{t} = \\\\frac{0.00625}{t}",
-      "derivation": "Volumetric flow rate from collecting tank dimensions (0.25 m × 0.25 m) and 10 cm level rise:\\n\\nQ_{act} = \\\\frac{0.00625}{t} \\\\text{ (m}^3\\\\text{/s)}",
+      "latex": "Q_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.25 \\times 0.25 \\times 0.1}{t} = \\frac{0.00625}{t}",
+      "derivation": "Volumetric flow rate from collecting tank dimensions (0.25 m × 0.25 m) and 10 cm level rise:\\n\\nQ_{act} = \\frac{0.00625}{t} \\text{ (m}^3\\text{/s)}",
       "purpose": "Calculates actual volumetric flow rate delivered by the gear pump.",
       "variables": [
         {
@@ -440,7 +440,7 @@
           "symbol": "Q_{act}",
           "meaning": "Actual discharge rate",
           "unit": "m³/s",
-          "typical_range": "5.7 \\\\times 10^{-4} – 6.1 \\\\times 10^{-4} \\\\text{ m}^3\\\\text{/s}"
+          "typical_range": "5.7 \\times 10^{-4} – 6.1 \\times 10^{-4} \\text{ m}^3\\text{/s}"
         }
       ],
       "assumptions": [
@@ -451,8 +451,8 @@
     {
       "id": "Ip",
       "label": "Electrical Input Power (Ip)",
-      "latex": "I_p = \\\\frac{N \\\\times 3600 \\\\times 1000}{T \\\\times 1200} = \\\\frac{30000}{T}",
-      "derivation": "Calculated from energy meter disc revolutions and energy meter constant 1200 rev/kWh:\\n\\nI_p = \\\\frac{10 \\\\times 3600 \\\\times 1000}{T \\\\times 1200} = \\\\frac{30000}{T} \\\\text{ (Watts)}",
+      "latex": "I_p = \\frac{N \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T}",
+      "derivation": "Calculated from energy meter disc revolutions and energy meter constant 1200 rev/kWh:\\n\\nI_p = \\frac{10 \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T} \\text{ (Watts)}",
       "purpose": "Measures total electric power supplied to the motor driving the pump.",
       "variables": [
         {
@@ -476,8 +476,8 @@
     {
       "id": "Op",
       "label": "Pump Hydraulic Output Power (Op)",
-      "latex": "O_p = \\\\rho g \\\\cdot H_T \\\\cdot Q_{act} = 8770 \\\\times H_T \\\\times Q_{act}",
-      "derivation": "Hydraulic work done on the fluid per unit time:\\n\\nO_p = \\\\gamma \\\\cdot H_T \\\\cdot Q_{act} = 8770 \\\\times H_T \\\\times Q_{act} \\\\text{ (Watts)}",
+      "latex": "O_p = \\rho g \\cdot H_T \\cdot Q_{act} = 8770 \\times H_T \\times Q_{act}",
+      "derivation": "Hydraulic work done on the fluid per unit time:\\n\\nO_p = \\gamma \\cdot H_T \\cdot Q_{act} = 8770 \\times H_T \\times Q_{act} \\text{ (Watts)}",
       "purpose": "Calculates useful hydraulic work transferred to the pumped fluid.",
       "variables": [
         {
@@ -490,7 +490,7 @@
           "symbol": "Q_{act}",
           "meaning": "Actual discharge rate",
           "unit": "m³/s",
-          "typical_range": "5.7 \\\\times 10^{-4} – 6.1 \\\\times 10^{-4} \\\\text{ m}^3\\\\text{/s}"
+          "typical_range": "5.7 \\times 10^{-4} – 6.1 \\times 10^{-4} \\text{ m}^3\\text{/s}"
         },
         {
           "symbol": "O_p",
@@ -507,8 +507,8 @@
     {
       "id": "eta",
       "label": "Overall Pump Efficiency (η)",
-      "latex": "\\\\eta = \\\\frac{O_p}{I_p} \\\\times 100",
-      "derivation": "Ratio of useful hydraulic power output to gross electrical power input:\\n\\n\\\\eta = \\\\frac{O_p}{I_p} \\\\times 100 \\\\text{ (\\\\%)}",
+      "latex": "\\eta = \\frac{O_p}{I_p} \\times 100",
+      "derivation": "Ratio of useful hydraulic power output to gross electrical power input:\\n\\n\\eta = \\frac{O_p}{I_p} \\times 100 \\text{ (\\%)}",
       "purpose": "Measures overall energy conversion efficiency of the gear oil pump set.",
       "variables": [
         {
@@ -524,7 +524,7 @@
           "typical_range": "800 – 1120 W"
         },
         {
-          "symbol": "\\\\eta",
+          "symbol": "\\eta",
           "meaning": "Efficiency",
           "unit": "%",
           "typical_range": "10 – 18%"
