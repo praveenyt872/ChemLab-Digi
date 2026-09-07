@@ -35,6 +35,8 @@ export function LiveResultsPanel() {
     ? 'Loss Coefficient (K)'
     : (currentExperimentId === 'centrifugal_pump' || currentExperimentId === 'reciprocating_pump' || currentExperimentId === 'gear_oil_pump')
     ? 'Efficiency (η)'
+    : currentExperimentId === 'drag_coefficient_solid_particle'
+    ? 'Drag Coefficient (CD)'
     : 'Coefficient of Discharge (Cd)';
 
   const resultUnit = headlineConfig?.unit
@@ -82,6 +84,8 @@ export function LiveResultsPanel() {
                   ? headlineResult.mean.toFixed(5)
                   : currentExperimentId === 'minor_losses'
                   ? headlineResult.mean.toFixed(2)
+                  : currentExperimentId === 'drag_coefficient_solid_particle'
+                  ? headlineResult.mean.toFixed(4)
                   : headlineResult.mean.toFixed(3)
               ) : (
                 '—'

@@ -79,6 +79,15 @@ export function ExperimentSelectPage({ onNavigate }) {
       formulaPreview: 'η = (Op / Ip) × 100',
       calcCount: '7 Formula Steps',
       icon: <Gauge className="w-6 h-6 text-amber-600" />
+    },
+    {
+      id: 'drag_coefficient_solid_particle',
+      title: 'Determination of Drag Coefficient of Solid Particles',
+      aim: 'To determine terminal settling velocity, drag force, Reynolds number, and drag coefficient of a spherical solid particle falling through a viscous fluid.',
+      schematic: 'Sedimentation Column + Solid Particles + Digital Stopwatch + Graduated Scale',
+      formulaPreview: 'CD = (2 FD) / (ρ A v²)  |  FD = 3 π μ Dp v',
+      calcCount: '5 Formula Steps',
+      icon: <Gauge className="w-6 h-6 text-indigo-600" />
     }
   ];
 

@@ -412,7 +412,7 @@ export function formatResultString(template, headlineResult, fallbackMean = null
 
   const getK = () => (meanVal !== null ? meanVal.toFixed(2) : '15.31');
   const getF = () => (meanVal !== null ? meanVal.toFixed(4) : '0.0064');
-  const getCd = () => (meanVal !== null ? meanVal.toFixed(3) : '0.598');
+  const getCd = () => (meanVal !== null ? (meanVal < 0.2 ? meanVal.toFixed(4) : meanVal.toFixed(3)) : '0.0942');
   const getH = () => (meanVal !== null ? meanVal.toFixed(2) : '14.28');
   const getEtaMax = () => (maxVal !== null ? maxVal.toFixed(2) : (meanVal !== null ? meanVal.toFixed(2) : '17.53'));
   const getEta = () => (meanVal !== null ? meanVal.toFixed(2) : '15.70');
@@ -442,11 +442,13 @@ export function formatResultString(template, headlineResult, fallbackMean = null
     .replace(/\{mean_f\}/gi, getF())
     .replace(/\{avg_f\}/gi, getF())
     .replace(/\{f\}/gi, getF())
+    .replace(/\{mean_CD\}/gi, getCd())
     .replace(/\{avg_Cd\}/gi, getCd())
     .replace(/\{Cd_avg\}/gi, getCd())
     .replace(/\{CD_Avg\}/gi, getCd())
     .replace(/\{mean_Cd\}/gi, getCd())
     .replace(/\{Cd\}/gi, getCd())
+    .replace(/\{CD\}/gi, getCd())
     .replace(/\{mean_h\}/gi, getH())
     .replace(/\{avg_h\}/gi, getH())
     .replace(/\{h\}/gi, getH())

@@ -1,0 +1,473 @@
+{
+  "experiment_id": "drag_coefficient_solid_particle",
+  "subject": "fluid_mechanics",
+  "title": "Determination of Drag Coefficient of Solid Particles",
+  "short_name": "Drag Coeff. Solid Particle",
+  "short_title": "Drag Coefficient of Solid Particle",
+  "aim": "To determine the terminal settling velocity, drag force, Reynolds number, and drag coefficient of a given solid particle falling through a fluid medium.",
+  "apparatus": [
+    "A tall transparent sedimentation column filled with viscous liquid (ρ = 880 kg/m³, μ = 0.01232 kg/(m·s))",
+    "Solid spherical particles (particle diameter Dp = 0.0124 m)",
+    "Digital stopwatch",
+    "Graduated vertical measuring scale",
+    "Screw gauge / Vernier caliper for particle diameter measurement"
+  ],
+  "theory": "Drag is defined as the resistive force exerted by a fluid on a solid body in the direction of relative flow. When a solid particle falls freely through a stationary fluid under gravity, it accelerates until the downward gravitational force is exactly balanced by the upward buoyant force and fluid drag force. At this point, the net force is zero and the particle descends at a constant terminal settling velocity (v).\n\nThe drag coefficient (CD) is a dimensionless index defined as the ratio of the drag force to the product of dynamic pressure and projected area:\nCD = (2 FD) / (ρ A v²)\n\nWhere:\n• FD = Total fluid drag force (N)\n• A = Projected frontal area of particle = (π / 4) Dp² (m²)\n• ρ = Density of liquid medium (kg/m³)\n• v = Terminal settling velocity = D / T (m/s)\n• Dp = Spherical particle diameter (m)\n• μ = Dynamic viscosity of fluid medium (kg/(m·s))\n\nFor laminar, creeping flow around a sphere (Stokes' law regime, NRe < 2):\nFD = 3 π μ Dp v\n\nParticle Reynolds Number:\nNRe = (ρ v Dp) / μ\n\nSettling Flow Regimes:\n1. Stokes' Range (NRe < 2): CD = 24 / NRe\n2. Intermediate Range (2 < NRe < 1000): CD = 18.5 / (NRe^0.6)\n3. Newton's Range (1000 < NRe < 200,000): CD ≈ 0.44",
+  "procedure": [
+    "Measure the diameter of the spherical solid particle (Dp = 0.0124 m) using a screw gauge or vernier caliper.",
+    "Record the density of the fluid medium (ρ = 880 kg/m³) and dynamic viscosity (μ = 0.01232 kg/(m·s)).",
+    "Mark two reference points separated by distance D (e.g. 0.28 m) along the sedimentation column, well below the free surface to ensure the particle attains steady terminal velocity before timing begins.",
+    "Gently drop the spherical particle into the column along the central axis without imparting any initial velocity or rotation.",
+    "Start the digital stopwatch when the particle passes the upper graduation mark and stop it precisely as it crosses the lower mark to record the transit time T (s).",
+    "Calculate the terminal settling velocity v = D / T, drag force FD = 3 π μ Dp v, Reynolds number NRe = (ρ v Dp) / μ, projected area A = (π / 4) Dp², and drag coefficient CD = (2 FD) / (ρ A v²).",
+    "Repeat the experiment for multiple trials to verify concordance and report the mean drag coefficient CD."
+  ],
+  "formulas": [
+    {
+      "id": "velocity",
+      "label": "Terminal Settling Velocity (v)",
+      "latex": "v = \\frac{D}{T}",
+      "derivation": "Terminal velocity is the steady uniform speed achieved by the particle traversing measured distance D in elapsed time T.",
+      "purpose": "Calculates the steady settling speed of the spherical particle in the fluid column.",
+      "variables": [
+        { "symbol": "D", "meaning": "Fall distance between timing marks", "unit": "m", "typical_range": "0.20 – 1.0 m" },
+        { "symbol": "T", "meaning": "Time elapsed for fall", "unit": "s", "typical_range": "0.5 – 5.0 s" },
+        { "symbol": "v", "meaning": "Terminal settling velocity", "unit": "m/s", "typical_range": "0.1 – 1.0 m/s" }
+      ],
+      "assumptions": ["Particle has reached steady terminal settling speed before upper mark", "Negligible wall boundary effects"],
+      "practical_application": "Fundamental in sedimentology, chemical clarifiers, and pneumatic/hydraulic conveying."
+    },
+    {
+      "id": "FD",
+      "label": "Fluid Drag Force (FD)",
+      "latex": "F_D = 3 \\pi \\mu D_p v",
+      "derivation": "Derived from Stokes' law for viscous drag exerted by a creeping laminar flow around a spherical body.",
+      "purpose": "Quantifies the viscous shear and form drag resisted by the fluid medium.",
+      "variables": [
+        { "symbol": "\\mu", "meaning": "Dynamic viscosity of fluid", "unit": "kg/(m·s)", "typical_range": "0.01 – 0.05 kg/(m·s)" },
+        { "symbol": "D_p", "meaning": "Particle diameter", "unit": "m", "typical_range": "0.005 – 0.025 m" },
+        { "symbol": "v", "meaning": "Terminal velocity", "unit": "m/s", "typical_range": "0.1 – 0.5 m/s" },
+        { "symbol": "F_D", "meaning": "Drag force", "unit": "N", "typical_range": "1×10⁻⁴ – 1×10⁻³ N" }
+      ],
+      "assumptions": ["Smooth spherical particle", "Homogeneous Newtonian fluid medium"],
+      "practical_application": "Governs particle classification in cyclones, settling tanks, and fluidized bed reactors."
+    },
+    {
+      "id": "N_Re",
+      "label": "Particle Reynolds Number (NRe)",
+      "latex": "N_{Re} = \\frac{\\rho v D_p}{\\mu}",
+      "derivation": "Ratio of inertial forces to viscous forces acting on the settling spherical particle.",
+      "purpose": "Characterizes the hydrodynamic flow regime around the moving particle.",
+      "variables": [
+        { "symbol": "\\rho", "meaning": "Fluid medium density", "unit": "kg/m³", "typical_range": "800 – 1200 kg/m³" },
+        { "symbol": "v", "meaning": "Terminal velocity", "unit": "m/s", "typical_range": "0.1 – 0.5 m/s" },
+        { "symbol": "D_p", "meaning": "Particle diameter", "unit": "m", "typical_range": "0.005 – 0.025 m" },
+        { "symbol": "\\mu", "meaning": "Dynamic viscosity", "unit": "kg/(m·s)", "typical_range": "0.01 – 0.05 kg/(m·s)" },
+        { "symbol": "N_{Re}", "meaning": "Particle Reynolds number", "unit": "dimensionless", "typical_range": "50 – 500" }
+      ],
+      "assumptions": ["Uniform relative approach velocity", "Constant fluid physical properties"],
+      "practical_application": "Demarcates Stokes' regime, intermediate boundary layer separation, and turbulent wake shedding."
+    },
+    {
+      "id": "A",
+      "label": "Projected Frontal Area (A)",
+      "latex": "A = \\frac{\\pi}{4} D_p^2",
+      "derivation": "Orthogonal projected area of a sphere of diameter Dp perpendicular to the direction of motion.",
+      "purpose": "Computes cross-sectional area resisting relative fluid motion.",
+      "variables": [
+        { "symbol": "D_p", "meaning": "Particle diameter", "unit": "m", "typical_range": "0.0124 m" },
+        { "symbol": "A", "meaning": "Projected area", "unit": "m²", "typical_range": "1.0×10⁻⁴ – 2.0×10⁻⁴ m²" }
+      ],
+      "assumptions": ["Spherical particle geometry"],
+      "practical_application": "Used across all aerodynamic and hydrodynamic drag calculations."
+    },
+    {
+      "id": "CD",
+      "label": "Drag Coefficient (CD)",
+      "latex": "C_D = \\frac{2 F_D}{\\rho A v^2}",
+      "derivation": "Dimensionless drag coefficient derived by normalizing drag force against dynamic pressure (1/2 ρ v²) and projected area A.",
+      "purpose": "Evaluates the overall drag coefficient characterizing particle-fluid interaction.",
+      "variables": [
+        { "symbol": "F_D", "meaning": "Drag force", "unit": "N", "typical_range": "1×10⁻⁴ – 1×10⁻³ N" },
+        { "symbol": "\\rho", "meaning": "Fluid density", "unit": "kg/m³", "typical_range": "880 kg/m³" },
+        { "symbol": "A", "meaning": "Projected area", "unit": "m²", "typical_range": "1.2076×10⁻⁴ m²" },
+        { "symbol": "v", "meaning": "Terminal velocity", "unit": "m/s", "typical_range": "0.2 – 0.4 m/s" },
+        { "symbol": "C_D", "meaning": "Drag coefficient", "unit": "dimensionless", "typical_range": "0.08 – 0.12" }
+      ],
+      "assumptions": ["Incompressible medium", "Unbounded flow field around particle"],
+      "practical_application": "Critical coefficient for designing thickeners, elutriators, and aerosol transport systems."
+    }
+  ],
+  "calculation_steps": [
+    {
+      "step_id": "velocity",
+      "step_number": 1,
+      "label": "Step 1: Terminal Settling Velocity (v)",
+      "formula_latex": "v = \\frac{D}{T}",
+      "formula_expression": "distance / time",
+      "substitution_template": "v = \\frac{{distance}}{{time}}",
+      "depends_on": ["distance", "time"],
+      "unit": "m/s",
+      "format": "decimal",
+      "decimal_precision": 4,
+      "feeds_into": "Step 2: Drag Force (FD) and Step 3: Reynolds Number (NRe)"
+    },
+    {
+      "step_id": "FD",
+      "step_number": 2,
+      "label": "Step 2: Fluid Drag Force (FD)",
+      "formula_latex": "F_D = 3 \\pi \\mu D_p v",
+      "formula_expression": "3 * pi * mu * D_p * (distance / time)",
+      "substitution_template": "F_D = 3 \\times 3.1416 \\times {mu} \\times {D_p} \\times {velocity}",
+      "depends_on": ["mu", "D_p", "velocity"],
+      "unit": "N",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 5: Drag Coefficient (CD)"
+    },
+    {
+      "step_id": "N_Re",
+      "step_number": 3,
+      "label": "Step 3: Particle Reynolds Number (NRe)",
+      "formula_latex": "N_{Re} = \\frac{\\rho v D_p}{\\mu}",
+      "formula_expression": "(rho * (distance / time) * D_p) / mu",
+      "substitution_template": "N_{Re} = \\frac{{rho} \\times {velocity} \\times {D_p}}{{mu}}",
+      "depends_on": ["rho", "velocity", "D_p", "mu"],
+      "unit": "-",
+      "format": "decimal",
+      "decimal_precision": 2,
+      "feeds_into": "Hydrodynamic regime verification & plotting"
+    },
+    {
+      "step_id": "A",
+      "step_number": 4,
+      "label": "Step 4: Projected Area of Particle (A)",
+      "formula_latex": "A = \\frac{\\pi}{4} D_p^2",
+      "formula_expression": "(pi / 4) * (D_p ^ 2)",
+      "substitution_template": "A = \\frac{3.1416}{4} \\times ({D_p})^2",
+      "depends_on": ["D_p"],
+      "unit": "m²",
+      "format": "scientific",
+      "decimal_precision": 4,
+      "feeds_into": "Step 5: Drag Coefficient (CD)"
+    },
+    {
+      "step_id": "CD",
+      "step_number": 5,
+      "label": "Step 5: Drag Coefficient (CD)",
+      "formula_latex": "C_D = \\frac{2 F_D}{\\rho A v^2}",
+      "formula_expression": "(2 * (3 * pi * mu * D_p * (distance / time))) / (rho * ((pi / 4) * (D_p ^ 2)) * ((distance / time) ^ 2))",
+      "substitution_template": "C_D = \\frac{2 \\times {FD}}{{rho} \\times {A} \\times ({velocity})^2}",
+      "depends_on": ["FD", "rho", "A", "velocity"],
+      "unit": "dim",
+      "format": "decimal",
+      "decimal_precision": 4
+    }
+  ],
+  "trial_inputs": [
+    {
+      "id": "distance",
+      "label": "Fall Distance (D)",
+      "unit": "m",
+      "type": "number",
+      "placeholder": "e.g. 0.28",
+      "tooltip": "Vertical fall distance traversed between graduation marks (m)"
+    },
+    {
+      "id": "time",
+      "label": "Total Time (T)",
+      "unit": "s",
+      "type": "number",
+      "placeholder": "e.g. 0.94",
+      "tooltip": "Elapsed travel time measured using stopwatch (s)"
+    }
+  ],
+  "fixed_inputs": [
+    {
+      "id": "D_p",
+      "label": "Particle Diameter (Dp)",
+      "value": 0.0124,
+      "unit": "m",
+      "description": "Measured spherical particle diameter (m)"
+    },
+    {
+      "id": "rho",
+      "label": "Fluid Density (ρ)",
+      "value": 880,
+      "unit": "kg/m³",
+      "description": "Density of viscous fluid medium (kg/m³)"
+    },
+    {
+      "id": "mu",
+      "label": "Fluid Viscosity (μ)",
+      "value": 0.01232,
+      "unit": "kg/(m·s)",
+      "description": "Dynamic viscosity of fluid medium (kg/(m·s))"
+    },
+    {
+      "id": "g",
+      "label": "Gravity Acceleration (g)",
+      "value": 9.81,
+      "unit": "m/s²",
+      "description": "Standard gravitational acceleration (m/s²)"
+    }
+  ],
+  "manual_calculation_mode": true,
+  "calculation_expressions": {
+    "velocity": "distance / time",
+    "FD": "3 * pi * mu * D_p * (distance / time)",
+    "N_Re": "(rho * (distance / time) * D_p) / mu",
+    "A": "(pi / 4) * (D_p ^ 2)",
+    "CD": "(2 * (3 * pi * mu * D_p * (distance / time))) / (rho * ((pi / 4) * (D_p ^ 2)) * ((distance / time) ^ 2))"
+  },
+  "calculations": [
+    {
+      "id": "velocity",
+      "step_number": 1,
+      "label": "Step 1: Terminal Settling Velocity (v)",
+      "formula_latex": "v = \\frac{D}{T}",
+      "substitution_template": "v = \\frac{{distance}}{{time}}",
+      "variables": [
+        {
+          "symbol": "D",
+          "label": "Fall Distance (D)",
+          "source_field": "distance",
+          "unit": "m"
+        },
+        {
+          "symbol": "T",
+          "label": "Travel Time (T)",
+          "source_field": "time",
+          "unit": "s"
+        }
+      ],
+      "result_unit": "m/s",
+      "target_field": "velocity",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "FD",
+      "step_number": 2,
+      "label": "Step 2: Drag Force on Particle (FD)",
+      "formula_latex": "F_D = 3 \\pi \\mu D_p v",
+      "substitution_template": "F_D = 3 \\times 3.1416 \\times {mu} \\times {D_p} \\times {velocity}",
+      "variables": [
+        {
+          "symbol": "v",
+          "label": "Terminal Velocity (v)",
+          "source_field": "velocity",
+          "unit": "m/s"
+        }
+      ],
+      "result_unit": "N",
+      "target_field": "FD",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "N_Re",
+      "step_number": 3,
+      "label": "Step 3: Particle Reynolds Number (NRe)",
+      "formula_latex": "N_{Re} = \\frac{\\rho v D_p}{\\mu}",
+      "substitution_template": "N_{Re} = \\frac{{rho} \\times {velocity} \\times {D_p}}{{mu}}",
+      "variables": [
+        {
+          "symbol": "v",
+          "label": "Terminal Velocity (v)",
+          "source_field": "velocity",
+          "unit": "m/s"
+        }
+      ],
+      "result_unit": "-",
+      "target_field": "N_Re",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "A",
+      "step_number": 4,
+      "label": "Step 4: Projected Area of Particle (A)",
+      "formula_latex": "A = \\frac{\\pi}{4} D_p^2",
+      "substitution_template": "A = \\frac{3.1416}{4} \\times ({D_p})^2",
+      "variables": [
+        {
+          "symbol": "D_p",
+          "label": "Particle Diameter (Dp)",
+          "source_field": "D_p",
+          "unit": "m"
+        }
+      ],
+      "result_unit": "m²",
+      "target_field": "A",
+      "tolerance_percent": 5
+    },
+    {
+      "id": "CD",
+      "step_number": 5,
+      "label": "Step 5: Drag Coefficient (CD)",
+      "formula_latex": "C_D = \\frac{2 F_D}{\\rho A v^2}",
+      "substitution_template": "C_D = \\frac{2 \\times {FD}}{{rho} \\times {A} \\times ({velocity})^2}",
+      "variables": [
+        {
+          "symbol": "F_D",
+          "label": "Drag Force (FD)",
+          "source_field": "FD",
+          "unit": "N"
+        },
+        {
+          "symbol": "v",
+          "label": "Terminal Velocity (v)",
+          "source_field": "velocity",
+          "unit": "m/s"
+        },
+        {
+          "symbol": "A",
+          "label": "Projected Area (A)",
+          "source_field": "A",
+          "unit": "m²"
+        }
+      ],
+      "result_unit": "dim",
+      "target_field": "CD",
+      "tolerance_percent": 5
+    }
+  ],
+  "calculated_columns": [
+    {
+      "id": "velocity",
+      "label": "Velocity (v)",
+      "unit": "m/s",
+      "format": "decimal"
+    },
+    {
+      "id": "FD",
+      "label": "Drag Force (FD)",
+      "unit": "N",
+      "format": "scientific"
+    },
+    {
+      "id": "N_Re",
+      "label": "Reynolds Number (NRe)",
+      "unit": "-",
+      "format": "decimal"
+    },
+    {
+      "id": "CD",
+      "label": "Drag Coeff. (CD)",
+      "unit": "-",
+      "format": "decimal"
+    }
+  ],
+  "headline_output": {
+    "label": "Drag Coefficient (CD)",
+    "unit": "dim",
+    "target_key": "CD"
+  },
+  "graph": {
+    "type": "scatter_with_trend",
+    "x": "N_Re",
+    "y": "CD",
+    "x_label": "Particle Reynolds Number (NRe)",
+    "y_label": "Drag Coefficient (CD)",
+    "title": "Drag Coefficient vs Reynolds Number (CD vs NRe)"
+  },
+  "graph_config": {
+    "x_axis": {
+      "label": "Particle Reynolds Number (NRe)",
+      "variable_ref": "N_Re"
+    },
+    "y_axis": {
+      "label": "Drag Coefficient (CD)",
+      "variable_ref": "CD"
+    },
+    "series": [
+      {
+        "id": "actual",
+        "label": "Observed Data",
+        "type": "scatter+line",
+        "style": "solid",
+        "color_index": 0,
+        "source": "trial_inputs_calculated"
+      },
+      {
+        "id": "theoretical",
+        "label": "Theoretical Trendline",
+        "type": "line",
+        "style": "dashed",
+        "color_index": 1,
+        "source": "computed_theoretical_curve",
+        "computation": {
+          "method": "linear_fit"
+        }
+      }
+    ]
+  },
+  "reference_code": {
+    "python": {
+      "label": "Python (NumPy / Matplotlib) Reference",
+      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Fixed apparatus parameters\nDp = 0.0124       # Particle diameter (m)\nrho = 880.0       # Liquid density (kg/m^3)\nmu = 0.01232      # Liquid viscosity (kg/(m*s))\ng = 9.81          # Gravitational acceleration (m/s^2)\n\n# Projected area of spherical particle\nA = (np.pi / 4.0) * (Dp ** 2)\n\n# Observed trial readings (distance in m, time in s)\ndistance = np.array([0.28, 0.28, 0.28])\ntime_s = np.array([0.94, 0.97, 1.01])\n\n# Hydrodynamic calculations\nv = distance / time_s\nFD = 3.0 * np.pi * mu * Dp * v\nN_Re = (rho * v * Dp) / mu\nCD = (2.0 * FD) / (rho * A * (v ** 2))\n\nprint(f\"Mean Drag Coefficient CD: {np.mean(CD):.4f}\")\n\n# Plot CD vs NRe\nplt.figure(figsize=(7, 4.5))\nplt.plot(N_Re, CD, 'o-', color='#0072BD', linewidth=2, markersize=8, label='Observed Data')\nm, c = np.polyfit(N_Re, CD, 1)\nN_fit = np.linspace(min(N_Re), max(N_Re), 50)\nplt.plot(N_fit, m * N_fit + c, '--', color='#D95319', label='Linear Trendline')\nplt.xlabel('Particle Reynolds Number (NRe)')\nplt.ylabel('Drag Coefficient (CD)')\nplt.title('Drag Coefficient vs Reynolds Number (CD vs NRe)')\nplt.grid(True, linestyle='--', alpha=0.6)\nplt.legend()\nplt.show()"
+    },
+    "matlab": {
+      "label": "MATLAB Plot Script Reference",
+      "code": "% MATLAB Reference Script for Drag Coefficient Determination\n\n% Fixed parameters\nDp = 0.0124;      % Particle diameter (m)\nrho = 880.0;      % Liquid density (kg/m^3)\nmu = 0.01232;     % Viscosity (kg/(m*s))\ng = 9.81;         % Gravity (m/s^2)\n\n% Projected area\nA = (pi / 4) * Dp^2;\n\n% Observations\ndistance = [0.28, 0.28, 0.28]; % m\ntime_s = [0.94, 0.97, 1.01];   % s\n\n% Calculations\nv = distance ./ time_s;\nFD = 3 * pi * mu * Dp .* v;\nN_Re = (rho .* v .* Dp) ./ mu;\nCD = (2 .* FD) ./ (rho .* A .* (v .^ 2));\n\nmean_CD = mean(CD);\nfprintf('Mean Drag Coefficient CD = %.4f\\n', mean_CD);\n\n% Plotting\nfigure;\nplot(N_Re, CD, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.8, 'MarkerSize', 8, 'DisplayName', 'Observed Data');\nhold on;\np = polyfit(N_Re, CD, 1);\nN_fit = linspace(min(N_Re), max(N_Re), 100);\nplot(N_fit, polyval(p, N_fit), '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Trendline');\ngrid on; box on;\nxlabel('Particle Reynolds Number (NRe)');\nylabel('Drag Coefficient (CD)');\ntitle('Drag Coefficient vs Reynolds Number (CD vs NRe)');\nlegend('Location', 'northeast');"
+    }
+  },
+  "validation_ranges": {
+    "distance": {
+      "min": 0.05,
+      "max": 2.0,
+      "label": "Fall Distance (m)"
+    },
+    "time": {
+      "min": 0.1,
+      "max": 30.0,
+      "label": "Travel Time (s)"
+    },
+    "CD": {
+      "min": 0.01,
+      "max": 2.0,
+      "label": "Drag Coefficient (CD)"
+    }
+  },
+  "sample_data": [
+    {
+      "distance": 0.28,
+      "time": 0.94
+    },
+    {
+      "distance": 0.28,
+      "time": 0.97
+    },
+    {
+      "distance": 0.28,
+      "time": 1.01
+    }
+  ],
+  "result_template": "The drag coefficient of the given solid particle in the fluid medium is found to be CD = {mean_CD}.",
+  "precautions": [
+    "The solid particle must be released gently along the column axis without initial velocity or rotation.",
+    "Ensure the upper timing graduation is sufficiently far below the fluid surface so the particle has fully attained terminal velocity.",
+    "The fluid medium temperature should be maintained constant since viscosity varies rapidly with temperature.",
+    "Avoid parallax error when viewing the transit times across the timing graduation marks."
+  ],
+  "viva_questions": [
+    {
+      "question": "1. What is terminal settling velocity?",
+      "answer": "Terminal settling velocity is the constant steady-state velocity attained by a solid body freely falling through a viscous fluid when the downward gravitational force is exactly balanced by the sum of the upward buoyant force and hydrodynamic drag force."
+    },
+    {
+      "question": "2. State Stokes' Law and its range of validity.",
+      "answer": "Stokes' Law states that the viscous drag force on a smooth spherical body moving in a fluid is FD = 3 π μ Dp v. It is strictly valid for creeping laminar flow where inertial forces are negligible compared to viscous forces, corresponding to particle Reynolds numbers NRe < 2."
+    },
+    {
+      "question": "3. What is the drag coefficient (CD) and why is it dimensionless?",
+      "answer": "The drag coefficient CD is a dimensionless ratio of the total fluid drag force to the product of dynamic pressure head (1/2 ρ v²) and the projected frontal area A of the body (CD = 2 FD / (ρ A v²)). Because force has units of N and dynamic pressure times area also equals N, CD is completely dimensionless."
+    },
+    {
+      "question": "4. How does the drag coefficient vary with Reynolds number across different settling regimes?",
+      "answer": "In Stokes' regime (NRe < 2), CD = 24 / NRe (inversely proportional to NRe). In the intermediate regime (2 < NRe < 1000), CD ≈ 18.5 / NRe^0.6. In Newton's turbulent regime (1000 < NRe < 200,000), the boundary layer separates and form drag dominates, making CD approximately constant at 0.44."
+    },
+    {
+      "question": "5. What are the wall effects in a settling column, and how can they be minimized?",
+      "answer": "Wall effects occur when the column diameter is not sufficiently large relative to the particle diameter, causing upward fluid displacement and increased shearing resistance. Wall effects are minimized by keeping the column diameter at least 50 to 100 times greater than the particle diameter."
+    }
+  ]
+}
