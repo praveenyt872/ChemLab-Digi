@@ -1,0 +1,573 @@
+{
+  "experiment_id": "helical_spiral_coil",
+  "subject": "fluid_mechanics",
+  "title": "Flow Through Helical Coil and Spiral Coil",
+  "short_name": "Helical & Spiral Coil",
+  "short_title": "Flow Through Coils",
+  "aim": "To determine the pressure drop, straight tube loss, Dean effects, and friction factor in a helical coil and spiral coil for various liquid flow velocities.",
+  "apparatus": [
+    "Helical coil and Spiral coil experimental test rig",
+    "U-tube mercury manometer with pressure tappings",
+    "Calibrated flowmeter (LPH)",
+    "Digital stopwatch",
+    "Collecting tank with level indicator / piezometer",
+    "Centrifugal circulating water pump"
+  ],
+  "theory": "Coils (helical and spiral geometries) are extensively utilized in chemical process equipment, compact heat exchangers, reactors, and cryogenic systems where high heat transfer coefficients and space economy are paramount.\n\nWhen a fluid flows through curved conduits, centrifugal forces act outwards on the fast-moving fluid core, setting up a secondary recirculating flow consisting of a pair of counter-rotating longitudinal vortices perpendicular to the main axial stream. This secondary circulation phenomenon is known as the Dean Effect. The secondary motion enhances radial momentum and heat exchange while causing additional frictional resistance compared to a straight tube of identical length and diameter.\n\nKey Governing Relationships:\n1. Manometer Head Differential:\nΔh = |h2 - h1| (cm Hg)\n\n2. Equivalent Head Loss in Coil:\nHc = (Δh / 100) × [(ρ_Hg / ρ_w) - 1] = (Δh / 100) × 12.6 (m H₂O)\n\n3. Flow Velocity:\nV = Q_act / A (m/s), where A = (π / 4) Dp² (m²)\n\n4. Reynolds Number:\nNRe = (ρ V Dp) / μ\n\n5. Critical Reynolds Number (Onset of Turbulence in Curved Tube):\nN_REC = 2100 × [1 + 12 √(Dp / Dc)]\nDue to the stabilizing influence of secondary vortices, laminar flow persists up to significantly higher Reynolds numbers in coiled pipes compared to straight pipes (where N_RE,crit ≈ 2100).\n\n6. Straight Tube Friction Factor (f_st):\n• For Laminar Flow (NRe < 2000): f_st = 16 / NRe\n• For Turbulent Flow (NRe ≥ 2000): f_st = 0.046 / (NRe^0.2)\n\n7. Head Loss in Straight Tube (Darcy-Weisbach Equation):\nH_st = (4 f_st L V²) / (2 g Dp)\n\n8. Friction Factor in Coiled Tube (f_c):\nf_c = 0.08 (NRe^-0.25) + 0.01 (Dp / Dc)^0.5",
+  "procedure": [
+    "Verify that the apparatus pipeline connections and manometer cocks are secure and leak-free.",
+    "Prime the pump, open the bypass valve partially, and switch on the circulating water pump.",
+    "Select the test coil (Helical Coil or Spiral Coil) by opening the corresponding inlet and outlet valves while closing the other coil circuit.",
+    "Regulate the flow control valve to set a desired flow rate (e.g. 60, 80, 140 LPH).",
+    "Allow the flow to attain steady state and purge any air bubbles from the manometer lines.",
+    "Record the mercury levels in both limbs of the U-tube manometer (h1 and h2 in cm).",
+    "Record the transit time taken for a fixed water level rise in the collecting tank to determine the actual discharge Q_act.",
+    "Calculate the head loss Hc, fluid velocity V, Reynolds number NRe, critical Reynolds number N_REC, straight pipe friction factor f_st, straight head loss H_st, and coil friction factor f_c.",
+    "Repeat the measurements across multiple flow rates and repeat the entire procedure for both Helical and Spiral coils."
+  ],
+  "precautions": [
+    "Ensure all air bubbles are completely expelled from manometer tappings before taking limb readings.",
+    "Operate flow regulation valves gradually to prevent sudden pressure surges.",
+    "Record stopwatch timings with close attention to eye level to avoid parallax errors.",
+    "Ensure steady flow conditions are achieved before noting manometer readings."
+  ],
+  "parts": [
+    {
+      "id": "partA",
+      "title": "Part A: Flow Through Helical Coil",
+      "short_title": "Helical Coil",
+      "aim": "To determine the pressure drop, head loss, and friction factor in a helical coil for various liquid flow velocities.",
+      "theory": "In a helical coil, the pipe is wound uniformly in a helix with constant pitch and curvature diameter Dc. The secondary Dean vortices remain uniform along the entire coiled length, giving a consistent enhancement in pressure drop and friction factor fc.",
+      "formulas": [
+        {
+          "id": "Hc",
+          "label": "Head Loss in Coil (Hc)",
+          "latex": "H_c = \\Delta h \\times \\left(\\frac{S_{Hg}}{S_w} - 1\\right) = \\frac{\\Delta h \\times 12.6}{100}",
+          "derivation": "Calculated by converting differential mercury column height into equivalent meters of water column head.",
+          "purpose": "Measures total pressure head loss across the helical coil in meters of water.",
+          "variables": [
+            { "symbol": "\\Delta h", "meaning": "Differential manometer height |h1 - h2|", "unit": "cm", "typical_range": "1 – 5 cm" },
+            { "symbol": "H_c", "meaning": "Head loss across helical coil", "unit": "m", "typical_range": "0.15 – 0.50 m" }
+          ],
+          "assumptions": ["Specific gravity of mercury = 13.6", "Specific gravity of water = 1.0"]
+        },
+        {
+          "id": "V",
+          "label": "Flow Velocity (V)",
+          "latex": "V = \\frac{Q_{act}}{A} = \\frac{Q_{act}}{\\frac{\\pi}{4} D_p^2}",
+          "derivation": "Fluid velocity through the circular pipe cross section of inside diameter Dp.",
+          "purpose": "Computes average linear velocity of liquid flowing through the coil.",
+          "variables": [
+            { "symbol": "Q_{act}", "meaning": "Actual discharge rate", "unit": "m³/s", "typical_range": "1.0×10⁻⁴ – 4.0×10⁻⁴ m³/s" },
+            { "symbol": "D_p", "meaning": "Pipe inside diameter", "unit": "m", "typical_range": "0.021 m" },
+            { "symbol": "V", "meaning": "Fluid velocity", "unit": "m/s", "typical_range": "0.3 – 1.0 m/s" }
+          ],
+          "assumptions": ["Uniform velocity distribution across cross-section"]
+        },
+        {
+          "id": "N_Re",
+          "label": "Reynolds Number (NRe)",
+          "latex": "N_{Re} = \\frac{\\rho V D_p}{\\mu}",
+          "derivation": "Standard dimensionless ratio of inertial forces to viscous forces in pipe flow.",
+          "purpose": "Determines flow regime through the coil.",
+          "variables": [
+            { "symbol": "\\rho", "meaning": "Density of water", "unit": "kg/m³", "typical_range": "1000 kg/m³" },
+            { "symbol": "V", "meaning": "Fluid velocity", "unit": "m/s", "typical_range": "0.3 – 1.0 m/s" },
+            { "symbol": "D_p", "meaning": "Pipe inside diameter", "unit": "m", "typical_range": "0.021 m" },
+            { "symbol": "\\mu", "meaning": "Dynamic viscosity", "unit": "kg/(m·s)", "typical_range": "0.01 kg/(m·s)" }
+          ],
+          "assumptions": ["Constant fluid physical properties"]
+        },
+        {
+          "id": "N_REC",
+          "label": "Critical Reynolds Number (NREC)",
+          "latex": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{\\frac{D_p}{D_c}}\\right)",
+          "derivation": "Dean's empirical correlation defining the delayed laminar-to-turbulent transition threshold in curved pipes.",
+          "purpose": "Predicts critical Reynolds number above which turbulence begins in the coil.",
+          "variables": [
+            { "symbol": "D_p", "meaning": "Pipe diameter", "unit": "m", "typical_range": "0.021 m" },
+            { "symbol": "D_c", "meaning": "Curvature diameter of coil", "unit": "m", "typical_range": "0.014 m" },
+            { "symbol": "N_{REC}", "meaning": "Critical transition Reynolds number", "unit": "dimensionless", "typical_range": "32,000 – 35,000" }
+          ],
+          "assumptions": ["Stable secondary Dean circulation delay"]
+        },
+        {
+          "id": "fc",
+          "label": "Coil Friction Factor (fc)",
+          "latex": "f_c = 0.08 N_{Re}^{-0.25} + 0.01 \\left(\\frac{D_p}{D_c}\\right)^{0.5}",
+          "derivation": "Ito correlation combining boundary layer skin friction with curvature-induced secondary flow losses.",
+          "purpose": "Evaluates the overall Darcy friction factor for flow through the helical coil.",
+          "variables": [
+            { "symbol": "N_{Re}", "meaning": "Reynolds number", "unit": "dimensionless", "typical_range": "800 – 2500" },
+            { "symbol": "D_p", "meaning": "Pipe diameter", "unit": "m", "typical_range": "0.021 m" },
+            { "symbol": "D_c", "meaning": "Coil curvature diameter", "unit": "m", "typical_range": "0.014 m" },
+            { "symbol": "f_c", "meaning": "Friction factor of coil", "unit": "dimensionless", "typical_range": "0.020 – 0.030" }
+          ],
+          "assumptions": ["Smooth inner pipe wall", "Fully developed secondary circulation"]
+        }
+      ],
+      "calculation_steps": [
+        {
+          "step_id": "Hc",
+          "step_number": 1,
+          "label": "Step 1: Equivalent Head Loss in Coil (Hc)",
+          "formula_latex": "H_c = \\frac{\\Delta h \\times 12.6}{100}",
+          "formula_expression": "(abs(h2 - h1) / 100) * 12.6",
+          "substitution_template": "H_c = \\frac{({h2} - {h1}) \\times 12.6}{100}",
+          "depends_on": ["h1", "h2"],
+          "unit": "m H₂O",
+          "format": "decimal",
+          "decimal_precision": 4
+        },
+        {
+          "step_id": "V",
+          "step_number": 2,
+          "label": "Step 2: Flow Velocity (V)",
+          "formula_latex": "V = \\frac{Q_{act}}{A} = \\frac{Q_{act} \\times 10^{-4}}{\\frac{\\pi}{4} D_p^2}",
+          "formula_expression": "(Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))",
+          "substitution_template": "V = \\frac{{Q_act} \\times 10^{-4}}{3.46 \\times 10^{-4}}",
+          "depends_on": ["Q_act", "D_p"],
+          "unit": "m/s",
+          "format": "decimal",
+          "decimal_precision": 3
+        },
+        {
+          "step_id": "N_Re",
+          "step_number": 3,
+          "label": "Step 3: Reynolds Number (NRe)",
+          "formula_latex": "N_{Re} = \\frac{\\rho V D_p}{\\mu}",
+          "formula_expression": "(rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu",
+          "substitution_template": "N_{Re} = \\frac{{rho} \\times {V} \\times {D_p}}{{mu}}",
+          "depends_on": ["rho", "V", "D_p", "mu"],
+          "unit": "-",
+          "format": "decimal",
+          "decimal_precision": 1
+        },
+        {
+          "step_id": "N_REC",
+          "step_number": 4,
+          "label": "Step 4: Critical Reynolds Number (NREC)",
+          "formula_latex": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{\\frac{D_p}{D_c}}\\right)",
+          "formula_expression": "2100 * (1 + 12 * sqrt(D_p / D_c))",
+          "substitution_template": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{\\frac{0.021}{0.014}}\\right)",
+          "depends_on": ["D_p", "D_c"],
+          "unit": "-",
+          "format": "integer",
+          "decimal_precision": 0
+        },
+        {
+          "step_id": "fc",
+          "step_number": 5,
+          "label": "Step 5: Helical Coil Friction Factor (fc)",
+          "formula_latex": "f_c = 0.08 N_{Re}^{-0.25} + 0.01 \\left(\\frac{D_p}{D_c}\\right)^{0.5}",
+          "formula_expression": "0.08 * (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ (-0.25)) + 0.01 * ((D_p / D_c) ^ 0.5)",
+          "substitution_template": "f_c = 0.08 ({N_Re})^{-0.25} + 0.01 \\left(\\frac{0.021}{0.014}\\right)^{0.5}",
+          "depends_on": ["N_Re", "D_p", "D_c"],
+          "unit": "dim",
+          "format": "decimal",
+          "decimal_precision": 4
+        }
+      ],
+      "calculations": [
+        {
+          "id": "Hc",
+          "step_number": 1,
+          "label": "Step 1: Equivalent Head Loss in Coil (Hc)",
+          "formula_latex": "H_c = \\frac{\\Delta h \\times 12.6}{100}",
+          "substitution_template": "H_c = \\frac{({h2} - {h1}) \\times 12.6}{100}",
+          "variables": [
+            { "symbol": "h1", "label": "Upstream Limb (h1)", "source_field": "h1", "unit": "cm" },
+            { "symbol": "h2", "label": "Downstream Limb (h2)", "source_field": "h2", "unit": "cm" }
+          ],
+          "result_unit": "m H₂O",
+          "target_field": "Hc",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "V",
+          "step_number": 2,
+          "label": "Step 2: Flow Velocity (V)",
+          "formula_latex": "V = \\frac{Q_{act}}{A}",
+          "substitution_template": "V = \\frac{{Q_act} \\times 10^{-4}}{3.46 \\times 10^{-4}}",
+          "variables": [
+            { "symbol": "Q_{act}", "label": "Discharge (Qact)", "source_field": "Q_act", "unit": "×10⁻⁴ m³/s" }
+          ],
+          "result_unit": "m/s",
+          "target_field": "V",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "N_Re",
+          "step_number": 3,
+          "label": "Step 3: Reynolds Number (NRe)",
+          "formula_latex": "N_{Re} = \\frac{\\rho V D_p}{\\mu}",
+          "substitution_template": "N_{Re} = \\frac{1000 \\times {V} \\times 0.021}{0.01}",
+          "variables": [
+            { "symbol": "V", "label": "Velocity (V)", "source_field": "V", "unit": "m/s" }
+          ],
+          "result_unit": "-",
+          "target_field": "N_Re",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "N_REC",
+          "step_number": 4,
+          "label": "Step 4: Critical Reynolds Number (NREC)",
+          "formula_latex": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{\\frac{D_p}{D_c}}\\right)",
+          "substitution_template": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{1.5}\\right)",
+          "variables": [],
+          "result_unit": "-",
+          "target_field": "N_REC",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "fc",
+          "step_number": 5,
+          "label": "Step 5: Coil Friction Factor (fc)",
+          "formula_latex": "f_c = 0.08 N_{Re}^{-0.25} + 0.01 \\left(\\frac{D_p}{D_c}\\right)^{0.5}",
+          "substitution_template": "f_c = 0.08 ({N_Re})^{-0.25} + 0.01 (1.2247)",
+          "variables": [
+            { "symbol": "N_{Re}", "label": "Reynolds Number (NRe)", "source_field": "N_Re", "unit": "-" }
+          ],
+          "result_unit": "dim",
+          "target_field": "fc",
+          "tolerance_percent": 5
+        }
+      ],
+      "trial_inputs": [
+        { "id": "flow_lph", "label": "Flowmeter (LPH)", "unit": "LPH", "type": "number", "placeholder": "e.g. 60", "tooltip": "Flowmeter indicated reading in litres per hour" },
+        { "id": "h1", "label": "Upstream h1", "unit": "cm", "type": "number", "placeholder": "e.g. 15.5", "tooltip": "Upstream limb reading in cm Hg" },
+        { "id": "h2", "label": "Downstream h2", "unit": "cm", "type": "number", "placeholder": "e.g. 17.4", "tooltip": "Downstream limb reading in cm Hg" },
+        { "id": "t", "label": "Time for 5cm Rise", "unit": "s", "type": "number", "placeholder": "e.g. 150", "tooltip": "Time taken for 5 cm rise in collecting tank (s)" },
+        { "id": "Q_act", "label": "Discharge Qact (×10⁻⁴ m³/s)", "unit": "×10⁻⁴ m³/s", "type": "number", "placeholder": "e.g. 1.5", "tooltip": "Actual flow rate entering the coil in units of 10⁻⁴ m³/s" }
+      ],
+      "fixed_inputs": [
+        { "id": "D_p", "label": "Pipe Diameter (Dp)", "value": 0.021, "unit": "m", "description": "Inner diameter of pipe (21 mm)" },
+        { "id": "D_c", "label": "Coil Diameter (Dc)", "value": 0.014, "unit": "m", "description": "Diameter of coil curvature (14 mm)" },
+        { "id": "L", "label": "Length of Pipe (L)", "value": 5.6, "unit": "m", "description": "Total developed length of coiled tube (m)" },
+        { "id": "rho", "label": "Fluid Density (ρ)", "value": 1000, "unit": "kg/m³", "description": "Density of water (kg/m³)" },
+        { "id": "mu", "label": "Fluid Viscosity (μ)", "value": 0.01, "unit": "kg/(m·s)", "description": "Dynamic viscosity of liquid (0.01 kg/(m·s))" },
+        { "id": "g", "label": "Gravity Acceleration (g)", "value": 9.81, "unit": "m/s²", "description": "Standard acceleration of gravity" }
+      ],
+      "manual_calculation_mode": true,
+      "calculation_expressions": {
+        "dh": "round(abs(h2 - h1), 2)",
+        "Hc": "(round(abs(h2 - h1), 2) / 100) * 12.6",
+        "A": "(pi / 4) * (D_p ^ 2)",
+        "V": "(Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))",
+        "N_Re": "(rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu",
+        "fst": "((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) < 2000 ? 16 / ((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) : 0.046 / (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ 0.2)",
+        "Hst": "(4 * (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) < 2000 ? 16 / ((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) : 0.046 / (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ 0.2)) * L * (((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) ^ 2)) / (D_p * 2 * g)",
+        "N_REC": "round(2100 * (1 + 12 * sqrt(D_p / D_c)))",
+        "fc": "0.08 * (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ (-0.25)) + 0.01 * ((D_p / D_c) ^ 0.5)"
+      },
+      "calculated_columns": [
+        { "id": "dh", "label": "Δh", "unit": "cm", "format": "decimal" },
+        { "id": "Hc", "label": "Coil Head Loss (Hc)", "unit": "m", "format": "decimal" },
+        { "id": "Hst", "label": "Straight Loss (Hst)", "unit": "m", "format": "decimal" },
+        { "id": "fst", "label": "Straight fst", "unit": "-", "format": "decimal" },
+        { "id": "V", "label": "Velocity (V)", "unit": "m/s", "format": "decimal" },
+        { "id": "N_Re", "label": "Reynolds No. (NRe)", "unit": "-", "format": "decimal" },
+        { "id": "N_REC", "label": "Critical NREC", "unit": "-", "format": "integer" },
+        { "id": "fc", "label": "Coil Friction (fc)", "unit": "-", "format": "decimal" }
+      ],
+      "headline_output": {
+        "label": "Helical Coil Friction Factor (fc)",
+        "unit": "dim",
+        "target_key": "fc"
+      },
+      "graph": {
+        "type": "scatter_with_trend",
+        "x": "N_Re",
+        "y": "fc",
+        "x_label": "Reynolds Number (NRe)",
+        "y_label": "Helical Coil Friction Factor (fc)",
+        "title": "Helical Coil: Friction Factor vs Reynolds Number (fc vs NRe)"
+      },
+      "graph_config": {
+        "x_axis": { "label": "Reynolds Number (NRe)", "variable_ref": "N_Re" },
+        "y_axis": { "label": "Helical Coil Friction Factor (fc)", "variable_ref": "fc" },
+        "series": [
+          { "id": "actual", "label": "Helical Coil Observed Data", "type": "scatter+line", "style": "solid", "color_index": 0, "source": "trial_inputs_calculated" },
+          { "id": "theoretical", "label": "Friction Factor Trendline", "type": "line", "style": "dashed", "color_index": 1, "source": "computed_theoretical_curve", "computation": { "method": "linear_fit" } }
+        ]
+      },
+      "sample_data": [
+        { "flow_lph": 60, "h1": 15.5, "h2": 17.4, "t": 150, "Q_act": 1.5 },
+        { "flow_lph": 80, "h1": 15.3, "h2": 17.6, "t": 200, "Q_act": 2.0 },
+        { "flow_lph": 140, "h1": 15.0, "h2": 17.8, "t": 300, "Q_act": 3.0 }
+      ],
+      "result_template": "The mean friction factor for the Helical Coil (fc) is found to be {mean_fc}."
+    },
+    {
+      "id": "partB",
+      "title": "Part B: Flow Through Spiral Coil",
+      "short_title": "Spiral Coil",
+      "aim": "To determine the pressure drop, head loss, and friction factor in a spiral coil for various liquid flow velocities.",
+      "theory": "In a spiral coil, the tube winds outward in a flat Archimedean plane with varying curvature radius from center to periphery. The local Dean number varies across each spiral turn, creating a dynamically shifting secondary vortex intensity. The overall friction factor fc characterizes the integrated flow resistance across the entire spiral geometry.",
+      "formulas": [
+        {
+          "id": "Hc_sp",
+          "label": "Head Loss in Spiral Coil (Hc)",
+          "latex": "H_c = \\Delta h \\times \\left(\\frac{S_{Hg}}{S_w} - 1\\right) = \\frac{\\Delta h \\times 12.6}{100}",
+          "derivation": "Calculated by converting differential mercury column height into equivalent meters of water column head across the spiral coil.",
+          "purpose": "Measures total pressure head loss across the spiral coil in meters of water.",
+          "variables": [
+            { "symbol": "\\Delta h", "meaning": "Differential manometer height |h1 - h2|", "unit": "cm", "typical_range": "1 – 5 cm" },
+            { "symbol": "H_c", "meaning": "Head loss across spiral coil", "unit": "m", "typical_range": "0.15 – 0.50 m" }
+          ],
+          "assumptions": ["Specific gravity of mercury = 13.6", "Specific gravity of water = 1.0"]
+        },
+        {
+          "id": "V_sp",
+          "label": "Flow Velocity (V)",
+          "latex": "V = \\frac{Q_{act}}{A} = \\frac{Q_{act}}{\\frac{\\pi}{4} D_p^2}",
+          "derivation": "Fluid velocity through the spiral pipe cross section of inside diameter Dp.",
+          "purpose": "Computes average linear velocity of liquid flowing through the spiral coil.",
+          "variables": [
+            { "symbol": "Q_{act}", "meaning": "Actual discharge rate", "unit": "m³/s", "typical_range": "1.0×10⁻⁴ – 4.0×10⁻⁴ m³/s" },
+            { "symbol": "D_p", "meaning": "Pipe inside diameter", "unit": "m", "typical_range": "0.021 m" },
+            { "symbol": "V", "meaning": "Fluid velocity", "unit": "m/s", "typical_range": "0.3 – 1.0 m/s" }
+          ],
+          "assumptions": ["Uniform velocity distribution across cross-section"]
+        },
+        {
+          "id": "N_Re_sp",
+          "label": "Reynolds Number (NRe)",
+          "latex": "N_{Re} = \\frac{\\rho V D_p}{\\mu}",
+          "derivation": "Standard dimensionless ratio of inertial forces to viscous forces in pipe flow.",
+          "purpose": "Determines flow regime through the spiral coil.",
+          "variables": [
+            { "symbol": "\\rho", "meaning": "Density of water", "unit": "kg/m³", "typical_range": "1000 kg/m³" },
+            { "symbol": "V", "meaning": "Fluid velocity", "unit": "m/s", "typical_range": "0.3 – 1.0 m/s" },
+            { "symbol": "D_p", "meaning": "Pipe inside diameter", "unit": "m", "typical_range": "0.021 m" },
+            { "symbol": "\\mu", "meaning": "Dynamic viscosity", "unit": "kg/(m·s)", "typical_range": "0.01 kg/(m·s)" }
+          ],
+          "assumptions": ["Constant fluid physical properties"]
+        },
+        {
+          "id": "fc_sp",
+          "label": "Spiral Coil Friction Factor (fc)",
+          "latex": "f_c = 0.08 N_{Re}^{-0.25} + 0.01 \\left(\\frac{D_p}{D_c}\\right)^{0.5}",
+          "derivation": "Curvature friction factor correlation accounting for Dean secondary vortices across the spiral turns.",
+          "purpose": "Evaluates the overall Darcy friction factor for flow through the spiral coil.",
+          "variables": [
+            { "symbol": "N_{Re}", "meaning": "Reynolds number", "unit": "dimensionless", "typical_range": "800 – 2500" },
+            { "symbol": "D_p", "meaning": "Pipe diameter", "unit": "m", "typical_range": "0.021 m" },
+            { "symbol": "D_c", "meaning": "Equivalent curvature diameter", "unit": "m", "typical_range": "0.014 m" },
+            { "symbol": "f_c", "meaning": "Friction factor of spiral coil", "unit": "dimensionless", "typical_range": "0.020 – 0.030" }
+          ],
+          "assumptions": ["Smooth inner pipe wall", "Integrated Dean vortex effect across spiral turns"]
+        }
+      ],
+      "calculation_steps": [
+        {
+          "step_id": "Hc",
+          "step_number": 1,
+          "label": "Step 1: Equivalent Head Loss in Coil (Hc)",
+          "formula_latex": "H_c = \\frac{\\Delta h \\times 12.6}{100}",
+          "formula_expression": "(abs(h2 - h1) / 100) * 12.6",
+          "substitution_template": "H_c = \\frac{({h2} - {h1}) \\times 12.6}{100}",
+          "depends_on": ["h1", "h2"],
+          "unit": "m H₂O",
+          "format": "decimal",
+          "decimal_precision": 4
+        },
+        {
+          "step_id": "V",
+          "step_number": 2,
+          "label": "Step 2: Flow Velocity (V)",
+          "formula_latex": "V = \\frac{Q_{act}}{A} = \\frac{Q_{act} \\times 10^{-4}}{\\frac{\\pi}{4} D_p^2}",
+          "formula_expression": "(Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))",
+          "substitution_template": "V = \\frac{{Q_act} \\times 10^{-4}}{3.46 \\times 10^{-4}}",
+          "depends_on": ["Q_act", "D_p"],
+          "unit": "m/s",
+          "format": "decimal",
+          "decimal_precision": 3
+        },
+        {
+          "step_id": "N_Re",
+          "step_number": 3,
+          "label": "Step 3: Reynolds Number (NRe)",
+          "formula_latex": "N_{Re} = \\frac{\\rho V D_p}{\\mu}",
+          "formula_expression": "(rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu",
+          "substitution_template": "N_{Re} = \\frac{{rho} \\times {V} \\times {D_p}}{{mu}}",
+          "depends_on": ["rho", "V", "D_p", "mu"],
+          "unit": "-",
+          "format": "decimal",
+          "decimal_precision": 1
+        },
+        {
+          "step_id": "N_REC",
+          "step_number": 4,
+          "label": "Step 4: Critical Reynolds Number (NREC)",
+          "formula_latex": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{\\frac{D_p}{D_c}}\\right)",
+          "formula_expression": "2100 * (1 + 12 * sqrt(D_p / D_c))",
+          "substitution_template": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{\\frac{0.021}{0.014}}\\right)",
+          "depends_on": ["D_p", "D_c"],
+          "unit": "-",
+          "format": "integer",
+          "decimal_precision": 0
+        },
+        {
+          "step_id": "fc",
+          "step_number": 5,
+          "label": "Step 5: Spiral Coil Friction Factor (fc)",
+          "formula_latex": "f_c = 0.08 N_{Re}^{-0.25} + 0.01 \\left(\\frac{D_p}{D_c}\\right)^{0.5}",
+          "formula_expression": "0.08 * (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ (-0.25)) + 0.01 * ((D_p / D_c) ^ 0.5)",
+          "substitution_template": "f_c = 0.08 ({N_Re})^{-0.25} + 0.01 \\left(\\frac{0.021}{0.014}\\right)^{0.5}",
+          "depends_on": ["N_Re", "D_p", "D_c"],
+          "unit": "dim",
+          "format": "decimal",
+          "decimal_precision": 4
+        }
+      ],
+      "calculations": [
+        {
+          "id": "Hc",
+          "step_number": 1,
+          "label": "Step 1: Equivalent Head Loss in Coil (Hc)",
+          "formula_latex": "H_c = \\frac{\\Delta h \\times 12.6}{100}",
+          "substitution_template": "H_c = \\frac{({h2} - {h1}) \\times 12.6}{100}",
+          "variables": [
+            { "symbol": "h1", "label": "Upstream Limb (h1)", "source_field": "h1", "unit": "cm" },
+            { "symbol": "h2", "label": "Downstream Limb (h2)", "source_field": "h2", "unit": "cm" }
+          ],
+          "result_unit": "m H₂O",
+          "target_field": "Hc",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "V",
+          "step_number": 2,
+          "label": "Step 2: Flow Velocity (V)",
+          "formula_latex": "V = \\frac{Q_{act}}{A}",
+          "substitution_template": "V = \\frac{{Q_act} \\times 10^{-4}}{3.46 \\times 10^{-4}}",
+          "variables": [
+            { "symbol": "Q_{act}", "label": "Discharge (Qact)", "source_field": "Q_act", "unit": "×10⁻⁴ m³/s" }
+          ],
+          "result_unit": "m/s",
+          "target_field": "V",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "N_Re",
+          "step_number": 3,
+          "label": "Step 3: Reynolds Number (NRe)",
+          "formula_latex": "N_{Re} = \\frac{\\rho V D_p}{\\mu}",
+          "substitution_template": "N_{Re} = \\frac{1000 \\times {V} \\times 0.021}{0.01}",
+          "variables": [
+            { "symbol": "V", "label": "Velocity (V)", "source_field": "V", "unit": "m/s" }
+          ],
+          "result_unit": "-",
+          "target_field": "N_Re",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "N_REC",
+          "step_number": 4,
+          "label": "Step 4: Critical Reynolds Number (NREC)",
+          "formula_latex": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{\\frac{D_p}{D_c}}\\right)",
+          "substitution_template": "N_{REC} = 2100 \\left(1 + 12 \\sqrt{1.5}\\right)",
+          "variables": [],
+          "result_unit": "-",
+          "target_field": "N_REC",
+          "tolerance_percent": 5
+        },
+        {
+          "id": "fc",
+          "step_number": 5,
+          "label": "Step 5: Coil Friction Factor (fc)",
+          "formula_latex": "f_c = 0.08 N_{Re}^{-0.25} + 0.01 \\left(\\frac{D_p}{D_c}\\right)^{0.5}",
+          "substitution_template": "f_c = 0.08 ({N_Re})^{-0.25} + 0.01 (1.2247)",
+          "variables": [
+            { "symbol": "N_{Re}", "label": "Reynolds Number (NRe)", "source_field": "N_Re", "unit": "-" }
+          ],
+          "result_unit": "dim",
+          "target_field": "fc",
+          "tolerance_percent": 5
+        }
+      ],
+      "trial_inputs": [
+        { "id": "flow_lph", "label": "Flowmeter (LPH)", "unit": "LPH", "type": "number", "placeholder": "e.g. 60", "tooltip": "Flowmeter indicated reading in litres per hour" },
+        { "id": "h1", "label": "Upstream h1", "unit": "cm", "type": "number", "placeholder": "e.g. 15.9", "tooltip": "Upstream limb reading in cm Hg" },
+        { "id": "h2", "label": "Downstream h2", "unit": "cm", "type": "number", "placeholder": "e.g. 17.5", "tooltip": "Downstream limb reading in cm Hg" },
+        { "id": "t", "label": "Time for 5cm Rise", "unit": "s", "type": "number", "placeholder": "e.g. 180", "tooltip": "Time taken for 5 cm rise in collecting tank (s)" },
+        { "id": "Q_act", "label": "Discharge Qact (×10⁻⁴ m³/s)", "unit": "×10⁻⁴ m³/s", "type": "number", "placeholder": "e.g. 1.8", "tooltip": "Actual flow rate entering the spiral coil in units of 10⁻⁴ m³/s" }
+      ],
+      "fixed_inputs": [
+        { "id": "D_p", "label": "Pipe Diameter (Dp)", "value": 0.021, "unit": "m", "description": "Inner diameter of pipe (21 mm)" },
+        { "id": "D_c", "label": "Coil Diameter (Dc)", "value": 0.014, "unit": "m", "description": "Diameter of coil curvature (14 mm)" },
+        { "id": "L", "label": "Length of Pipe (L)", "value": 5.6, "unit": "m", "description": "Total developed length of spiral tube (m)" },
+        { "id": "rho", "label": "Fluid Density (ρ)", "value": 1000, "unit": "kg/m³", "description": "Density of water (kg/m³)" },
+        { "id": "mu", "label": "Fluid Viscosity (μ)", "value": 0.01, "unit": "kg/(m·s)", "description": "Dynamic viscosity of liquid (0.01 kg/(m·s))" },
+        { "id": "g", "label": "Gravity Acceleration (g)", "value": 9.81, "unit": "m/s²", "description": "Standard acceleration of gravity" }
+      ],
+      "manual_calculation_mode": true,
+      "calculation_expressions": {
+        "dh": "round(abs(h2 - h1), 2)",
+        "Hc": "(round(abs(h2 - h1), 2) / 100) * 12.6",
+        "A": "(pi / 4) * (D_p ^ 2)",
+        "V": "(Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))",
+        "N_Re": "(rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu",
+        "fst": "((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) < 2000 ? 16 / ((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) : 0.046 / (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ 0.2)",
+        "Hst": "(4 * (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) < 2000 ? 16 / ((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) : 0.046 / (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ 0.2)) * L * (((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) ^ 2)) / (D_p * 2 * g)",
+        "N_REC": "round(2100 * (1 + 12 * sqrt(D_p / D_c)))",
+        "fc": "0.08 * (((rho * ((Q_act * 0.0001) / ((pi / 4) * (D_p ^ 2))) * D_p) / mu) ^ (-0.25)) + 0.01 * ((D_p / D_c) ^ 0.5)"
+      },
+      "calculated_columns": [
+        { "id": "dh", "label": "Δh", "unit": "cm", "format": "decimal" },
+        { "id": "Hc", "label": "Coil Head Loss (Hc)", "unit": "m", "format": "decimal" },
+        { "id": "Hst", "label": "Straight Loss (Hst)", "unit": "m", "format": "decimal" },
+        { "id": "fst", "label": "Straight fst", "unit": "-", "format": "decimal" },
+        { "id": "V", "label": "Velocity (V)", "unit": "m/s", "format": "decimal" },
+        { "id": "N_Re", "label": "Reynolds No. (NRe)", "unit": "-", "format": "decimal" },
+        { "id": "N_REC", "label": "Critical NREC", "unit": "-", "format": "integer" },
+        { "id": "fc", "label": "Coil Friction (fc)", "unit": "-", "format": "decimal" }
+      ],
+      "headline_output": {
+        "label": "Spiral Coil Friction Factor (fc)",
+        "unit": "dim",
+        "target_key": "fc"
+      },
+      "graph": {
+        "type": "scatter_with_trend",
+        "x": "N_Re",
+        "y": "fc",
+        "x_label": "Reynolds Number (NRe)",
+        "y_label": "Spiral Coil Friction Factor (fc)",
+        "title": "Spiral Coil: Friction Factor vs Reynolds Number (fc vs NRe)"
+      },
+      "graph_config": {
+        "x_axis": { "label": "Reynolds Number (NRe)", "variable_ref": "N_Re" },
+        "y_axis": { "label": "Spiral Coil Friction Factor (fc)", "variable_ref": "fc" },
+        "series": [
+          { "id": "actual", "label": "Spiral Coil Observed Data", "type": "scatter+line", "style": "solid", "color_index": 0, "source": "trial_inputs_calculated" },
+          { "id": "theoretical", "label": "Friction Factor Trendline", "type": "line", "style": "dashed", "color_index": 1, "source": "computed_theoretical_curve", "computation": { "method": "linear_fit" } }
+        ]
+      },
+      "sample_data": [
+        { "flow_lph": 60, "h1": 15.9, "h2": 17.5, "t": 180, "Q_act": 1.8 },
+        { "flow_lph": 80, "h1": 15.6, "h2": 17.7, "t": 200, "Q_act": 2.0 },
+        { "flow_lph": 140, "h1": 15.3, "h2": 17.9, "t": 300, "Q_act": 3.0 }
+      ],
+      "result_template": "The mean friction factor for the Spiral Coil (fc) is found to be {mean_fc}."
+    }
+  ],
+  "reference_code": {
+    "python": {
+      "label": "Python (NumPy / Matplotlib) Reference",
+      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Apparatus parameters\nDp = 0.021      # Pipe diameter (m)\nDc = 0.014      # Coil diameter (m)\nL = 5.6         # Pipe length (m)\nrho = 1000.0    # Fluid density (kg/m^3)\nmu = 0.01       # Viscosity (kg/(m*s))\ng = 9.81        # Gravity (m/s^2)\nA = (np.pi / 4.0) * (Dp ** 2)\n\n# Critical Reynolds number (Dean correlation)\nN_REC = 2100.0 * (1.0 + 12.0 * np.sqrt(Dp / Dc))\nprint(f\"Critical Reynolds Number NREC: {N_REC:.0f}\")\n\n# Helical Coil Observations\nQ_act_helical = np.array([1.5e-4, 2.0e-4, 3.0e-4]) # m^3/s\nV_helical = Q_act_helical / A\nN_Re_helical = (rho * V_helical * Dp) / mu\nfc_helical = 0.08 * (N_Re_helical ** -0.25) + 0.01 * np.sqrt(Dp / Dc)\n\n# Spiral Coil Observations\nQ_act_spiral = np.array([1.8e-4, 2.0e-4, 3.0e-4]) # m^3/s\nV_spiral = Q_act_spiral / A\nN_Re_spiral = (rho * V_spiral * Dp) / mu\nfc_spiral = 0.08 * (N_Re_spiral ** -0.25) + 0.01 * np.sqrt(Dp / Dc)\n\n# Plotting Helical Coil fc vs NRe\nplt.figure(figsize=(7, 4.5))\nplt.plot(N_Re_helical, fc_helical, 'o-', color='#0072BD', linewidth=2, label='Helical Coil')\nplt.plot(N_Re_spiral, fc_spiral, 's--', color='#D95319', linewidth=2, label='Spiral Coil')\nplt.xlabel('Reynolds Number (NRe)')\nplt.ylabel('Coil Friction Factor (fc)')\nplt.title('Friction Factor vs Reynolds Number in Coils')\nplt.grid(True)\nplt.legend()\nplt.show()"
+    },
+    "matlab": {
+      "label": "MATLAB Plot Script Reference",
+      "code": "% MATLAB Reference Script for Flow Through Helical and Spiral Coils\n\n% Fixed apparatus dimensions\nDp = 0.021;     % Pipe diameter (m)\nDc = 0.014;     % Coil diameter (m)\nL = 5.6;        % Pipe length (m)\nrho = 1000.0;   % Water density (kg/m^3)\nmu = 0.01;      % Dynamic viscosity (kg/(m*s))\ng = 9.81;       % Gravity (m/s^2)\nA = (pi / 4) * Dp^2;\n\n% Critical Reynolds number\nN_REC = 2100 * (1 + 12 * sqrt(Dp / Dc));\nfprintf('Critical Reynolds Number NREC = %.0f\\n', N_REC);\n\n% Helical Coil Readings\nQ_helical = [1.5e-4, 2.0e-4, 3.0e-4];\nV_helical = Q_helical ./ A;\nNRe_helical = (rho .* V_helical .* Dp) ./ mu;\nfc_helical = 0.08 .* (NRe_helical .^ -0.25) + 0.01 * sqrt(Dp / Dc);\n\n% Spiral Coil Readings\nQ_spiral = [1.8e-4, 2.0e-4, 3.0e-4];\nV_spiral = Q_spiral ./ A;\nNRe_spiral = (rho .* V_spiral .* Dp) ./ mu;\nfc_spiral = 0.08 .* (NRe_spiral .^ -0.25) + 0.01 * sqrt(Dp / Dc);\n\nfigure;\nplot(NRe_helical, fc_helical, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.8, 'DisplayName', 'Helical Coil');\nhold on;\nplot(NRe_spiral, fc_spiral, 's--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.8, 'DisplayName', 'Spiral Coil');\ngrid on; box on;\nxlabel('Reynolds Number (NRe)');\nylabel('Coil Friction Factor (fc)');\ntitle('Coil Friction Factor vs Reynolds Number');\nlegend('Location', 'northeast');"
+    }
+  },
+  "validation_ranges": {
+    "h1": { "min": 5.0, "max": 40.0, "label": "Upstream h1 (cm)" },
+    "h2": { "min": 5.0, "max": 40.0, "label": "Downstream h2 (cm)" },
+    "Q_act": { "min": 0.5, "max": 10.0, "label": "Discharge Qact (×10⁻⁴ m³/s)" },
+    "fc": { "min": 0.01, "max": 0.10, "label": "Coil Friction Factor (fc)" }
+  }
+}

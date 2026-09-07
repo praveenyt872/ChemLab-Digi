@@ -11,6 +11,7 @@ import centrifugalPumpConfig from '../data/experiments/centrifugal_pump.json';
 import reciprocatingPumpConfig from '../data/experiments/reciprocating_pump.json';
 import gearOilPumpConfig from '../data/experiments/gear_oil_pump.json';
 import dragCoefficientConfig from '../data/experiments/drag_coefficient_solid_particle.json';
+import helicalSpiralCoilConfig from '../data/experiments/helical_spiral_coil.json';
 import { calculateTable, calculateSummary, validateManualCalculation } from '../engine/formulaEngine';
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
@@ -26,6 +27,7 @@ const EXPERIMENT_CONFIGS = {
   reciprocating_pump: reciprocatingPumpConfig,
   gear_oil_pump: gearOilPumpConfig,
   drag_coefficient_solid_particle: dragCoefficientConfig,
+  helical_spiral_coil: helicalSpiralCoilConfig,
   'exp1-first-order-system-response': processControlConfig,
   free_convection: freeConvectionConfig,
   rtd_cstr: rtdCstrConfig
@@ -39,6 +41,7 @@ const getPrimaryKey = (expId, activePartId = 'partA') => {
   if (expId === 'centrifugal_pump' || expId === 'reciprocating_pump' || expId === 'gear_oil_pump') return 'eta';
   if (expId === 'rtd_cstr') return 't_bar';
   if (expId === 'drag_coefficient_solid_particle') return 'CD';
+  if (expId === 'helical_spiral_coil') return 'fc';
   if (expId === 'exp1-first-order-system-response') return activePartId === 'partA' ? 'T_dev_heat' : 'T_out';
   return 'Cd';
 };

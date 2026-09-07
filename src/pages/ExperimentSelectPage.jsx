@@ -88,6 +88,15 @@ export function ExperimentSelectPage({ onNavigate }) {
       formulaPreview: 'CD = (2 FD) / (ρ A v²)  |  FD = 3 π μ Dp v',
       calcCount: '5 Formula Steps',
       icon: <Gauge className="w-6 h-6 text-indigo-600" />
+    },
+    {
+      id: 'helical_spiral_coil',
+      title: 'Flow Through Helical Coil and Spiral Coil',
+      aim: 'To determine the pressure drop, straight tube loss, Dean effects, and friction factor in a helical coil and spiral coil for various liquid flow velocities.',
+      schematic: 'Helical & Spiral Coils + U-Tube Manometer + Flowmeter + Collecting Tank',
+      formulaPreview: 'fc = 0.08 NRe^-0.25 + 0.01 √(Dp/Dc)  |  NREC = 2100(1 + 12√(Dp/Dc))',
+      calcCount: 'Part A & Part B (Helical & Spiral)',
+      icon: <Zap className="w-6 h-6 text-rose-600" />
     }
   ];
 

@@ -37,6 +37,8 @@ export function LiveResultsPanel() {
     ? 'Efficiency (η)'
     : currentExperimentId === 'drag_coefficient_solid_particle'
     ? 'Drag Coefficient (CD)'
+    : currentExperimentId === 'helical_spiral_coil'
+    ? 'Coil Friction Factor (fc)'
     : 'Coefficient of Discharge (Cd)';
 
   const resultUnit = headlineConfig?.unit
@@ -84,7 +86,7 @@ export function LiveResultsPanel() {
                   ? headlineResult.mean.toFixed(5)
                   : currentExperimentId === 'minor_losses'
                   ? headlineResult.mean.toFixed(2)
-                  : currentExperimentId === 'drag_coefficient_solid_particle'
+                  : (currentExperimentId === 'drag_coefficient_solid_particle' || currentExperimentId === 'helical_spiral_coil')
                   ? headlineResult.mean.toFixed(4)
                   : headlineResult.mean.toFixed(3)
               ) : (
