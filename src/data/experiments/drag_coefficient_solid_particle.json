@@ -447,27 +447,5 @@
     "Ensure the upper timing graduation is sufficiently far below the fluid surface so the particle has fully attained terminal velocity.",
     "The fluid medium temperature should be maintained constant since viscosity varies rapidly with temperature.",
     "Avoid parallax error when viewing the transit times across the timing graduation marks."
-  ],
-  "viva_questions": [
-    {
-      "question": "1. What is terminal settling velocity?",
-      "answer": "Terminal settling velocity is the constant steady-state velocity attained by a solid body freely falling through a viscous fluid when the downward gravitational force is exactly balanced by the sum of the upward buoyant force and hydrodynamic drag force."
-    },
-    {
-      "question": "2. State Stokes' Law and its range of validity.",
-      "answer": "Stokes' Law states that the viscous drag force on a smooth spherical body moving in a fluid is FD = 3 π μ Dp v. It is strictly valid for creeping laminar flow where inertial forces are negligible compared to viscous forces, corresponding to particle Reynolds numbers NRe < 2."
-    },
-    {
-      "question": "3. What is the drag coefficient (CD) and why is it dimensionless?",
-      "answer": "The drag coefficient CD is a dimensionless ratio of the total fluid drag force to the product of dynamic pressure head (1/2 ρ v²) and the projected frontal area A of the body (CD = 2 FD / (ρ A v²)). Because force has units of N and dynamic pressure times area also equals N, CD is completely dimensionless."
-    },
-    {
-      "question": "4. How does the drag coefficient vary with Reynolds number across different settling regimes?",
-      "answer": "In Stokes' regime (NRe < 2), CD = 24 / NRe (inversely proportional to NRe). In the intermediate regime (2 < NRe < 1000), CD ≈ 18.5 / NRe^0.6. In Newton's turbulent regime (1000 < NRe < 200,000), the boundary layer separates and form drag dominates, making CD approximately constant at 0.44."
-    },
-    {
-      "question": "5. What are the wall effects in a settling column, and how can they be minimized?",
-      "answer": "Wall effects occur when the column diameter is not sufficiently large relative to the particle diameter, causing upward fluid displacement and increased shearing resistance. Wall effects are minimized by keeping the column diameter at least 50 to 100 times greater than the particle diameter."
-    }
   ]
 }
