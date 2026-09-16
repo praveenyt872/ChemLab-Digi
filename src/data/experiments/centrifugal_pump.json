@@ -58,6 +58,85 @@
     "Op": "1000 * 9.81 * ((Pd * 10) + (Ps * 0.0136) + 0.85) * (0.01225 / t)",
     "eta": "((1000 * 9.81 * ((Pd * 10) + (Ps * 0.0136) + 0.85) * (0.01225 / t)) / (30000 / T)) * 100"
   },
+  "calculation_steps": [
+    {
+      "step_id": "Hs",
+      "step_number": 1,
+      "label": "Step 1: Suction Head (Hs)",
+      "formula_latex": "H_s = P_s \\times 0.0136",
+      "formula_expression": "Ps * 0.0136",
+      "substitution_template": "H_s = {Ps} \\times 0.0136",
+      "unit": "m",
+      "format": "decimal",
+      "decimal_precision": 3
+    },
+    {
+      "step_id": "Hd",
+      "step_number": 2,
+      "label": "Step 2: Delivery Head (Hd)",
+      "formula_latex": "H_d = P_d \\times 10",
+      "formula_expression": "Pd * 10",
+      "substitution_template": "H_d = {Pd} \\times 10",
+      "unit": "m",
+      "format": "decimal",
+      "decimal_precision": 2
+    },
+    {
+      "step_id": "HT",
+      "step_number": 3,
+      "label": "Step 3: Total Operating Head (HT)",
+      "formula_latex": "H_T = H_d + H_s + Z = H_d + H_s + 0.85",
+      "formula_expression": "(Pd * 10) + (Ps * 0.0136) + 0.85",
+      "substitution_template": "H_T = {Hd} + {Hs} + 0.85",
+      "unit": "m",
+      "format": "decimal",
+      "decimal_precision": 2
+    },
+    {
+      "step_id": "Q",
+      "step_number": 4,
+      "label": "Step 4: Actual Discharge Rate (Qact)",
+      "formula_latex": "Q_{act} = \\frac{A_{tank} \\times rise}{t} = \\frac{0.01225}{t}",
+      "formula_expression": "0.01225 / t",
+      "substitution_template": "Q_{act} = \\frac{0.01225}{{t}}",
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4
+    },
+    {
+      "step_id": "Ip",
+      "step_number": 5,
+      "label": "Step 5: Electrical Input Power (Ip)",
+      "formula_latex": "I_p = \\frac{N \\times 3600 \\times 1000}{T \\times 1200} = \\frac{30000}{T}",
+      "formula_expression": "30000 / T",
+      "substitution_template": "I_p = \\frac{10 \\times 3600 \\times 1000}{{T} \\times 1200} = \\frac{30000}{{T}}",
+      "unit": "W",
+      "format": "decimal",
+      "decimal_precision": 1
+    },
+    {
+      "step_id": "Op",
+      "step_number": 6,
+      "label": "Step 6: Pump Output Power (Op)",
+      "formula_latex": "O_p = \\rho \\cdot g \\cdot H_T \\cdot Q_{act} = 1000 \\times 9.81 \\times H_T \\times Q_{act}",
+      "formula_expression": "1000 * 9.81 * ((Pd * 10) + (Ps * 0.0136) + 0.85) * (0.01225 / t)",
+      "substitution_template": "O_p = 1000 \\times 9.81 \\times {HT} \\times {Q}",
+      "unit": "W",
+      "format": "decimal",
+      "decimal_precision": 2
+    },
+    {
+      "step_id": "eta",
+      "step_number": 7,
+      "label": "Step 7: Overall Pump Efficiency (η)",
+      "formula_latex": "\\eta = \\frac{O_p}{I_p} \\times 100",
+      "formula_expression": "((1000 * 9.81 * ((Pd * 10) + (Ps * 0.0136) + 0.85) * (0.01225 / t)) / (30000 / T)) * 100",
+      "substitution_template": "\\eta = \\frac{{Op}}{{Ip}} \\times 100",
+      "unit": "%",
+      "format": "decimal",
+      "decimal_precision": 2
+    }
+  ],
   "calculations": [
     {
       "id": "Hs",

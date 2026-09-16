@@ -49,6 +49,74 @@
     "NRe": "(0.0125 * ((0.016 / t) / ((pi / 4) * (0.0125 ^ 2))) * 1000) / 0.001",
     "f": "0.079 / (((0.0125 * ((0.016 / t) / ((pi / 4) * (0.0125 ^ 2))) * 1000) / 0.001) ^ 0.25)"
   },
+  "calculation_steps": [
+    {
+      "step_id": "dh",
+      "step_number": 1,
+      "label": "Step 1: Differential Manometer Level (Δh)",
+      "formula_latex": "\\Delta h = \\frac{|h_1 - h_2|}{100}",
+      "formula_expression": "abs(h1 - h2) / 100",
+      "substitution_template": "\\Delta h = \\frac{|{h1} - {h2}|}{100}",
+      "unit": "m",
+      "format": "decimal",
+      "decimal_precision": 3
+    },
+    {
+      "step_id": "hf",
+      "step_number": 2,
+      "label": "Step 2: Head Loss due to Friction (hf)",
+      "formula_latex": "h_f = \\Delta h \\times 12.6",
+      "formula_expression": "(abs(h1 - h2) / 100) * 12.6",
+      "substitution_template": "h_f = {dh} \\times 12.6",
+      "unit": "m",
+      "format": "decimal",
+      "decimal_precision": 3
+    },
+    {
+      "step_id": "Q",
+      "step_number": 3,
+      "label": "Step 3: Volumetric Flow Rate (Q)",
+      "formula_latex": "Q = \\frac{A_{tank} \\times rise}{t} = \\frac{0.016}{t}",
+      "formula_expression": "0.016 / t",
+      "substitution_template": "Q = \\frac{0.016}{{t}}",
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4
+    },
+    {
+      "step_id": "V",
+      "step_number": 4,
+      "label": "Step 4: Flow Velocity (v)",
+      "formula_latex": "v = \\frac{Q}{A} = \\frac{Q}{1.2265 \\times 10^{-4}}",
+      "formula_expression": "(0.016 / t) / ((pi / 4) * (0.0125 ^ 2))",
+      "substitution_template": "v = \\frac{{Q}}{1.2265 \\times 10^{-4}}",
+      "unit": "m/s",
+      "format": "decimal",
+      "decimal_precision": 3
+    },
+    {
+      "step_id": "NRe",
+      "step_number": 5,
+      "label": "Step 5: Reynolds Number (NRe)",
+      "formula_latex": "N_{Re} = \\frac{D \\cdot v \\cdot \\rho}{\\mu} = \\frac{0.0125 \\times v \\times 1000}{0.001}",
+      "formula_expression": "(0.0125 * ((0.016 / t) / ((pi / 4) * (0.0125 ^ 2))) * 1000) / 0.001",
+      "substitution_template": "N_{Re} = \\frac{0.0125 \\times {V} \\times 1000}{0.001}",
+      "unit": "dim",
+      "format": "decimal",
+      "decimal_precision": 1
+    },
+    {
+      "step_id": "f",
+      "step_number": 6,
+      "label": "Step 6: Friction Factor (f)",
+      "formula_latex": "f = \\frac{0.079}{(N_{Re})^{1/4}}",
+      "formula_expression": "0.079 / (((0.0125 * ((0.016 / t) / ((pi / 4) * (0.0125 ^ 2))) * 1000) / 0.001) ^ 0.25)",
+      "substitution_template": "f = \\frac{0.079}{({NRe})^{0.25}}",
+      "unit": "dim",
+      "format": "decimal",
+      "decimal_precision": 4
+    }
+  ],
   "calculations": [
     {
       "id": "dh",

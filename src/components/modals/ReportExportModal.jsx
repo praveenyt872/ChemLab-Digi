@@ -189,7 +189,6 @@ export function ReportExportModal() {
 
     const partTrialInputs = Array.isArray(part.trial_inputs) ? part.trial_inputs : [];
     const partCalcColumns = Array.isArray(part.calculated_columns) ? part.calculated_columns : [];
-    const partCalcSteps = Array.isArray(part.calculation_steps) ? part.calculation_steps : [];
     const partFormulas = Array.isArray(part.formulas) ? part.formulas : [];
     const partProcedure = Array.isArray(part.procedure) ? part.procedure : [];
     const partApparatus = Array.isArray(part.apparatus) ? part.apparatus : (Array.isArray(experimentConfig?.apparatus) ? experimentConfig.apparatus : []);
@@ -207,10 +206,66 @@ export function ReportExportModal() {
       partRows = observationRows || [];
     }
 
+    const partCalcSteps = Array.isArray(part.calculation_steps) && part.calculation_steps.length > 0
+      ? part.calculation_steps
+      : (Array.isArray(part.calculations) ? part.calculations : []);
+
+    // Evaluate step calculations for Trial 2 (index 1), falling back to index 0 if only 1 trial row exists
+    const trialIndex = (partRows && partRows.length > 1) ? 1 : 0;
+    const targetTrialRow = (partRows && partRows.length > 0) ? partRows[trialIndex] : {};
+
+    // In manual calculation mode, calculatedRows[1] may have blank/null columns if student hasn't entered all values,
+    // so compute auto-evaluated values to ensure complete formula substitution
+    let fullEvaluatedRow = { ...targetTrialRow };
+    try {
+      const calcExprs = part.calculation_expressions || part.calculations || {};
+      const autoComputed = calculateRow(targetTrialRow, calcExprs, part.fixed_inputs || [], part.calculation_expressions);
+      fullEvaluatedRow = {
+        ...autoComputed,
+        ...targetTrialRow
+      };
+    } catch (e) {
+      console.error('Error computing fullEvaluatedRow:', e);
+    }
+
+    const expManualData = (manualCalculationData && manualCalculationData[currentExpId]) || {};
+    const trialManual = expManualData[trialIndex] || {};
+    const trialManualSteps = trialManual.steps || {};
+
     let sampleTrialSteps = [];
     try {
-      if (partRows && partRows.length > 0 && partCalcSteps.length > 0) {
-        sampleTrialSteps = evaluateStepCalculations(partRows[0], partCalcSteps, part.fixed_inputs || []);
+      if (fullEvaluatedRow && partCalcSteps.length > 0) {
+        sampleTrialSteps = evaluateStepCalculations(fullEvaluatedRow, partCalcSteps, part.fixed_inputs || []);
+
+        // If the student has entered manual calculation inputs/results for Trial 2, incorporate them
+        sampleTrialSteps = sampleTrialSteps.map(step => {
+          const stepId = step.step_id || step.id;
+          const studentStep = trialManualSteps[stepId];
+          if (!studentStep) return step;
+
+          let substitutedLatex = step.substituted_latex;
+          if (studentStep.variables && Object.keys(studentStep.variables).length > 0 && step.substitution_template) {
+            let sub = step.substitution_template;
+            Object.entries(studentStep.variables).forEach(([sym, val]) => {
+              if (val !== undefined && val !== '') {
+                sub = sub.replace(new RegExp(`\\{${sym}\\}`, 'g'), val);
+              }
+            });
+            substitutedLatex = sub;
+          }
+
+          let formattedVal = step.formatted_value;
+          if (studentStep.result !== undefined && studentStep.result !== '') {
+            const num = parseFloat(studentStep.result);
+            formattedVal = !isNaN(num) ? formatValue(num, step.format || 'decimal') : String(studentStep.result);
+          }
+
+          return {
+            ...step,
+            substituted_latex: substitutedLatex,
+            formatted_value: formattedVal
+          };
+        });
       }
     } catch (e) {
       console.error('Error evaluating sampleTrialSteps:', e);
@@ -606,10 +661,12 @@ export function ReportExportModal() {
           </div>
         </div>
 
-        {/* SAMPLE CALCULATION (Trial 1) */}
+        {/* CALCULATION (Trial 2) */}
         {sampleTrialSteps.length > 0 && (
           <div className="space-y-1.5 printable-section pt-1">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">SAMPLE CALCULATION (Trial 1):</h3>
+            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">
+              CALCULATION (Trial {trialIndex + 1}):
+            </h3>
             <div className="space-y-2 p-2 rounded border border-black bg-gray-50 text-xs font-mono">
               {sampleTrialSteps.map((step, idx) => (
                 <div key={idx} className="space-y-1 pb-1.5 border-b border-gray-300 last:border-0 last:pb-0">
@@ -638,7 +695,7 @@ export function ReportExportModal() {
                 </div>
               ))}
               <p className="text-[10px] text-gray-600 italic font-sans pt-1">
-                Same calculation method applied to all remaining trials — see Results table for values.
+                Trial {trialIndex + 1} calculation performed according to standard experimental procedure — see Observation Table for all trial readings.
               </p>
             </div>
           </div>

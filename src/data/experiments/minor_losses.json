@@ -50,6 +50,74 @@
     "head_term": "(((0.016 / t) / ((pi / 4) * (0.02 ^ 2))) ^ 2 - ((0.016 / t) / ((pi / 4) * (0.04 ^ 2))) ^ 2) / (2 * 9.81)",
     "K": "((abs(h1 - h2) / 100) * 12.6) / ((((0.016 / t) / ((pi / 4) * (0.02 ^ 2))) ^ 2 - ((0.016 / t) / ((pi / 4) * (0.04 ^ 2))) ^ 2) / (2 * 9.81))"
   },
+  "calculation_steps": [
+    {
+      "step_id": "dh",
+      "step_number": 1,
+      "label": "Step 1: Differential Manometer Level (Δh)",
+      "formula_latex": "\\Delta h = |h_2 - h_1|",
+      "formula_expression": "abs(h1 - h2)",
+      "substitution_template": "\\Delta h = |{h2} - {h1}|",
+      "unit": "cm",
+      "format": "decimal",
+      "decimal_precision": 1
+    },
+    {
+      "step_id": "hf",
+      "step_number": 2,
+      "label": "Step 2: Head Loss (hf)",
+      "formula_latex": "h_f = \\frac{\\Delta h}{100} \\times 12.6",
+      "formula_expression": "(abs(h1 - h2) / 100) * 12.6",
+      "substitution_template": "h_f = \\frac{{dh}}{100} \\times 12.6",
+      "unit": "m",
+      "format": "decimal",
+      "decimal_precision": 3
+    },
+    {
+      "step_id": "Q",
+      "step_number": 3,
+      "label": "Step 3: Actual Discharge (Q)",
+      "formula_latex": "Q = \\frac{A_{tank} \\times rise}{t} = \\frac{0.016}{t}",
+      "formula_expression": "0.016 / t",
+      "substitution_template": "Q = \\frac{0.016}{{t}}",
+      "unit": "m³/s",
+      "format": "scientific",
+      "decimal_precision": 4
+    },
+    {
+      "step_id": "V1",
+      "step_number": 4,
+      "label": "Step 4: Flow Velocity in Larger Pipe (V1)",
+      "formula_latex": "V_1 = \\frac{Q}{A_1} = \\frac{Q}{1.256 \\times 10^{-3}}",
+      "formula_expression": "(0.016 / t) / ((pi / 4) * (0.04 ^ 2))",
+      "substitution_template": "V_1 = \\frac{{Q}}{1.256 \\times 10^{-3}}",
+      "unit": "m/s",
+      "format": "decimal",
+      "decimal_precision": 3
+    },
+    {
+      "step_id": "V2",
+      "step_number": 5,
+      "label": "Step 5: Flow Velocity in Smaller Pipe (V2)",
+      "formula_latex": "V_2 = \\frac{Q}{A_2} = \\frac{Q}{3.14 \\times 10^{-4}}",
+      "formula_expression": "(0.016 / t) / ((pi / 4) * (0.02 ^ 2))",
+      "substitution_template": "V_2 = \\frac{{Q}}{3.14 \\times 10^{-4}}",
+      "unit": "m/s",
+      "format": "decimal",
+      "decimal_precision": 3
+    },
+    {
+      "step_id": "K",
+      "step_number": 6,
+      "label": "Step 6: Loss Coefficient (K)",
+      "formula_latex": "K = \\frac{h_f}{\\frac{V_2^2 - V_1^2}{2g}}",
+      "formula_expression": "((abs(h1 - h2) / 100) * 12.6) / ((((0.016 / t) / ((pi / 4) * (0.02 ^ 2))) ^ 2 - ((0.016 / t) / ((pi / 4) * (0.04 ^ 2))) ^ 2) / (2 * 9.81))",
+      "substitution_template": "K = \\frac{{hf} \\times 2(9.81)}{({V2})^2 - ({V1})^2}",
+      "unit": "dim",
+      "format": "decimal",
+      "decimal_precision": 3
+    }
+  ],
   "calculations": [
     {
       "id": "dh",
