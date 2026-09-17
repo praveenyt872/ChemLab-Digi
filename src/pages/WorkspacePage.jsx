@@ -38,7 +38,8 @@ export function WorkspacePage({ onNavigate }) {
     activePartId,
     setActivePart,
     headlineResult,
-    currentSubject
+    currentSubject,
+    calculatedRows
   } = useExperimentStore();
   const [mobileTab, setMobileTab] = useState('data');
   const [isCodeModalOpen, setCodeModalOpen] = useState(false);
