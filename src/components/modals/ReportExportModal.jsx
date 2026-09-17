@@ -95,6 +95,74 @@ export function ReportExportModal() {
   const studentInterpText = (studentInterpretations && studentInterpretations[currentExpId]) || '';
   const interpWordCount = studentInterpText.trim() ? studentInterpText.trim().split(/\s+/).filter(Boolean).length : 0;
 
+  const EXP_DEFAULT_NUMBERS = {
+    rotameter_calibration: '1',
+    venturi_meter: '2',
+    orifice_meter: '3',
+    pipe_friction: '4',
+    minor_losses: '5',
+    centrifugal_pump: '6',
+    reciprocating_pump: '7',
+    gear_oil_pump: '8',
+    drag_coefficient_solid_particle: '9',
+    helical_spiral_coil: '10',
+    'exp1-first-order-system-response': '1',
+    rtd_cstr: '2',
+    free_convection: '1'
+  };
+
+  const getTodayFormattedDate = () => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const [experimentNumber, setExperimentNumber] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('labflow_experiment_numbers') || '{}');
+      if (saved[currentExpId]) return saved[currentExpId];
+    } catch (e) {}
+    return EXP_DEFAULT_NUMBERS[currentExpId] || '1';
+  });
+
+  const [experimentDate, setExperimentDate] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('labflow_experiment_dates') || '{}');
+      if (saved[currentExpId]) return saved[currentExpId];
+    } catch (e) {}
+    return getTodayFormattedDate();
+  });
+
+  React.useEffect(() => {
+    try {
+      const savedNums = JSON.parse(localStorage.getItem('labflow_experiment_numbers') || '{}');
+      setExperimentNumber(savedNums[currentExpId] || EXP_DEFAULT_NUMBERS[currentExpId] || '1');
+
+      const savedDates = JSON.parse(localStorage.getItem('labflow_experiment_dates') || '{}');
+      setExperimentDate(savedDates[currentExpId] || getTodayFormattedDate());
+    } catch (e) {}
+  }, [currentExpId]);
+
+  const handleExpNumberChange = (val) => {
+    setExperimentNumber(val);
+    try {
+      const saved = JSON.parse(localStorage.getItem('labflow_experiment_numbers') || '{}');
+      saved[currentExpId] = val;
+      localStorage.setItem('labflow_experiment_numbers', JSON.stringify(saved));
+    } catch (e) {}
+  };
+
+  const handleExpDateChange = (val) => {
+    setExperimentDate(val);
+    try {
+      const saved = JSON.parse(localStorage.getItem('labflow_experiment_dates') || '{}');
+      saved[currentExpId] = val;
+      localStorage.setItem('labflow_experiment_dates', JSON.stringify(saved));
+    } catch (e) {}
+  };
+
   const defaultSubjectInfo = {
     courseCode: 'CH23331',
     courseTitle: 'Fluid Mechanics Lab',
@@ -567,6 +635,28 @@ export function ReportExportModal() {
           <h2 className="text-sm font-bold uppercase tracking-wider text-black bg-gray-100 p-2 rounded font-heading">
             {part.title}
           </h2>
+        )}
+
+        {/* EXPERIMENT NUMBER & DATE (Above AIM, on Left Side) */}
+        {(!isSub || part.id === 'partA' || part.id === experimentConfig.parts?.[0]?.id) && (
+          <div className="printable-section space-y-1 pb-1 font-mono text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold uppercase tracking-wider text-black underline">
+                EXPERIMENT NUMBER:
+              </span>
+              <span className="font-bold text-black font-sans">
+                {experimentNumber || '—'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold uppercase tracking-wider text-black underline">
+                EXPERIMENT DATE:
+              </span>
+              <span className="font-bold text-black font-sans">
+                {experimentDate || '—'}
+              </span>
+            </div>
+          </div>
         )}
 
         {/* AIM */}
@@ -1059,11 +1149,58 @@ export function ReportExportModal() {
             )}
           </div>
 
+          {/* Experiment Meta Quick Settings Strip (no-print) */}
+          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono no-print flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-200">Experiment Number:</span>
+                <input
+                  type="text"
+                  value={experimentNumber}
+                  onChange={(e) => handleExpNumberChange(e.target.value)}
+                  placeholder="e.g. 1"
+                  className="w-20 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-bold text-center focus:outline-none focus:border-cyan-400 shadow-inner"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-200">Experiment Date:</span>
+                <input
+                  type="text"
+                  value={experimentDate}
+                  onChange={(e) => handleExpDateChange(e.target.value)}
+                  placeholder="DD/MM/YYYY"
+                  className="w-32 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-bold text-center focus:outline-none focus:border-cyan-400 shadow-inner"
+                />
+              </div>
+            </div>
+            <span className="text-[11px] text-slate-400 font-sans italic">
+              Editable fields — reflected directly on the PDF report.
+            </span>
+          </div>
+
           {/* Compact Printable Report Sheet */}
           <div
             ref={reportRef}
             className="p-6 rounded-xl bg-white text-black font-sans space-y-4 printable-report-sheet shadow-xl"
           >
+            {/* Centered Institution Header with College Emblem */}
+            <div className="text-center pb-2 printable-section space-y-1">
+              <div className="flex justify-center mb-1">
+                <img
+                  src={recLogo}
+                  alt="Rajalakshmi Engineering College"
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto"
+                  crossOrigin="anonymous"
+                />
+              </div>
+              <h1 className="text-sm sm:text-base md:text-lg font-bold font-heading uppercase tracking-wide text-black leading-snug">
+                RAJALAKSHMI ENGINEERING COLLEGE, CHENNAI
+              </h1>
+              <h2 className="text-xs sm:text-sm font-bold font-sans uppercase tracking-wider text-gray-800">
+                DEPARTMENT OF CHEMICAL ENGINEERING
+              </h2>
+            </div>
+
             {/* Student & Course Details Reference Header Table */}
             <div className="printable-section border border-black text-xs font-mono">
               <table className="w-full text-left border-collapse">
