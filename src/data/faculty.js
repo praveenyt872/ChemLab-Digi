@@ -24,10 +24,10 @@ export const FLUID_MECHANICS_FACULTY = [
 export const UNIVERSAL_TEACHER_PASSWORD = '789456';
 
 export const ALL_FACULTY_LIST = [
-  { name: 'Dr. K. Nagarajan (HOD)', email: 'hod.chem@rajalakshmi.edu.in', designation: 'Head of Department' },
+  { name: 'Dr. Sundararaman T R (HOD)', email: 'hod.chem@rajalakshmi.edu.in', designation: 'Head of Department' },
   { name: 'Dr. Mangaleswari S', email: 'mangaleswari.s@rajalakshmi.edu.in', designation: 'Associate Professor / FM In-Charge' },
   { name: 'Ms. Ambigadevi J', email: 'ambigadevi.j@rajalakshmi.edu.in', designation: 'Assistant Professor / FM In-Charge' },
-  { name: 'Dr. Sundararaman T R', email: 'sundararaman.tr@rajalakshmi.edu.in', designation: 'Professor' },
+  { name: 'Dr. Sundararaman T R', email: 'sundararaman.tr@rajalakshmi.edu.in', designation: 'Professor & HOD' },
   { name: 'Dr. Narasimha Reddy S', email: 'narasimhareddy.s@rajalakshmi.edu.in', designation: 'Associate Professor' },
   { name: 'Dr. Seelam Narasimha Reddy', email: 'seelamnarasimhareddy@rajalakshmi.edu.in', designation: 'Associate Professor' },
   { name: 'Dr. Ramesh Chandra Panda', email: 'rameschandrapanda@rajalakshmi.edu.in', designation: 'Professor' },
