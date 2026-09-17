@@ -89,8 +89,6 @@ export function ReportExportModal() {
   const [isEditingInterp, setIsEditingInterp] = useState(false);
   const reportRef = useRef(null);
 
-  if (!isReportModalOpen || !experimentConfig) return null;
-
   const currentExpId = currentExperimentId || experimentConfig?.experiment_id || 'rotameter_calibration';
   const studentInterpText = (studentInterpretations && studentInterpretations[currentExpId]) || '';
   const interpWordCount = studentInterpText.trim() ? studentInterpText.trim().split(/\s+/).filter(Boolean).length : 0;
@@ -162,6 +160,8 @@ export function ReportExportModal() {
       localStorage.setItem('labflow_experiment_dates', JSON.stringify(saved));
     } catch (e) {}
   };
+
+  if (!isReportModalOpen || !experimentConfig) return null;
 
   const defaultSubjectInfo = {
     courseCode: 'CH23331',
