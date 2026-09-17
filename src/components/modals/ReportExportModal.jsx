@@ -206,12 +206,29 @@ export function ReportExportModal() {
 
   const isManualComplete = checkManualCalcComplete();
 
+  const expNum = experimentNumber || '1';
+  const regNo = (studentDetails?.registerNumber || '').trim() || 'Report';
+  const filePrefix = isFluidMechanics ? 'Fluid_Mechanics' : (experimentConfig?.subject ? experimentConfig.subject.replace(/[^a-zA-Z0-9]/g, '_') : 'ChemLab');
+  const targetPdfFileName = `${filePrefix}_Exp_${expNum}_${regNo}.pdf`;
+
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = targetPdfFileName.replace(/\.pdf$/i, '');
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1500);
   };
 
   const handleDownloadPdf = async (customFileName = null) => {
     if (!reportRef.current) return;
+    const finalFileName = (typeof customFileName === 'string' && customFileName.trim())
+      ? customFileName.trim()
+      : targetPdfFileName;
+
+    const originalTitle = document.title;
+    document.title = finalFileName.replace(/\.pdf$/i, '');
+
     try {
       setIsGeneratingPdf(true);
       await new Promise(r => setTimeout(r, 200));
@@ -259,9 +276,7 @@ export function ReportExportModal() {
         heightLeft -= pdfHeight;
       }
 
-      const defaultFileName = `${experimentConfig?.experiment_id || 'experiment'}_Lab_Report.pdf`;
-      const fileName = (typeof customFileName === 'string' && customFileName.trim()) ? customFileName.trim() : defaultFileName;
-      pdf.save(fileName);
+      pdf.save(finalFileName);
       return true;
     } catch (err) {
       console.error('PDF export error:', err);
@@ -269,6 +284,9 @@ export function ReportExportModal() {
       return false;
     } finally {
       setIsGeneratingPdf(false);
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1500);
     }
   };
 
@@ -1373,12 +1391,12 @@ export function ReportExportModal() {
               )}
 
               <button
-                onClick={handleDownloadPdf}
+                onClick={() => handleDownloadPdf()}
                 disabled={isGeneratingPdf || !isManualComplete}
                 title={!isManualComplete ? 'Complete all Trial 2+ manual calculation fields before downloading report' : 'Download PDF File'}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.3)] disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 text-white font-bold text-xs hover:bg-violet-500 disabled:opacity-50 transition-all cursor-pointer shadow-md shadow-violet-600/30 disabled:cursor-not-allowed"
               >
-                {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Download className="w-4 h-4 text-white" />}
                 <span>Download PDF File</span>
               </button>
 
@@ -1386,7 +1404,7 @@ export function ReportExportModal() {
                 onClick={handlePrint}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 text-xs font-mono transition-all cursor-pointer"
               >
-                <Printer className="w-4 h-4 text-cyan-400" />
+                <Printer className="w-4 h-4 text-violet-400" />
                 <span>Print</span>
               </button>
 
@@ -1399,18 +1417,18 @@ export function ReportExportModal() {
             </div>
           </div>
 
-          {/* Interpretation Status & Quick Edit Drawer (no-print) */}
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono no-print space-y-2">
+          {/* Interpretation Status & Quick Edit Drawer (no-print) — Light / Mid-Light Theme */}
+          <div className="p-3.5 rounded-xl bg-slate-100 border border-slate-300/80 text-xs font-mono no-print space-y-2.5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-200">Student Interpretation:</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold">
+                <span className="font-bold text-slate-800 text-xs">Student Interpretation:</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-200 text-[11px] font-bold">
                   {interpWordCount} {interpWordCount === 1 ? 'word' : 'words'}
                 </span>
               </div>
               <button
                 onClick={() => setIsEditingInterp(!isEditingInterp)}
-                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                className="text-[11px] font-bold text-violet-700 hover:text-violet-900 underline cursor-pointer"
               >
                 {isEditingInterp ? 'Close Quick Editor' : 'Edit Interpretation Text'}
               </button>
@@ -1422,36 +1440,36 @@ export function ReportExportModal() {
                 value={studentInterpText}
                 onChange={(e) => setStudentInterpretation(currentExpId, e.target.value)}
                 placeholder="Type or edit student interpretation here..."
-                className="w-full p-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 shadow-inner"
+                className="w-full p-3 rounded-lg bg-white border border-slate-300 text-xs font-sans text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 shadow-sm"
               />
             )}
           </div>
 
-          {/* Experiment Meta Quick Settings Strip (no-print) */}
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono no-print flex flex-wrap items-center justify-between gap-3">
+          {/* Experiment Meta Quick Settings Strip (no-print) — Light / Mid-Light Theme */}
+          <div className="p-3.5 rounded-xl bg-slate-100 border border-slate-300/80 text-xs font-mono no-print flex flex-wrap items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center flex-wrap gap-4">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-200">Experiment Number:</span>
+                <span className="font-bold text-slate-800">Experiment Number:</span>
                 <input
                   type="text"
                   value={experimentNumber}
                   onChange={(e) => handleExpNumberChange(e.target.value)}
                   placeholder="e.g. 1"
-                  className="w-20 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-bold text-center focus:outline-none focus:border-cyan-400 shadow-inner"
+                  className="w-20 px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-violet-900 font-bold text-center focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 shadow-sm text-xs"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-200">Experiment Date:</span>
+                <span className="font-bold text-slate-800">Experiment Date:</span>
                 <input
                   type="text"
                   value={experimentDate}
                   onChange={(e) => handleExpDateChange(e.target.value)}
                   placeholder="DD/MM/YYYY"
-                  className="w-32 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-bold text-center focus:outline-none focus:border-cyan-400 shadow-inner"
+                  className="w-32 px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-violet-900 font-bold text-center focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 shadow-sm text-xs"
                 />
               </div>
             </div>
-            <span className="text-[11px] text-slate-400 font-sans italic">
+            <span className="text-[11px] text-slate-500 font-sans italic">
               Editable fields — reflected directly on the PDF report.
             </span>
           </div>
@@ -1468,7 +1486,6 @@ export function ReportExportModal() {
                   src={recLogo}
                   alt="Rajalakshmi Engineering College"
                   className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto"
-                  crossOrigin="anonymous"
                 />
               </div>
               <h1 className="text-sm sm:text-base md:text-lg font-bold font-heading uppercase tracking-wide text-black leading-snug">
