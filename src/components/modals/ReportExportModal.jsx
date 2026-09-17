@@ -251,12 +251,35 @@ export function ReportExportModal() {
     }
   };
 
+  // Helper to format table column headers cleanly without duplicating units
+  const formatHeaderLabel = (label, unit) => {
+    if (!label) return '';
+    const trimmedLabel = String(label).trim();
+    if (!unit || unit === '-' || unit === 'dim' || unit === 'dimensionless') {
+      return trimmedLabel;
+    }
+    const cleanUnit = String(unit).trim();
+    const lowerLabel = trimmedLabel.toLowerCase();
+    const lowerUnit = cleanUnit.toLowerCase();
+
+    if (
+      lowerLabel.includes(`(${lowerUnit})`) ||
+      lowerLabel.includes(`[${lowerUnit}]`) ||
+      lowerLabel.endsWith(lowerUnit)
+    ) {
+      return trimmedLabel;
+    }
+    return `${trimmedLabel} (${cleanUnit})`;
+  };
+
   // Helper to render a single experiment part section in report
   const renderPartSection = (part, isSub = false) => {
     if (!part) return null;
 
     const partTrialInputs = Array.isArray(part.trial_inputs) ? part.trial_inputs : [];
     const partCalcColumns = Array.isArray(part.calculated_columns) ? part.calculated_columns : [];
+    const isWideTable = (partTrialInputs.length > 0 && partCalcColumns.length > 0) &&
+                        (partTrialInputs.length + partCalcColumns.length > 6);
     const partFormulas = Array.isArray(part.formulas) ? part.formulas : [];
     const partProcedure = Array.isArray(part.procedure) ? part.procedure : [];
     const partApparatus = Array.isArray(part.apparatus) ? part.apparatus : (Array.isArray(experimentConfig?.apparatus) ? experimentConfig.apparatus : []);
@@ -839,46 +862,128 @@ export function ReportExportModal() {
           </ol>
         </div>
 
-        {/* OBSERVATION TABLE */}
-        <div className="space-y-1 printable-section">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">OBSERVATION TABLE:</h3>
-          <div className="overflow-x-auto border border-black rounded">
-            <table className="w-full text-left text-xs font-mono border-collapse">
-              <thead>
-                <tr className="bg-gray-100 text-black border-b border-black">
-                  <th className="py-1 px-2 border-r border-black text-center w-10">S.NO</th>
-                  {partTrialInputs.map(inp => (
-                    <th key={inp.id} className="py-1 px-2 border-r border-black">{inp.label} ({inp.unit || '-'})</th>
-                  ))}
-                  {partCalcColumns.map(col => (
-                    <th key={col.id} className="py-1 px-2 border-r border-black bg-gray-200 font-bold">{col.label} {col.unit && col.unit !== '-' ? `(${col.unit})` : ''}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black">
-                {partRows.map((row, rIdx) => (
-                  <tr key={rIdx}>
-                    <td className="py-1 px-2 font-bold text-center border-r border-black">{rIdx + 1}</td>
-                    {partTrialInputs.map(inp => (
-                      <td key={inp.id} className="py-1 px-2 border-r border-black">{row[inp.id] || '—'}</td>
+        {/* OBSERVATION TABLE(S) */}
+        {isWideTable ? (
+          <div className="space-y-3 printable-section">
+            {/* Table 1: Measured Readings */}
+            <div className="space-y-1">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">
+                OBSERVATION TABLE (MEASURED READINGS):
+              </h3>
+              <div className="border border-black rounded overflow-hidden">
+                <table className="w-full text-center text-[10px] sm:text-[11px] font-mono border-collapse table-auto">
+                  <thead>
+                    <tr className="bg-gray-100 text-black border-b border-black">
+                      <th className="py-1 px-1.5 border-r border-black text-center w-10 text-[10px] sm:text-[11px]">S.NO</th>
+                      {partTrialInputs.map(inp => (
+                        <th key={inp.id} className="py-1 px-1.5 border-r last:border-r-0 border-black font-bold break-words text-[10px] sm:text-[11px]">
+                          {formatHeaderLabel(inp.label, inp.unit)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black">
+                    {partRows.map((row, rIdx) => (
+                      <tr key={rIdx} className="hover:bg-gray-50/50">
+                        <td className="py-1 px-1.5 font-bold text-center border-r border-black text-[10px] sm:text-[11px]">{rIdx + 1}</td>
+                        {partTrialInputs.map(inp => (
+                          <td key={inp.id} className="py-1 px-1.5 border-r last:border-r-0 border-black text-center text-[10px] sm:text-[11px]">
+                            {row[inp.id] !== undefined && row[inp.id] !== null && row[inp.id] !== '' ? String(row[inp.id]) : '—'}
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                    {partCalcColumns.map(col => {
-                      const valStr = formatValue(row[col.id], col.format);
-                      const headlineKey = config?.headline_output?.resultKey || 'h';
-                      const isHeadlineCol = col.id === headlineKey || col.id === 'h' || col.id === 'Q' || col.id === 'Cd' || col.id === 'f';
-                      const suffix = isManualMode && rIdx === 0 && isHeadlineCol ? ' (Example)' : '';
-                      return (
-                        <td key={col.id} className="py-1 px-2 border-r border-black font-bold text-black">
-                          {valStr !== '—' ? `${valStr}${suffix}` : '—'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Table 2: Calculated Parameters (under Table 1) */}
+            <div className="space-y-1 pt-0.5">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">
+                TABULATION (CALCULATED PARAMETERS):
+              </h3>
+              <div className="border border-black rounded overflow-hidden">
+                <table className="w-full text-center text-[9px] sm:text-[10px] font-mono border-collapse table-auto">
+                  <thead>
+                    <tr className="bg-gray-200 text-black border-b border-black">
+                      <th className="py-1 px-1 border-r border-black text-center w-10 text-[9px] sm:text-[10px]">S.NO</th>
+                      {partCalcColumns.map(col => (
+                        <th key={col.id} className="py-1 px-1 border-r last:border-r-0 border-black font-bold break-words text-[9px] sm:text-[10px]">
+                          {formatHeaderLabel(col.label, col.unit)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black">
+                    {partRows.map((row, rIdx) => (
+                      <tr key={rIdx} className="hover:bg-gray-50/50">
+                        <td className="py-1 px-1 font-bold text-center border-r border-black text-[9px] sm:text-[10px]">{rIdx + 1}</td>
+                        {partCalcColumns.map(col => {
+                          const valStr = formatValue(row[col.id], col.format);
+                          const headlineKey = config?.headline_output?.resultKey || 'h';
+                          const isHeadlineCol = col.id === headlineKey || col.id === 'h' || col.id === 'Q' || col.id === 'Cd' || col.id === 'f';
+                          const suffix = isManualMode && rIdx === 0 && isHeadlineCol ? ' (Example)' : '';
+                          return (
+                            <td key={col.id} className="py-1 px-1 border-r last:border-r-0 border-black font-bold text-black text-center text-[9px] sm:text-[10px]">
+                              {valStr !== '—' ? `${valStr}${suffix}` : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-1 printable-section">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">OBSERVATION TABLE:</h3>
+            <div className="border border-black rounded overflow-hidden">
+              <table className="w-full text-center text-[10px] sm:text-xs font-mono border-collapse table-auto">
+                <thead>
+                  <tr className="bg-gray-100 text-black border-b border-black">
+                    <th className="py-1 px-2 border-r border-black text-center w-10">S.NO</th>
+                    {partTrialInputs.map(inp => (
+                      <th key={inp.id} className="py-1 px-2 border-r border-black font-bold break-words">
+                        {formatHeaderLabel(inp.label, inp.unit)}
+                      </th>
+                    ))}
+                    {partCalcColumns.map(col => (
+                      <th key={col.id} className="py-1 px-2 border-r last:border-r-0 border-black bg-gray-200 font-bold break-words">
+                        {formatHeaderLabel(col.label, col.unit)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black">
+                  {partRows.map((row, rIdx) => (
+                    <tr key={rIdx} className="hover:bg-gray-50/50">
+                      <td className="py-1 px-2 font-bold text-center border-r border-black">{rIdx + 1}</td>
+                      {partTrialInputs.map(inp => (
+                        <td key={inp.id} className="py-1 px-2 border-r border-black text-center">
+                          {row[inp.id] !== undefined && row[inp.id] !== null && row[inp.id] !== '' ? String(row[inp.id]) : '—'}
+                        </td>
+                      ))}
+                      {partCalcColumns.map(col => {
+                        const valStr = formatValue(row[col.id], col.format);
+                        const headlineKey = config?.headline_output?.resultKey || 'h';
+                        const isHeadlineCol = col.id === headlineKey || col.id === 'h' || col.id === 'Q' || col.id === 'Cd' || col.id === 'f';
+                        const suffix = isManualMode && rIdx === 0 && isHeadlineCol ? ' (Example)' : '';
+                        return (
+                          <td key={col.id} className="py-1 px-2 border-r last:border-r-0 border-black font-bold text-black text-center">
+                            {valStr !== '—' ? `${valStr}${suffix}` : '—'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* CALCULATION (Trial 2) */}
         {sampleTrialSteps.length > 0 && (
