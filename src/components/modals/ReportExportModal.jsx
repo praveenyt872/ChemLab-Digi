@@ -415,6 +415,60 @@ export function ReportExportModal() {
       sampleTrialSteps = [];
     }
 
+    // Co-efficient of friction factor (Exp and Calculated) for Helical and Spiral Coil
+    let coilExpFriction = '—';
+    let coilCalcFriction = '—';
+
+    if (experimentConfig?.experiment_id === 'helical_spiral_coil') {
+      const Dp = 0.021;
+      const L = 5.6;
+      const g = 9.81;
+
+      const dataToEvaluate = (partRows && partRows.some(r => r && (r.Hc || r.h2)))
+        ? partRows
+        : (part.sample_data || []);
+
+      const expList = [];
+      const calcList = [];
+
+      dataToEvaluate.forEach(r => {
+        let V = parseFloat(r.V);
+        let Hc = parseFloat(r.Hc);
+        let fst = parseFloat(r.fst);
+        let NRe = parseFloat(r.N_Re);
+
+        if ((isNaN(V) || isNaN(Hc)) && r.Q_act && (r.h1 !== undefined && r.h2 !== undefined)) {
+          const dh = Math.abs(parseFloat(r.h2) - parseFloat(r.h1));
+          Hc = (dh / 100) * 12.6;
+          const A = (Math.PI / 4) * (Dp * Dp);
+          V = (parseFloat(r.Q_act) * 0.0001) / A;
+          NRe = (1000 * V * Dp) / 0.01;
+          fst = NRe < 2000 ? 16 / NRe : 0.046 / Math.pow(NRe, 0.2);
+        }
+
+        if (!isNaN(V) && !isNaN(Hc) && V > 0 && Hc > 0) {
+          const fExp = (Hc * g * Dp) / (2 * L * (V * V));
+          if (!isNaN(fExp) && isFinite(fExp) && fExp > 0) {
+            expList.push(fExp);
+          }
+        }
+
+        if (!isNaN(fst) && isFinite(fst) && fst > 0) {
+          calcList.push(fst);
+        } else if (!isNaN(NRe) && NRe > 0) {
+          const fCalc = NRe < 2000 ? 16 / NRe : 0.046 / Math.pow(NRe, 0.2);
+          calcList.push(fCalc);
+        }
+      });
+
+      if (expList.length > 0) {
+        coilExpFriction = (expList.reduce((a, b) => a + b, 0) / expList.length).toFixed(4);
+      }
+      if (calcList.length > 0) {
+        coilCalcFriction = (calcList.reduce((a, b) => a + b, 0) / calcList.length).toFixed(4);
+      }
+    }
+
     const isStep = part.graph?.type === 'first_order_step';
     const isSinusoidal = part.graph?.type === 'first_order_sinusoidal';
     const isReciprocatingPump = experimentConfig?.experiment_id === 'reciprocating_pump' || part.graph?.type === 'reciprocating_dual_plots';
@@ -1113,25 +1167,32 @@ export function ReportExportModal() {
         {/* RESULT */}
         <div className="printable-section pt-1 border-t border-gray-300">
           <span className="font-bold text-xs uppercase tracking-wider text-black font-mono underline block mb-1">RESULT:</span>
-          {part.id === 'partA' ? (
-            <p className="text-xs font-semibold text-gray-900 font-sans">
-              The step response of the first-order system is studied and the time constant τ at 63.2% response is found to be 10.0 sec.
-            </p>
-          ) : part.id === 'partB' ? (
-            <div className="text-xs text-gray-900 font-sans space-y-1">
-              <p className="font-bold text-black">The sinusoidal response of the first-order thermowell system is evaluated with the following result parameters:</p>
-              <table className="w-full text-left text-xs font-mono border border-black max-w-md my-1">
-                <tbody className="divide-y divide-black">
-                  <tr><td className="p-1.5 font-bold border-r border-black">I/p amplitude</td><td className="p-1.5 font-bold">10 °C</td></tr>
-                  <tr><td className="p-1.5 font-bold border-r border-black">O/p amplitude</td><td className="p-1.5 font-bold">3 °C</td></tr>
-                  <tr><td className="p-1.5 font-bold border-r border-black">Amplitude Ratio (AR)</td><td className="p-1.5 font-bold">0.3</td></tr>
-                  <tr><td className="p-1.5 font-bold border-r border-black">Frequency of oscillation (ω)</td><td className="p-1.5 font-bold">0.105 rad/s</td></tr>
-                  <tr><td className="p-1.5 font-bold border-r border-black">Phase lag (φ)</td><td className="p-1.5 font-bold">60°</td></tr>
-                  <tr><td className="p-1.5 font-bold border-r border-black">θ / A</td><td className="p-1.5 font-bold">0.1365</td></tr>
-                  <tr className="bg-gray-100"><td className="p-1.5 font-bold border-r border-black">Time Constant (τ)</td><td className="p-1.5 font-bold text-black">30.36 s</td></tr>
-                </tbody>
-              </table>
+          {experimentConfig?.experiment_id === 'helical_spiral_coil' ? (
+            <div className="text-xs font-mono text-black space-y-1 font-semibold">
+              <p>Co-efficient of friction factor - Exp &nbsp;= &nbsp;{coilExpFriction}</p>
+              <p>Co-efficient of friction factor – Calculated = &nbsp;{coilCalcFriction}</p>
             </div>
+          ) : (experimentConfig?.experiment_id === 'exp1-first-order-system-response' || experimentConfig?.experiment_id === 'process_control_first_order') ? (
+            part.id === 'partA' ? (
+              <p className="text-xs font-semibold text-gray-900 font-sans">
+                The step response of the first-order system is studied and the time constant τ at 63.2% response is found to be 10.0 sec.
+              </p>
+            ) : (
+              <div className="text-xs text-gray-900 font-sans space-y-1">
+                <p className="font-bold text-black">The sinusoidal response of the first-order thermowell system is evaluated with the following result parameters:</p>
+                <table className="w-full text-left text-xs font-mono border border-black max-w-md my-1">
+                  <tbody className="divide-y divide-black">
+                    <tr><td className="p-1.5 font-bold border-r border-black">I/p amplitude</td><td className="p-1.5 font-bold">10 °C</td></tr>
+                    <tr><td className="p-1.5 font-bold border-r border-black">O/p amplitude</td><td className="p-1.5 font-bold">3 °C</td></tr>
+                    <tr><td className="p-1.5 font-bold border-r border-black">Amplitude Ratio (AR)</td><td className="p-1.5 font-bold">0.3</td></tr>
+                    <tr><td className="p-1.5 font-bold border-r border-black">Frequency of oscillation (ω)</td><td className="p-1.5 font-bold">0.105 rad/s</td></tr>
+                    <tr><td className="p-1.5 font-bold border-r border-black">Phase lag (φ)</td><td className="p-1.5 font-bold">60°</td></tr>
+                    <tr><td className="p-1.5 font-bold border-r border-black">θ / A</td><td className="p-1.5 font-bold">0.1365</td></tr>
+                    <tr className="bg-gray-100"><td className="p-1.5 font-bold border-r border-black">Time Constant (τ)</td><td className="p-1.5 font-bold text-black">30.36 s</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            )
           ) : part.result_template || config.result_template ? (
             <p className="text-xs font-semibold text-gray-900 font-sans">
               {formatResultString(part.result_template || config.result_template, headlineResult)}

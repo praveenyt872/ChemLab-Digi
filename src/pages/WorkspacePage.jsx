@@ -82,10 +82,67 @@ export function WorkspacePage({ onNavigate }) {
       headlineOutputText = meanVal ? `Max η = ${maxVal} % | Mean η = ${meanVal} %` : `Max η = ${maxVal} %`;
     } else if (experimentConfig.experiment_id === 'exp1-first-order-system-response') {
       headlineOutputText = activePartId === 'partA' ? `τ = 10.0 s (63.2%)` : `AR = 0.375 | τ = 27 s`;
+    } else if (experimentConfig.experiment_id === 'helical_spiral_coil') {
+      headlineOutputText = `fc = ${headlineResult.mean.toFixed(4)}`;
+    } else if (experimentConfig.experiment_id === 'drag_coefficient_solid_particle') {
+      headlineOutputText = `CD = ${headlineResult.mean.toFixed(4)}`;
     } else if (isFreeConvection || headlineLabel === 'h') {
       headlineOutputText = `h = ${headlineResult.mean.toFixed(2)} W/m²·K`;
     } else {
       headlineOutputText = `Cd = ${headlineResult.mean.toFixed(3)}`;
+    }
+  }
+
+  // Co-efficient of friction factor (Exp and Calculated) for Helical and Spiral Coil
+  let coilExpFriction = '—';
+  let coilCalcFriction = '—';
+  if (experimentConfig?.experiment_id === 'helical_spiral_coil') {
+    const Dp = 0.021;
+    const L = 5.6;
+    const g = 9.81;
+
+    const dataToEvaluate = (calculatedRows && calculatedRows.some(r => r && (r.Hc || r.h2)))
+      ? calculatedRows
+      : (config?.sample_data || []);
+
+    const expList = [];
+    const calcList = [];
+
+    dataToEvaluate.forEach(r => {
+      let V = parseFloat(r.V);
+      let Hc = parseFloat(r.Hc);
+      let fst = parseFloat(r.fst);
+      let NRe = parseFloat(r.N_Re);
+
+      if ((isNaN(V) || isNaN(Hc)) && r.Q_act && (r.h1 !== undefined && r.h2 !== undefined)) {
+        const dh = Math.abs(parseFloat(r.h2) - parseFloat(r.h1));
+        Hc = (dh / 100) * 12.6;
+        const A = (Math.PI / 4) * (Dp * Dp);
+        V = (parseFloat(r.Q_act) * 0.0001) / A;
+        NRe = (1000 * V * Dp) / 0.01;
+        fst = NRe < 2000 ? 16 / NRe : 0.046 / Math.pow(NRe, 0.2);
+      }
+
+      if (!isNaN(V) && !isNaN(Hc) && V > 0 && Hc > 0) {
+        const fExp = (Hc * g * Dp) / (2 * L * (V * V));
+        if (!isNaN(fExp) && isFinite(fExp) && fExp > 0) {
+          expList.push(fExp);
+        }
+      }
+
+      if (!isNaN(fst) && isFinite(fst) && fst > 0) {
+        calcList.push(fst);
+      } else if (!isNaN(NRe) && NRe > 0) {
+        const fCalc = NRe < 2000 ? 16 / NRe : 0.046 / Math.pow(NRe, 0.2);
+        calcList.push(fCalc);
+      }
+    });
+
+    if (expList.length > 0) {
+      coilExpFriction = (expList.reduce((a, b) => a + b, 0) / expList.length).toFixed(4);
+    }
+    if (calcList.length > 0) {
+      coilCalcFriction = (calcList.reduce((a, b) => a + b, 0) / calcList.length).toFixed(4);
     }
   }
 
@@ -368,6 +425,11 @@ export function WorkspacePage({ onNavigate }) {
                     </div>
                   </div>
                 )
+              ) : experimentConfig.experiment_id === 'helical_spiral_coil' ? (
+                <div className="space-y-1.5 text-sm font-mono text-slate-900 font-bold">
+                  <p>Co-efficient of friction factor - Exp &nbsp;= &nbsp;<span className="text-cyan-700">{coilExpFriction}</span></p>
+                  <p>Co-efficient of friction factor – Calculated = &nbsp;<span className="text-violet-700">{coilCalcFriction}</span></p>
+                </div>
               ) : config.result_template ? (
                 <p className="text-sm font-semibold text-slate-900 font-sans">
                   {formatResultString(config.result_template, headlineResult)}

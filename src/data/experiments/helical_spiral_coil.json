@@ -297,7 +297,7 @@
         { "flow_lph": 80, "h1": 15.3, "h2": 17.6, "t": 200, "Q_act": 2.0 },
         { "flow_lph": 140, "h1": 15.0, "h2": 17.8, "t": 300, "Q_act": 3.0 }
       ],
-      "result_template": "The mean friction factor for the Helical Coil (fc) is found to be {mean_fc}."
+      "result_template": "Co-efficient of friction factor - Exp = 0.0160\nCo-efficient of friction factor – Calculated = 0.0131"
     },
     {
       "id": "partB",
@@ -551,7 +551,7 @@
         { "flow_lph": 80, "h1": 15.6, "h2": 17.7, "t": 200, "Q_act": 2.0 },
         { "flow_lph": 140, "h1": 15.3, "h2": 17.9, "t": 300, "Q_act": 3.0 }
       ],
-      "result_template": "The mean friction factor for the Spiral Coil (fc) is found to be {mean_fc}."
+      "result_template": "Co-efficient of friction factor - Exp = 0.0121\nCo-efficient of friction factor – Calculated = 0.0122"
     }
   ],
   "reference_code": {
