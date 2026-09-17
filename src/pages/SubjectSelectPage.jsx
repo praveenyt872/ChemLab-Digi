@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Waves, Flame, ArrowRightLeft, Atom, Cog, Gauge, Search } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
+import { useAuthStore } from '../store/authStore';
 import { SUBJECT_THEMES } from '../components/common/SubjectCardTheme';
 import { ThemedSubjectCard } from '../components/common/ThemedSubjectCard';
 import { isValidRajalakshmiEmail } from '../data/faculty';
 
 export function SubjectSelectPage({ onNavigate }) {
   const { setSubject, studentDetails, setStudentGateOpen } = useExperimentStore();
+  const authRole = useAuthStore((s) => s.role);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectSubject = (subId) => {
     setSubject(subId);
-    if (!studentDetails?.studentName || !studentDetails?.registerNumber || !isValidRajalakshmiEmail(studentDetails?.email)) {
+    if (authRole !== 'teacher' && (!studentDetails?.studentName || !studentDetails?.registerNumber || !isValidRajalakshmiEmail(studentDetails?.email))) {
       setStudentGateOpen(true);
     }
     onNavigate('experiment');

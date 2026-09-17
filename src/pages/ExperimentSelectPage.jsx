@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Play, Gauge, ShieldCheck, Zap } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { useExperimentStore } from '../store/experimentStore';
+import { useAuthStore } from '../store/authStore';
 import { isValidRajalakshmiEmail } from '../data/faculty';
 
 export function ExperimentSelectPage({ onNavigate }) {
@@ -165,9 +166,11 @@ export function ExperimentSelectPage({ onNavigate }) {
     ? 'CSTR RTD exit age distribution, impulse tracer injection, mean residence time, and ideal reactor comparison.'
     : 'Select an experiment module to launch the interactive virtual workspace and calculation engine.';
 
+  const authRole = useAuthStore((s) => s.role);
+
   const handleLaunch = (expId) => {
     setExperiment(expId);
-    if (!studentDetails?.studentName || !studentDetails?.registerNumber || !isValidRajalakshmiEmail(studentDetails?.email)) {
+    if (authRole !== 'teacher' && (!studentDetails?.studentName || !studentDetails?.registerNumber || !isValidRajalakshmiEmail(studentDetails?.email))) {
       setStudentGateOpen(true);
       return;
     }

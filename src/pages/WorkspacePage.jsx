@@ -17,6 +17,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
+import { useAuthStore } from '../store/authStore';
 import { formatScientific, formatResultString } from '../engine/formulaEngine';
 import { GlassCard } from '../components/common/GlassCard';
 import { ObservationTable } from '../components/workspace/ObservationTable';
@@ -49,7 +50,9 @@ export function WorkspacePage({ onNavigate }) {
   const [mobileTab, setMobileTab] = useState('data');
   const [isCodeModalOpen, setCodeModalOpen] = useState(false);
 
-  const isAuthorized = Boolean(
+  const authRole = useAuthStore((s) => s.role);
+
+  const isAuthorized = authRole === 'teacher' || Boolean(
     studentDetails?.studentName &&
     studentDetails?.registerNumber &&
     isValidRajalakshmiEmail(studentDetails?.email)

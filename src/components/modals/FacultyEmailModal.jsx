@@ -31,6 +31,7 @@ export function FacultyEmailModal({
   const [selectedFacultyId, setSelectedFacultyId] = useState(FLUID_MECHANICS_FACULTY[0].id);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -104,15 +105,16 @@ Rajalakshmi Engineering College
 
       // 1. Temporarily hide modal so html2canvas captures ONLY the pure report sheet
       const portalEl = document.getElementById('faculty-email-modal-portal');
-      if (portalEl) portalEl.style.visibility = 'hidden';
+      if (portalEl) portalEl.style.display = 'none';
 
       // 2. Trigger the clean report PDF download with exact matching filename
       if (typeof onDownloadPdf === 'function') {
         await onDownloadPdf(pdfFileName);
+        setDownloadSuccess(true);
       }
 
-      // Restore visibility
-      if (portalEl) portalEl.style.visibility = 'visible';
+      // Restore display
+      if (portalEl) portalEl.style.display = 'flex';
 
       // Small pause to allow browser download to start
       await new Promise(r => setTimeout(r, 400));
@@ -128,7 +130,7 @@ Rajalakshmi Engineering College
       console.error('Error initiating email submission:', err);
     } finally {
       const portalEl = document.getElementById('faculty-email-modal-portal');
-      if (portalEl) portalEl.style.visibility = 'visible';
+      if (portalEl) portalEl.style.display = 'flex';
       setIsProcessing(false);
     }
   };
@@ -137,15 +139,16 @@ Rajalakshmi Engineering College
     try {
       setIsProcessing(true);
       const portalEl = document.getElementById('faculty-email-modal-portal');
-      if (portalEl) portalEl.style.visibility = 'hidden';
+      if (portalEl) portalEl.style.display = 'none';
       if (typeof onDownloadPdf === 'function') {
         await onDownloadPdf(pdfFileName);
+        setDownloadSuccess(true);
       }
     } catch (err) {
       console.error('Error downloading PDF:', err);
     } finally {
       const portalEl = document.getElementById('faculty-email-modal-portal');
-      if (portalEl) portalEl.style.visibility = 'visible';
+      if (portalEl) portalEl.style.display = 'flex';
       setIsProcessing(false);
     }
   };
@@ -293,6 +296,25 @@ Rajalakshmi Engineering College
                   When you click the button below, the official formatted <strong>Lab Report PDF</strong> will automatically download to your device, and a new Gmail tab will open with the faculty email, subject, and student details pre-filled. Simply click the paperclip icon in Gmail to attach the downloaded PDF, then click Send!
                 </p>
               </div>
+
+              {/* Download Success Notice */}
+              {downloadSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3 text-xs font-mono">
+                  <div className="flex items-center gap-2 text-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>PDF downloaded to your device: <strong className="text-white">{pdfFileName}</strong></span>
+                  </div>
+                  <a
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedFaculty.email)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold text-[11px] shrink-0 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Open Gmail</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-end gap-3 pt-2">

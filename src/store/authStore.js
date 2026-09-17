@@ -1,28 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '../utils/supabaseClient';
 import bcrypt from 'bcryptjs';
-import { isValidRajalakshmiEmail } from '../data/faculty';
+import { isValidRajalakshmiEmail, TEACHER_WHITELIST, UNIVERSAL_TEACHER_PASSWORD } from '../data/faculty';
 import { useExperimentStore } from './experimentStore';
-
-const TEACHER_WHITELIST = [
-  'hod.chem@rajalakshmi.edu.in',
-  'jeffithmanohar.e.2024.chem@rajalakshmi.edu.in',
-  'praveenyt872@gmail.com',
-  'praveen.r.2024.chem@rajalakshmi.edu.in',
-  'shrivarshini.n.2024.chem@rajalakshmi.edu.in',
-  'samyuktha.g.2024.chem@rajalakshmi.edu.in',
-  'rahealcatherine.v.2024.chem@rajalakshmi.edu.in',
-  'mangaleswari.s@rajalakshmi.edu.in',
-  'sundararaman.tr@rajalakshmi.edu.in',
-  'narasimhareddy.s@rajalakshmi.edu.in',
-  'seelamnarasimhareddy@rajalakshmi.edu.in',
-  'rameschandrapanda@rajalakshmi.edu.in',
-  'vijayaraghavan.g@rajalakshmi.edu.in',
-  'maryrosana.nt@rajalakshmi.edu.in',
-  'vincentjoseph.kl@rajalakshmi.edu.in',
-  'ambigadevi.j@rajalakshmi.edu.in',
-  'sivamani.s@rajalakshmi.edu.in'
-];
 
 const normEmail = (email) => (email || '').trim().toLowerCase();
 
@@ -524,9 +504,26 @@ export const useAuthStore = create((set, get) => ({
     }
 
     if (!TEACHER_WHITELIST.includes(cleanEmail)) {
-      const err = 'This email is not registered by your department. Contact administrator.';
+      const err = 'This email is not registered in the department faculty directory. Contact administrator.';
       set({ authError: err, authLoading: false });
       return { success: false, error: err };
+    }
+
+    // Universal 6-digit department access password for all registered faculty
+    if (password.trim() === UNIVERSAL_TEACHER_PASSWORD) {
+      const teacherUser = { email: cleanEmail, role: 'teacher' };
+      localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
+
+      set({
+        user: teacherUser,
+        role: 'teacher',
+        isVerifiedStudent: true,
+        authLoading: false,
+        authError: null
+      });
+
+      get().checkActiveCodeStatus();
+      return { success: true, message: 'Faculty login successful!' };
     }
 
     // Call API endpoint first

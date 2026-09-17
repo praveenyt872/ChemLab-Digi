@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlaskConical, FileDown, HelpCircle, Sparkles, Edit3, Search, UserCheck, LogOut } from 'lucide-react';
+import { FlaskConical, FileDown, HelpCircle, Sparkles, Edit3, Search, UserCheck, LogOut, KeyRound } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { useAuthStore } from '../../store/authStore';
 import { ScrollProgress } from '../common/ScrollProgress';
@@ -82,7 +82,31 @@ export function Navbar({ currentPage, onNavigate }) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3 shrink-0">
-          {studentDetails?.studentName && isValidRajalakshmiEmail(studentDetails?.email) ? (
+          {useAuthStore.getState().role === 'teacher' && useAuthStore.getState().user?.email ? (
+            <div className="flex items-center gap-1.5">
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-violet-500/40 text-xs font-mono text-slate-200"
+                title={`Logged in as Faculty: ${useAuthStore.getState().user.email}`}
+              >
+                <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-[10px] uppercase">
+                  F
+                </div>
+                <div className="text-left hidden sm:block">
+                  <span className="font-semibold text-white block text-[11px] leading-tight max-w-[130px] truncate">{useAuthStore.getState().user.email}</span>
+                  <span className="text-[9px] text-violet-400 block font-mono">Department Faculty</span>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  await useAuthStore.getState().logout();
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all cursor-pointer"
+                title="Sign out of faculty account"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : studentDetails?.studentName && isValidRajalakshmiEmail(studentDetails?.email) ? (
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setStudentGateOpen(true)}
@@ -110,14 +134,24 @@ export function Navbar({ currentPage, onNavigate }) {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setStudentGateOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
-              title="Student Login with @rajalakshmi.edu.in"
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Student Login</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setStudentGateOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+                title="Student Login with @rajalakshmi.edu.in"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Student Login</span>
+              </button>
+              <button
+                onClick={() => setStudentGateOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                title="Faculty / Teacher Login"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-violet-400" />
+                <span className="hidden sm:inline">Teacher Login</span>
+              </button>
+            </div>
           )}
 
           <button
