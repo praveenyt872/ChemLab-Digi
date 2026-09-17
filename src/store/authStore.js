@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '../utils/supabaseClient';
 import bcrypt from 'bcryptjs';
+import { isValidRajalakshmiEmail } from '../data/faculty';
+import { useExperimentStore } from './experimentStore';
 
 const TEACHER_WHITELIST = [
   'hod.chem@rajalakshmi.edu.in',
@@ -117,22 +119,48 @@ export const useAuthStore = create((set, get) => ({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
-        const studentEmail = session.user.email;
+        const studentEmail = (session.user.email || '').trim().toLowerCase();
         const userId = session.user.id || studentEmail;
+        const googleName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
 
         // Clean OAuth hash from address bar if returning from OAuth redirect
         if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
           window.history.replaceState(null, '', window.location.pathname);
         }
 
-        // Validate Student Access against active_code & student_sessions (FLAW 3)
+        // STRICT SECURITY ENFORCEMENT: Enforce @rajalakshmi.edu.in domain for students
+        if (!isValidRajalakshmiEmail(studentEmail)) {
+          await supabase.auth.signOut();
+          try { useExperimentStore.getState().logoutStudent(); } catch (e) {}
+          set({
+            user: null,
+            role: null,
+            isVerifiedStudent: false,
+            authLoading: false,
+            authError: `Access Denied: Only Google accounts ending with @rajalakshmi.edu.in are authorized to access this virtual lab. (${studentEmail} is not an authorized institutional student account).`
+          });
+          return;
+        }
+
+        // Valid REC institutional student account
+        const expState = useExperimentStore.getState();
+        const currentDet = expState.studentDetails || {};
+        expState.saveStudentDetails({
+          ...currentDet,
+          email: studentEmail,
+          studentName: currentDet.studentName || googleName,
+          isGoogleVerified: true
+        });
+
+        // Validate Student Access against active_code & student_sessions (if teacher code active)
         const isAccessValid = await get().validateStudentAccess(userId, studentEmail);
 
         set({
-          user: { email: studentEmail, id: userId, role: 'student' },
+          user: { email: studentEmail, id: userId, name: googleName, role: 'student' },
           role: 'student',
-          isVerifiedStudent: isAccessValid,
-          authLoading: false
+          isVerifiedStudent: true, // Google domain verified student
+          authLoading: false,
+          authError: null
         });
 
         if (isAccessValid) {
@@ -140,6 +168,56 @@ export const useAuthStore = create((set, get) => ({
         }
         return;
       }
+    } catch (e) {
+      console.error('initAuth Supabase session error:', e);
+    }
+
+    // Subscribe to auth state changes (e.g. immediate callback from OAuth)
+    try {
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const studentEmail = (session.user.email || '').trim().toLowerCase();
+          const userId = session.user.id || studentEmail;
+          const googleName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
+
+          if (!isValidRajalakshmiEmail(studentEmail)) {
+            await supabase.auth.signOut();
+            try { useExperimentStore.getState().logoutStudent(); } catch (e) {}
+            set({
+              user: null,
+              role: null,
+              isVerifiedStudent: false,
+              authLoading: false,
+              authError: `Access Denied: Only Google accounts ending with @rajalakshmi.edu.in are authorized to access this virtual lab. (${studentEmail} is not an authorized institutional student account).`
+            });
+            return;
+          }
+
+          const expState = useExperimentStore.getState();
+          const currentDet = expState.studentDetails || {};
+          expState.saveStudentDetails({
+            ...currentDet,
+            email: studentEmail,
+            studentName: currentDet.studentName || googleName,
+            isGoogleVerified: true
+          });
+
+          set({
+            user: { email: studentEmail, id: userId, name: googleName, role: 'student' },
+            role: 'student',
+            isVerifiedStudent: true,
+            authLoading: false,
+            authError: null
+          });
+        } else if (event === 'SIGNED_OUT') {
+          set({
+            user: null,
+            role: null,
+            isVerifiedStudent: false,
+            authLoading: false
+          });
+        }
+      });
     } catch (e) {}
 
     set({ user: null, role: null, isVerifiedStudent: false, authLoading: false });
@@ -905,21 +983,26 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Student Google Login
+  // Student Google Login (Strict @rajalakshmi.edu.in hosted domain)
   studentGoogleLogin: async () => {
     set({ authLoading: true, authError: null });
     try {
       const targetUrl = window.location.origin + window.location.pathname;
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: targetUrl
+          redirectTo: targetUrl,
+          queryParams: {
+            hd: 'rajalakshmi.edu.in',
+            prompt: 'select_account'
+          }
         }
       });
       if (error) {
         set({ authError: error.message, authLoading: false });
         return { success: false, error: error.message };
       }
+      return { success: true };
     } catch (err) {
       const msg = !navigator.onLine ? 'You need an active internet connection to sign in with Google.' : 'Google sign in error.';
       set({ authError: msg, authLoading: false });
@@ -941,7 +1024,12 @@ export const useAuthStore = create((set, get) => ({
     localStorage.removeItem('chemlab_teacher_session');
     try {
       await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {}
+    try {
       await supabase.auth.signOut();
+    } catch (e) {}
+    try {
+      useExperimentStore.getState().logoutStudent();
     } catch (e) {}
 
     set({

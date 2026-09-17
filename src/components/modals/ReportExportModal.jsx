@@ -210,7 +210,7 @@ export function ReportExportModal() {
     window.print();
   };
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = async (customFileName = null) => {
     if (!reportRef.current) return;
     try {
       setIsGeneratingPdf(true);
@@ -223,7 +223,15 @@ export function ReportExportModal() {
         useCORS: true,
         allowTaint: true,
         logging: false,
-        windowWidth: 1100
+        windowWidth: 1200,
+        ignoreElements: (node) => {
+          if (!node) return false;
+          return (
+            node.hasAttribute?.('data-html2canvas-ignore') ||
+            node.classList?.contains('no-print') ||
+            node.id === 'faculty-email-modal-portal'
+          );
+        }
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -251,11 +259,14 @@ export function ReportExportModal() {
         heightLeft -= pdfHeight;
       }
 
-      const fileName = `${experimentConfig?.experiment_id || 'experiment'}_Lab_Report.pdf`;
+      const defaultFileName = `${experimentConfig?.experiment_id || 'experiment'}_Lab_Report.pdf`;
+      const fileName = (typeof customFileName === 'string' && customFileName.trim()) ? customFileName.trim() : defaultFileName;
       pdf.save(fileName);
+      return true;
     } catch (err) {
       console.error('PDF export error:', err);
       window.print();
+      return false;
     } finally {
       setIsGeneratingPdf(false);
     }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlaskConical, FileDown, HelpCircle, Sparkles, Edit3, Search, UserCheck, LogOut } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
+import { useAuthStore } from '../../store/authStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 import { OfflineBadge } from '../pwa/OfflineBadge';
 import { isValidRajalakshmiEmail } from '../../data/faculty';
@@ -98,7 +99,10 @@ export function Navbar({ currentPage, onNavigate }) {
                 <Edit3 className="w-3 h-3 text-violet-400 group-hover:scale-110 transition-transform ml-0.5" />
               </button>
               <button
-                onClick={logoutStudent}
+                onClick={async () => {
+                  logoutStudent();
+                  await useAuthStore.getState().logout();
+                }}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all cursor-pointer"
                 title="Sign out of student account"
               >

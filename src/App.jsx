@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuthStore } from './store/authStore';
 import { Navbar } from './components/layout/Navbar';
 import { FluidBackground } from './components/layout/FluidBackground';
 import { Footer } from './components/layout/Footer';
@@ -19,6 +20,11 @@ import { InstallBanner } from './components/pwa/InstallBanner';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
+  const initAuth = useAuthStore((s) => s.initAuth);
+
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
 
   const navigateTo = (page) => {
     setCurrentPage(page);

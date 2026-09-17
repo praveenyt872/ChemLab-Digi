@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -101,24 +102,50 @@ Rajalakshmi Engineering College
     try {
       setIsProcessing(true);
 
-      // 1. Trigger the report PDF download so the student has the exact file ready on their device
+      // 1. Temporarily hide modal so html2canvas captures ONLY the pure report sheet
+      const portalEl = document.getElementById('faculty-email-modal-portal');
+      if (portalEl) portalEl.style.visibility = 'hidden';
+
+      // 2. Trigger the clean report PDF download with exact matching filename
       if (typeof onDownloadPdf === 'function') {
-        await onDownloadPdf();
+        await onDownloadPdf(pdfFileName);
       }
 
-      // Small pause to allow browser download to start
-      await new Promise(r => setTimeout(r, 600));
+      // Restore visibility
+      if (portalEl) portalEl.style.visibility = 'visible';
 
-      // 2. Construct Gmail Web compose URL with pre-filled parameters
+      // Small pause to allow browser download to start
+      await new Promise(r => setTimeout(r, 400));
+
+      // 3. Construct Gmail Web compose URL with pre-filled parameters
       const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedFaculty.email)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
 
-      // 3. Open Gmail compose window in a new tab
+      // 4. Open Gmail compose window in a new tab
       window.open(gmailUrl, '_blank', 'noopener,noreferrer');
 
       setSendSuccess(true);
     } catch (err) {
       console.error('Error initiating email submission:', err);
     } finally {
+      const portalEl = document.getElementById('faculty-email-modal-portal');
+      if (portalEl) portalEl.style.visibility = 'visible';
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownloadOnly = async () => {
+    try {
+      setIsProcessing(true);
+      const portalEl = document.getElementById('faculty-email-modal-portal');
+      if (portalEl) portalEl.style.visibility = 'hidden';
+      if (typeof onDownloadPdf === 'function') {
+        await onDownloadPdf(pdfFileName);
+      }
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
+    } finally {
+      const portalEl = document.getElementById('faculty-email-modal-portal');
+      if (portalEl) portalEl.style.visibility = 'visible';
       setIsProcessing(false);
     }
   };
@@ -131,9 +158,13 @@ Rajalakshmi Engineering College
 
   const mailtoFallback = `mailto:${selectedFaculty.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div
+        id="faculty-email-modal-portal"
+        data-html2canvas-ignore="true"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -264,13 +295,28 @@ Rajalakshmi Engineering College
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={onClose}
                   className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-mono transition-all cursor-pointer"
                 >
                   Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadOnly}
+                  disabled={isProcessing}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-bold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  title="Download clean lab report PDF file to your device"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                  ) : (
+                    <Download className="w-4 h-4 text-cyan-400" />
+                  )}
+                  <span>Download PDF Only</span>
                 </button>
 
                 <button
@@ -282,7 +328,7 @@ Rajalakshmi Engineering College
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Preparing PDF & Gmail...</span>
+                      <span>Generating PDF & Opening Gmail...</span>
                     </>
                   ) : (
                     <>
@@ -303,26 +349,37 @@ Rajalakshmi Engineering College
 
               <div className="space-y-1">
                 <h4 className="font-heading text-xl font-bold text-white">
-                  PDF Downloaded & Gmail Window Opened!
+                  Report PDF Downloaded & Gmail Window Opened!
                 </h4>
                 <p className="text-xs text-slate-400 font-sans max-w-md mx-auto leading-relaxed">
-                  The official lab report PDF has been downloaded as <span className="font-mono text-emerald-300 font-semibold">{pdfFileName}</span>.
+                  Your clean experimental report PDF has been downloaded to your device as <span className="font-mono text-emerald-300 font-semibold">{pdfFileName}</span>.
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-left text-xs font-sans space-y-2.5 max-w-lg mx-auto">
                 <div className="font-bold text-slate-200 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wide">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Next Step in your opened Gmail tab:</span>
+                  <span>How to attach in your opened Gmail tab:</span>
                 </div>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-300 text-xs leading-relaxed">
-                  <li>In the Gmail compose tab that just opened, click the <strong>Attach files</strong> (paperclip) icon.</li>
-                  <li>Select the downloaded file: <span className="font-mono text-violet-300">{pdfFileName}</span> from your Downloads folder.</li>
-                  <li>Verify all parameters and click <strong>Send</strong> to submit to {selectedFaculty.name}.</li>
+                  <li>In the Gmail compose tab that just opened, click the <strong>Attach files</strong> (📎 paperclip) icon.</li>
+                  <li>Select the downloaded report file: <span className="font-mono text-violet-300">{pdfFileName}</span> from your Downloads folder.</li>
+                  <li>All student metadata and experiment metrics are already pre-filled. Click <strong>Send</strong> to submit to {selectedFaculty.name}!</li>
                 </ol>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadOnly}
+                  disabled={isProcessing}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-mono transition-all cursor-pointer"
+                  title="Download clean PDF again"
+                >
+                  <Download className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Download PDF Again</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleCopyBody}
@@ -355,6 +412,7 @@ Rajalakshmi Engineering College
 
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
