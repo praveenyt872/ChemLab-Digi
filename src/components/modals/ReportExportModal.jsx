@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, FileDown, Printer, Loader2, Download } from 'lucide-react';
+import { X, FileDown, Printer, Loader2, Download, Mail } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { formatValue, calculateTable, evaluateStepCalculations, formatResultString } from '../../engine/formulaEngine';
 import { KaTeXRenderer } from '../common/KaTeXRenderer';
@@ -18,6 +18,7 @@ import {
 
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
 import { getSchematicDiagram } from '../../utils/schematicAssets';
+import { FacultyEmailModal } from './FacultyEmailModal';
 import recLogo from '../../assets/rec-logo.png';
 
 class ModalErrorBoundary extends React.Component {
@@ -133,6 +134,8 @@ export function ReportExportModal() {
     return getTodayFormattedDate();
   });
 
+  const [isFacultyModalOpen, setFacultyModalOpen] = useState(false);
+
   React.useEffect(() => {
     try {
       const savedNums = JSON.parse(localStorage.getItem('labflow_experiment_numbers') || '{}');
@@ -175,6 +178,13 @@ export function ReportExportModal() {
   const config = activePartConfig || experimentConfig;
   const isMultiPart = Array.isArray(experimentConfig?.parts) && experimentConfig.parts.length > 0;
   const isManualMode = config?.manual_calculation_mode || experimentConfig?.manual_calculation_mode;
+  const isFluidMechanics =
+    experimentConfig?.subject === 'fluid_mechanics' ||
+    currentSubject === 'fluid_mechanics' ||
+    (!experimentConfig?.subject &&
+      experimentConfig?.experiment_id !== 'exp1-first-order-system-response' &&
+      experimentConfig?.experiment_id !== 'free_convection' &&
+      experimentConfig?.experiment_id !== 'rtd_cstr');
 
   const checkManualCalcComplete = () => {
     if (!isManualMode) return true;
@@ -1339,6 +1349,18 @@ export function ReportExportModal() {
             </div>
 
             <div className="flex items-center gap-2">
+              {isFluidMechanics && (
+                <button
+                  onClick={() => setFacultyModalOpen(true)}
+                  disabled={isGeneratingPdf || !isManualComplete}
+                  title={!isManualComplete ? 'Complete all Trial 2+ manual calculation fields before emailing report' : 'Send Report to Respected Faculty'}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-[0_0_15px_rgba(139,92,246,0.35)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Mail className="w-4 h-4 text-violet-200" />
+                  <span>Send to Faculty</span>
+                </button>
+              )}
+
               <button
                 onClick={handleDownloadPdf}
                 disabled={isGeneratingPdf || !isManualComplete}
@@ -1485,6 +1507,10 @@ export function ReportExportModal() {
                     <td className="p-1.5 text-black font-bold">{studentDetails?.registerNumber || '—'}</td>
                   </tr>
                   <tr>
+                    <td className="p-1.5 font-bold border-r border-black bg-gray-50">Official College Email</td>
+                    <td className="p-1.5 text-black font-mono font-semibold">{studentDetails?.email || '—'}</td>
+                  </tr>
+                  <tr>
                     <td className="p-1.5 font-bold border-r border-black bg-gray-50">Section</td>
                     <td className="p-1.5 text-black font-bold">Section {studentDetails?.section || subjectInfo.section || GLOBAL_APP_CONFIG.section}</td>
                   </tr>
@@ -1521,6 +1547,20 @@ export function ReportExportModal() {
             </div>
 
           </div>
+
+          {/* Faculty Email Modal for Fluid Mechanics */}
+          {isFluidMechanics && (
+            <FacultyEmailModal
+              isOpen={isFacultyModalOpen}
+              onClose={() => setFacultyModalOpen(false)}
+              experimentConfig={experimentConfig}
+              experimentNumber={experimentNumber}
+              experimentDate={experimentDate}
+              studentDetails={studentDetails}
+              onDownloadPdf={handleDownloadPdf}
+              headlineResult={headlineResult}
+            />
+          )}
         </ModalErrorBoundary>
       </motion.div>
     </div>

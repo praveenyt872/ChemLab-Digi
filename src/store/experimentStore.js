@@ -139,6 +139,8 @@ const loadInitialStudentDetails = () => {
       const parsed = JSON.parse(saved);
       if (parsed.studentName && parsed.registerNumber) {
         return {
+          email: '',
+          academicYear: '2027-2028',
           semester: 'VII',
           section: 'B',
           ...parsed
@@ -151,6 +153,7 @@ const loadInitialStudentDetails = () => {
   return {
     studentName: '',
     registerNumber: '',
+    email: '',
     academicYear: '2027-2028',
     semester: 'VII',
     section: 'B'
@@ -789,6 +792,22 @@ export const useExperimentStore = create((set, get) => ({
       console.error('Failed to save student details:', e);
     }
     set({ studentDetails: details, isStudentGateOpen: false });
+  },
+  logoutStudent: () => {
+    try {
+      localStorage.removeItem('labflow_student_details');
+    } catch (e) {}
+    set({
+      studentDetails: {
+        studentName: '',
+        registerNumber: '',
+        email: '',
+        academicYear: '2027-2028',
+        semester: 'VII',
+        section: 'B'
+      },
+      isStudentGateOpen: true
+    });
   },
 
   setOnboardingOpen: (isOpen) => set({ isOnboardingOpen: isOpen }),

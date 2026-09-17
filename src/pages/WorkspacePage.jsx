@@ -12,7 +12,9 @@ import {
   Info,
   HelpCircle,
   Code2,
-  ListOrdered
+  ListOrdered,
+  Lock,
+  UserCheck
 } from 'lucide-react';
 import { useExperimentStore } from '../store/experimentStore';
 import { formatScientific, formatResultString } from '../engine/formulaEngine';
@@ -29,6 +31,7 @@ import { StudentInterpretationPanel } from '../components/workspace/StudentInter
 import { CodeReferenceModal } from '../components/modals/CodeReferenceModal';
 import { WorkedExampleModal } from '../components/modals/WorkedExampleModal';
 import { getSchematicDiagram } from '../utils/schematicAssets';
+import { isValidRajalakshmiEmail } from '../data/faculty';
 import recLogo from '../assets/rec-logo.png';
 
 export function WorkspacePage({ onNavigate }) {
@@ -39,10 +42,54 @@ export function WorkspacePage({ onNavigate }) {
     setActivePart,
     headlineResult,
     currentSubject,
-    calculatedRows
+    calculatedRows,
+    studentDetails,
+    setStudentGateOpen
   } = useExperimentStore();
   const [mobileTab, setMobileTab] = useState('data');
   const [isCodeModalOpen, setCodeModalOpen] = useState(false);
+
+  const isAuthorized = Boolean(
+    studentDetails?.studentName &&
+    studentDetails?.registerNumber &&
+    isValidRajalakshmiEmail(studentDetails?.email)
+  );
+
+  React.useEffect(() => {
+    if (!isAuthorized) {
+      setStudentGateOpen(true);
+    }
+  }, [isAuthorized, setStudentGateOpen]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl max-w-md w-full text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-700 mx-auto shadow-sm">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 font-heading">
+              Student Login Required
+            </h2>
+            <p className="text-xs text-slate-500 font-mono mt-1">
+              Rajalakshmi Engineering College Virtual Laboratory
+            </p>
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">
+            Only verified students logged in with their official college email ending with <span className="font-mono font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-200">@rajalakshmi.edu.in</span> can access and perform laboratory experiments.
+          </p>
+          <button
+            onClick={() => setStudentGateOpen(true)}
+            className="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>Log in with @rajalakshmi.edu.in</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const config = activePartConfig || experimentConfig;
   if (!config) return null;

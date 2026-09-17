@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Play, Gauge, ShieldCheck, Zap } from 'lucide-react';
 import { GlassCard } from '../components/common/GlassCard';
 import { useExperimentStore } from '../store/experimentStore';
+import { isValidRajalakshmiEmail } from '../data/faculty';
 
 export function ExperimentSelectPage({ onNavigate }) {
   const { setExperiment, currentSubject, studentDetails, setStudentGateOpen } = useExperimentStore();
@@ -166,8 +167,9 @@ export function ExperimentSelectPage({ onNavigate }) {
 
   const handleLaunch = (expId) => {
     setExperiment(expId);
-    if (!studentDetails?.studentName || !studentDetails?.registerNumber) {
+    if (!studentDetails?.studentName || !studentDetails?.registerNumber || !isValidRajalakshmiEmail(studentDetails?.email)) {
       setStudentGateOpen(true);
+      return;
     }
     onNavigate('workspace');
   };

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserCheck, Lock, AlertCircle, CheckCircle2, X, ChevronDown, BookOpen } from 'lucide-react';
+import { UserCheck, Lock, AlertCircle, CheckCircle2, X, ChevronDown, BookOpen, Mail, ShieldCheck } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
+import { isValidRajalakshmiEmail } from '../../data/faculty';
 
 export function StudentDetailsGateModal({ onProceed }) {
   const {
@@ -17,6 +18,7 @@ export function StudentDetailsGateModal({ onProceed }) {
   const [selectedSubjectKey, setSelectedSubjectKey] = useState(currentSubject || 'fluid_mechanics');
   const [name, setName] = useState(studentDetails?.studentName || '');
   const [regNo, setRegNo] = useState(studentDetails?.registerNumber || '');
+  const [email, setEmail] = useState(studentDetails?.email || '');
   const [acadYear, setAcadYear] = useState(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
   const activeSubjectInfo = SUBJECTS_CONFIG[selectedSubjectKey] || SUBJECTS_CONFIG.fluid_mechanics;
   
@@ -27,6 +29,7 @@ export function StudentDetailsGateModal({ onProceed }) {
   useEffect(() => {
     setName(studentDetails?.studentName || '');
     setRegNo(studentDetails?.registerNumber || '');
+    setEmail(studentDetails?.email || '');
     setAcadYear(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
     setSemester(studentDetails?.semester || activeSubjectInfo?.semester || 'VII');
     setSection(studentDetails?.section || activeSubjectInfo?.section || 'B');
@@ -48,23 +51,36 @@ export function StudentDetailsGateModal({ onProceed }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setErrorMsg('');
+
     if (!name.trim()) {
-      setErrorMsg('Please enter your Student Name.');
+      setErrorMsg('Please enter your Student Full Name.');
       return;
     }
     if (!regNo.trim()) {
       setErrorMsg('Please enter your Register Number.');
       return;
     }
+
+    const trimmedEmail = (email || '').trim().toLowerCase();
+    if (!trimmedEmail) {
+      setErrorMsg('Please enter your official college email address.');
+      return;
+    }
+    if (!isValidRajalakshmiEmail(trimmedEmail)) {
+      setErrorMsg('Access Restricted: Only college email accounts ending with @rajalakshmi.edu.in can log in and do experiments.');
+      return;
+    }
+
     if (!acadYear.trim()) {
       setErrorMsg('Please enter the Academic Year.');
       return;
     }
 
-    setErrorMsg('');
     const details = {
       studentName: name.trim(),
       registerNumber: regNo.trim(),
+      email: trimmedEmail,
       academicYear: acadYear.trim(),
       semester,
       section
@@ -81,16 +97,20 @@ export function StudentDetailsGateModal({ onProceed }) {
     }
   };
 
-  const isComplete = studentDetails?.studentName && studentDetails?.registerNumber;
+  const isComplete = Boolean(
+    studentDetails?.studentName &&
+    studentDetails?.registerNumber &&
+    isValidRajalakshmiEmail(studentDetails?.email)
+  );
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="w-full max-w-2xl rounded-2xl bg-white border border-[#EDEEF1] p-6 sm:p-8 shadow-2xl text-slate-900 space-y-6 relative overflow-hidden"
+          className="w-full max-w-2xl rounded-2xl bg-white border border-[#EDEEF1] p-6 sm:p-8 shadow-2xl text-slate-900 space-y-6 relative overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[#EDEEF1] pb-4">
@@ -100,10 +120,10 @@ export function StudentDetailsGateModal({ onProceed }) {
               </div>
               <div>
                 <h3 className="font-heading text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <span>Student Identification Gate</span>
+                  <span>Student Login & Identification Gate</span>
                 </h3>
                 <p className="text-xs text-slate-500 font-sans">
-                  Select course title and enter student details for official lab verification
+                  Official REC Login Required — Only <span className="font-mono font-bold text-violet-700">@rajalakshmi.edu.in</span> accounts permitted
                 </p>
               </div>
             </div>
@@ -112,10 +132,22 @@ export function StudentDetailsGateModal({ onProceed }) {
               <button
                 onClick={() => setStudentGateOpen(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             )}
+          </div>
+
+          {/* Institutional Domain Banner */}
+          <div className="p-3.5 rounded-xl bg-violet-50/70 border border-violet-200/80 flex items-start gap-3 text-xs">
+            <ShieldCheck className="w-5 h-5 text-violet-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 text-violet-900">
+              <p className="font-bold">Rajalakshmi Engineering College Authorization Policy</p>
+              <p className="text-violet-700 leading-relaxed font-sans text-[11px]">
+                To conduct virtual lab experiments and submit official laboratory records, students must verify their identity using their official institutional email address (<span className="font-mono font-semibold">@rajalakshmi.edu.in</span>).
+              </p>
+            </div>
           </div>
 
           {/* Form Fields Grid */}
@@ -220,7 +252,7 @@ export function StudentDetailsGateModal({ onProceed }) {
             {/* Editable Student Inputs */}
             <div className="space-y-3 pt-2 border-t border-slate-200">
               <span className="text-[11px] font-mono uppercase tracking-wider text-violet-700 font-bold block">
-                Required Student Details
+                Required Student Login & Verification
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -235,7 +267,7 @@ export function StudentDetailsGateModal({ onProceed }) {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter student name..."
+                    placeholder="Enter student full name..."
                     className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono text-slate-900 focus:border-violet-500 shadow-sm"
                   />
                 </div>
@@ -271,6 +303,33 @@ export function StudentDetailsGateModal({ onProceed }) {
                     className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono text-slate-900 focus:border-violet-500 shadow-sm"
                   />
                 </div>
+
+                {/* College Email Address (@rajalakshmi.edu.in) */}
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-mono text-slate-700 flex items-center justify-between font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-violet-600" />
+                      <span>Official College Email (@rajalakshmi.edu.in) <span className="text-violet-600">*</span></span>
+                    </span>
+                    <span className="text-[10px] font-bold text-violet-600 font-mono">Must end with @rajalakshmi.edu.in</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. student.initial.2024.chem@rajalakshmi.edu.in"
+                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono text-slate-900 focus:border-violet-500 shadow-sm"
+                    />
+                    {isValidRajalakshmiEmail(email) && (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 absolute right-3 top-1/2 -translate-y-1/2" />
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-sans mt-1">
+                    Only students with this institutional email domain can login and perform experiments.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -286,10 +345,10 @@ export function StudentDetailsGateModal({ onProceed }) {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-heading font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-heading font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="w-4 h-4 text-white" />
-                <span>Save Details & Launch Course</span>
+                <span>Verify @rajalakshmi.edu.in & Launch Virtual Lab</span>
               </button>
             </div>
 

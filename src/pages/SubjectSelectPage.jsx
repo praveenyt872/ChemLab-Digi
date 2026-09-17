@@ -4,6 +4,7 @@ import { Waves, Flame, ArrowRightLeft, Atom, Cog, Gauge, Search } from 'lucide-r
 import { useExperimentStore } from '../store/experimentStore';
 import { SUBJECT_THEMES } from '../components/common/SubjectCardTheme';
 import { ThemedSubjectCard } from '../components/common/ThemedSubjectCard';
+import { isValidRajalakshmiEmail } from '../data/faculty';
 
 export function SubjectSelectPage({ onNavigate }) {
   const { setSubject, studentDetails, setStudentGateOpen } = useExperimentStore();
@@ -11,7 +12,7 @@ export function SubjectSelectPage({ onNavigate }) {
 
   const handleSelectSubject = (subId) => {
     setSubject(subId);
-    if (!studentDetails?.studentName || !studentDetails?.registerNumber) {
+    if (!studentDetails?.studentName || !studentDetails?.registerNumber || !isValidRajalakshmiEmail(studentDetails?.email)) {
       setStudentGateOpen(true);
     }
     onNavigate('experiment');
