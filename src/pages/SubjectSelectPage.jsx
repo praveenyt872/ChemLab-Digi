@@ -29,7 +29,7 @@ export function SubjectSelectPage({ onNavigate }) {
       name: 'Fluid Mechanics',
       icon: <Waves className="w-6 h-6 text-cyan-300" />,
       active: true,
-      experimentsCount: 3,
+      experimentsCount: 10,
       category: 'Core Chemical Engineering',
       desc: 'Flow meters, Venturi Meter, Orifice Meter, Rotameter calibration, Bernoulli principles, and friction losses.',
       theme: SUBJECT_THEMES.fluid_mechanics
