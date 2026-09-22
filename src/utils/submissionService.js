@@ -253,3 +253,42 @@ export async function fetchSubmissions({ subjectId = null, experimentId = null }
     return [];
   }
 }
+
+/**
+ * Deletes a student submission record from the database and removes its PDF from storage.
+ */
+export async function deleteSubmission(submissionId, pdfUrl = null) {
+  try {
+    if (!submissionId) return { success: false, error: 'Submission ID is required.' };
+
+    // 1. Delete from database table lab_submissions
+    const { error: dbError } = await supabase
+      .from('lab_submissions')
+      .delete()
+      .eq('id', submissionId);
+
+    if (dbError) {
+      console.error('Error deleting submission from database:', dbError);
+      return { success: false, error: dbError.message };
+    }
+
+    // 2. If pdfUrl is provided, attempt to clean up file from storage bucket
+    if (pdfUrl) {
+      try {
+        const match = pdfUrl.match(/student-lab-reports\/(.+)$/);
+        if (match && match[1]) {
+          const filePath = decodeURIComponent(match[1]);
+          await supabase.storage.from('student-lab-reports').remove([filePath]);
+        }
+      } catch (storageErr) {
+        console.warn('Non-fatal error removing storage file during submission deletion:', storageErr);
+      }
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Unexpected error deleting submission:', err);
+    return { success: false, error: err.message };
+  }
+}
+

@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import {
-  KeyRound,
-  Power,
-  Copy,
-  Check,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
   Clock,
@@ -19,13 +14,15 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCw,
-  LogOut
+  LogOut,
+  Trash2
 } from 'lucide-react';
 import {
   fetchSubmissions,
   fetchExperimentDeadline,
   fetchAllDeadlines,
-  setExperimentDeadline
+  setExperimentDeadline,
+  deleteSubmission
 } from '../../utils/submissionService';
 
 const TOTAL_CLASS_STRENGTH = 65;
@@ -45,15 +42,7 @@ const EXPERIMENTS_LIST = [
 ];
 
 export function TeacherDashboard({ onEnterLab }) {
-  const {
-    user,
-    generatedCode,
-    generatedCodeTime,
-    generateAccessCode,
-    endAccessCode,
-    authLoading,
-    logout
-  } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const [selectedExpId, setSelectedExpId] = useState('all');
   const [submissions, setSubmissions] = useState([]);
@@ -66,9 +55,9 @@ export function TeacherDashboard({ onEnterLab }) {
   const [isSavingDeadline, setIsSavingDeadline] = useState(false);
   const [deadlineSuccessMsg, setDeadlineSuccessMsg] = useState('');
 
-  // Access code toast
-  const [copied, setCopied] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
+  // Delete state
+  const [isDeletingId, setIsDeletingId] = useState(null);
+  const [deleteSuccessMsg, setDeleteSuccessMsg] = useState('');
 
   // Load Submissions & Deadlines from Supabase
   const loadData = async () => {
@@ -198,30 +187,22 @@ export function TeacherDashboard({ onEnterLab }) {
     setNewDeadlineDate(val);
   };
 
-  // Access code handlers
-  const handleGenerate = async () => {
-    setToastMsg('');
-    const res = await generateAccessCode();
-    if (res.success) {
-      setToastMsg('New 6-digit class access code is now active!');
-      setTimeout(() => setToastMsg(''), 3500);
+  // Handle deleting submission
+  const handleDeleteSubmission = async (id, studentName, regNo, pdfUrl) => {
+    if (!window.confirm(`Are you sure you want to delete the submission for ${studentName || 'this student'} (Reg: ${regNo})? This cannot be undone.`)) {
+      return;
     }
-  };
 
-  const handleEndCode = async () => {
-    const res = await endAccessCode();
+    setIsDeletingId(id);
+    const res = await deleteSubmission(id, pdfUrl);
     if (res.success) {
-      setToastMsg('Classroom access code deactivated.');
-      setTimeout(() => setToastMsg(''), 3000);
+      setSubmissions(prev => prev.filter(s => s.id !== id));
+      setDeleteSuccessMsg(`Submission record for ${regNo} deleted successfully.`);
+      setTimeout(() => setDeleteSuccessMsg(''), 3500);
+    } else {
+      alert('Failed to delete submission: ' + (res.error || 'Unknown error'));
     }
-  };
-
-  const handleCopyCode = () => {
-    if (generatedCode) {
-      navigator.clipboard.writeText(generatedCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    setIsDeletingId(null);
   };
 
   return (
@@ -238,7 +219,7 @@ export function TeacherDashboard({ onEnterLab }) {
             Teacher Management Dashboard
           </h1>
           <p className="text-sm text-slate-600">
-            Welcome, <strong className="text-violet-700">{user?.email}</strong>. Track student PDF submissions, set deadlines, and manage class access codes.
+            Welcome, <strong className="text-violet-700">{user?.email}</strong>. Track student PDF submissions, set experiment deadlines, and manage lab report records.
           </p>
         </div>
 
@@ -524,6 +505,13 @@ export function TeacherDashboard({ onEnterLab }) {
           </div>
         </div>
 
+        {deleteSuccessMsg && (
+          <div className="mx-6 mt-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{deleteSuccessMsg}</span>
+          </div>
+        )}
+
         {/* Table Content */}
         {isLoadingSubmissions ? (
           <div className="p-12 text-center text-slate-500 space-y-2">
@@ -550,7 +538,7 @@ export function TeacherDashboard({ onEnterLab }) {
                   <th className="py-3.5 px-4">Student Name</th>
                   <th className="py-3.5 px-4">Experiment</th>
                   <th className="py-3.5 px-4">Submitted At</th>
-                  <th className="py-3.5 px-4 text-right">PDF Report</th>
+                  <th className="py-3.5 px-4 text-right">Report & Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-sans">
@@ -584,108 +572,38 @@ export function TeacherDashboard({ onEnterLab }) {
                         : '—'}
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      {sub.pdf_url ? (
-                        <div className="inline-flex items-center gap-1.5">
+                      <div className="inline-flex items-center justify-end gap-2">
+                        {sub.pdf_url ? (
                           <a
                             href={sub.pdf_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-800 font-bold text-xs transition-colors"
+                            title="View student submitted lab report PDF"
                           >
                             <span>View PDF</span>
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-mono text-[11px]">No URL</span>
-                      )}
+                        ) : (
+                          <span className="text-slate-400 font-mono text-[11px]">No PDF</span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSubmission(sub.id, sub.student_name, sub.register_number, sub.pdf_url)}
+                          disabled={isDeletingId === sub.id}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition-colors cursor-pointer border border-rose-200 disabled:opacity-50"
+                          title="Delete this submission record from database"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>{isDeletingId === sub.id ? 'Deleting...' : 'Delete'}</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-
-      </div>
-
-      {/* 6. Active Classroom Access Code Manager (Clean Light White Card) */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-6">
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div>
-            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <KeyRound className="w-5 h-5 text-violet-600" />
-              <span>Live Student Classroom Access Code</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Students sign in with Google and enter this code to enter live experiment modules in class.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleGenerate}
-              disabled={authLoading}
-              className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>{generatedCode ? 'Regenerate Code' : 'Generate Code'}</span>
-            </button>
-
-            {generatedCode && (
-              <button
-                onClick={handleEndCode}
-                disabled={authLoading}
-                className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition-all cursor-pointer disabled:opacity-50"
-              >
-                <Power className="w-4 h-4" />
-                <span>End Code</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {toastMsg && (
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-            <Check className="w-4 h-4 text-emerald-600" />
-            <span>{toastMsg}</span>
-          </div>
-        )}
-
-        {generatedCode ? (
-          <div className="bg-violet-50/40 border border-violet-200/80 rounded-2xl p-6 text-center space-y-3">
-            <span className="inline-block px-3 py-1 rounded-full bg-violet-100 text-violet-800 text-xs font-bold uppercase tracking-wider">
-              Active Class Session Code
-            </span>
-
-            <div className="py-2">
-              <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-widest font-mono select-all bg-white px-6 py-3 rounded-2xl border border-violet-200 shadow-xs inline-block">
-                {generatedCode}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 pt-1">
-              <button
-                onClick={handleCopyCode}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold shadow-xs hover:bg-slate-50 transition-all cursor-pointer"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-                <span>{copied ? 'Copied!' : 'Copy Code'}</span>
-              </button>
-
-              {generatedCodeTime && (
-                <span className="text-xs text-slate-500 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" /> Generated at {generatedCodeTime}
-                </span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="bg-slate-50 rounded-2xl p-6 text-center space-y-2 border border-slate-200/60">
-            <p className="text-xs text-slate-600">
-              No active classroom code. Click <strong>"Generate Code"</strong> above to issue a 6-digit code for your students.
-            </p>
           </div>
         )}
 
