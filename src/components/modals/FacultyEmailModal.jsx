@@ -42,16 +42,6 @@ export function FacultyEmailModal({
   const expTitle = experimentConfig?.title || 'Fluid Mechanics Experiment';
   const emailSubject = `Fluid Mechanics Lab Report - Experiment ${expNum}: ${expTitle}`;
 
-  // Formulate high-precision academic result summary line
-  let resultSummary = '';
-  if (headlineResult && typeof headlineResult === 'object') {
-    resultSummary = `• Primary Metric: ${headlineResult.label || 'Result'} = ${headlineResult.value || '—'} ${headlineResult.unit || ''}`;
-  } else if (headlineResult) {
-    resultSummary = `• Primary Metric: ${String(headlineResult)}`;
-  } else {
-    resultSummary = `• Primary Metric: Completed according to REC Fluid Mechanics laboratory manual standard.`;
-  }
-
   const pdfFileName = `Fluid_Mechanics_Exp_${expNum}_${(studentDetails?.registerNumber || 'Report')}.pdf`;
 
   const emailBody = `Respected ${selectedFaculty.salutation} ${selectedFaculty.name},
@@ -78,11 +68,6 @@ EXPERIMENT DETAILS
 • Experiment Name    : ${expTitle}
 • Date of Experiment : ${experimentDate || '—'}
 • Submission Date    : ${new Date().toLocaleDateString('en-GB')}
-
-==================================================
-KEY EXPERIMENTAL RESULT SUMMARY
-==================================================
-${resultSummary}
 
 ==================================================
 ATTACHMENT INSTRUCTIONS
