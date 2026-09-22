@@ -11,8 +11,6 @@ export function AIChatWidget() {
   const messagesEndRef = useRef(null);
   const isOnline = useOnlineStatus();
 
-  if (isReportModalOpen) return null;
-
   const config = activePartConfig || experimentConfig;
   const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
 
@@ -47,6 +45,8 @@ export function AIChatWidget() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isAiThinking]);
+
+  if (isReportModalOpen) return null;
 
   return (
     <>

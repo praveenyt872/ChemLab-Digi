@@ -54,21 +54,29 @@ export default function App() {
       <Footer onNavigate={navigateTo} />
 
       {/* Watermark in Bottom-Right Corner */}
-      <Watermark />
+      <ErrorBoundary>
+        <Watermark />
+      </ErrorBoundary>
 
       {/* Persistent Floating AI Assistant Widget */}
-      <AIChatWidget />
+      <ErrorBoundary>
+        <AIChatWidget />
+      </ErrorBoundary>
 
       {/* PWA Install Banner */}
-      <InstallBanner />
+      <ErrorBoundary>
+        <InstallBanner />
+      </ErrorBoundary>
 
       {/* Modals & Dialogs */}
-      <StudentDetailsGateModal />
-      <OnboardingModal />
-      <DerivationModal />
-      <ValidationDetailModal />
-      <ResetConfirmModal />
-      <ReportExportModal />
+      <ErrorBoundary>
+        <StudentDetailsGateModal />
+        <OnboardingModal />
+        <DerivationModal />
+        <ValidationDetailModal />
+        <ResetConfirmModal />
+        <ReportExportModal />
+      </ErrorBoundary>
 
     </div>
   );
