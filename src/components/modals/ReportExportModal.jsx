@@ -597,8 +597,8 @@ export function ReportExportModal() {
     const chartData = (partRows || [])
       .map((r, idx) => {
         if (!r || !part.graph) return null;
-        const rawX = r[part.graph.x];
-        const rawY = r[part.graph.y];
+        const rawX = r[part.graph.x] !== undefined && r[part.graph.x] !== null ? r[part.graph.x] : (part.graph.x === 'Qth' ? (r['Q_th'] ?? r['qth']) : undefined);
+        const rawY = r[part.graph.y] !== undefined && r[part.graph.y] !== null ? r[part.graph.y] : (part.graph.y === 'Qa' ? r['Qact'] : (part.graph.y === 'Qact' ? r['Qa'] : undefined));
         const xVal = typeof rawX === 'number' ? rawX : parseFloat(rawX);
         const yVal = typeof rawY === 'number' ? rawY : parseFloat(rawY);
 

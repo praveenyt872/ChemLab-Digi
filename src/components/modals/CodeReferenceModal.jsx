@@ -209,26 +209,25 @@ h1 = np.array([${h1Arr.join(', ')}])  # cm
 h2 = np.array([${h2Arr.join(', ')}])  # cm
 t  = np.array([${tArr.join(', ')}])  # s
 
-Q_th, Cd = calculate_venturi(h1, h2, t)
+Q_th, Q_act, Cd = calculate_venturi(h1, h2, t)
 
-# Linear regression theoretical line
-slope, intercept = np.polyfit(Q_th, Cd, 1)
+# Linear regression theoretical line (Slope gives experimental Cd)
+slope, intercept = np.polyfit(Q_th, Q_act, 1)
 Q_line = np.linspace(min(Q_th), max(Q_th), 50)
-Cd_line = slope * Q_line + intercept
+Q_act_line = slope * Q_line + intercept
 
 # MATLAB-style Plotting
 plt.figure(figsize=(7, 4.5))
-plt.plot(Q_th, Cd, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')
-plt.plot(Q_line, Cd_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')
+plt.plot(Q_th, Q_act, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')
+plt.plot(Q_line, Q_act_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')
 plt.xlabel('Theoretical Flow Rate Qth (m³/s)')
-plt.ylabel('Coefficient of Discharge (Cd)')
-plt.title('Venturi Meter Calibration (Cd vs Qth)')
-plt.ylim([0.50, 0.70])
+plt.ylabel('Actual Flow Rate Qact (m³/s)')
+plt.title('Actual Discharge vs. Theoretical Discharge')
 plt.grid(True)
 plt.legend()
 plt.show()`;
 
-    matlabCode = `% MATLAB Reference Script for Venturi Meter Cd Determination
+    matlabCode = `% MATLAB Reference Script for Venturi Meter Calibration
 
 % Student-entered apparatus parameters
 d1 = ${d1}; % Inlet pipe diameter (mm)
@@ -258,21 +257,21 @@ Qact = vol ./ t;
 Qth = (a1 * a2 .* sqrt(2 * g .* H)) ./ sqrt(a1^2 - a2^2);
 Cd = Qact ./ Qth;
 
-% Linear regression fit
-p = polyfit(Qth, Cd, 1);
+% Linear regression fit (Slope gives experimental Cd)
+p = polyfit(Qth, Qact, 1);
 Q_fit = linspace(min(Qth), max(Qth), 100);
-Cd_fit = polyval(p, Q_fit);
+Qact_fit = polyval(p, Q_fit);
 
 % Plotting with MATLAB default aesthetic
 figure;
-plot(Qth, Cd, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');
+plot(Qth, Qact, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');
 hold on;
-plot(Q_fit, Cd_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');
+plot(Q_fit, Qact_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');
 box on; grid on;
 xlabel('Theoretical Flow Rate Qth (m^3/s)');
-ylabel('Coefficient of Discharge (Cd)');
-title('Venturi Meter Calibration (Cd vs Qth)');
-legend('Location', 'northeast');`;
+ylabel('Actual Flow Rate Qact (m^3/s)');
+title('Actual Discharge vs. Theoretical Discharge');
+legend('Location', 'northwest');`;
 
   } else if (expId === 'orifice_meter') {
     const d1 = fixed.d1 ?? 20.0;

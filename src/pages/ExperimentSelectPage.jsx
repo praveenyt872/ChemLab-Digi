@@ -22,7 +22,7 @@ export function ExperimentSelectPage({ onNavigate }) {
     {
       id: 'venturi_meter',
       title: 'Determine Coefficient of Discharge for Venturi Meter',
-      aim: 'To determine the coefficient of discharge (Cd) of the Venturi meter and plot Cd vs Qth.',
+      aim: 'To determine the coefficient of discharge (Cd) of the Venturi meter and plot Actual Discharge vs Theoretical Discharge.',
       schematic: 'Converging Cone + Throat + U-Tube Manometer',
       formulaPreview: 'Qth = (A1 A2 √(2gH)) / √(A1² - A2²)',
       calcCount: '4 Formula Steps',

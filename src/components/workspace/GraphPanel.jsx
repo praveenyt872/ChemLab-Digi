@@ -509,8 +509,8 @@ function GraphPanelContent() {
 
     return (calculatedRows || [])
       .map((r, idx) => {
-        const rawX = r[xKey];
-        const rawY = r[yKey];
+        const rawX = r[xKey] !== undefined && r[xKey] !== null ? r[xKey] : (xKey === 'Qth' ? (r['Q_th'] ?? r['qth']) : undefined);
+        const rawY = r[yKey] !== undefined && r[yKey] !== null ? r[yKey] : (yKey === 'Qa' ? r['Qact'] : (yKey === 'Qact' ? r['Qa'] : undefined));
         const xVal = typeof rawX === 'number' ? rawX : parseFloat(rawX);
         const yVal = typeof rawY === 'number' ? rawY : parseFloat(rawY);
 
