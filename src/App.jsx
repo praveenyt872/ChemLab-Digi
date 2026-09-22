@@ -7,6 +7,7 @@ import { LandingPage } from './pages/LandingPage';
 import { SubjectSelectPage } from './pages/SubjectSelectPage';
 import { ExperimentSelectPage } from './pages/ExperimentSelectPage';
 import { WorkspacePage } from './pages/WorkspacePage';
+import { TeacherDashboard } from './components/auth/TeacherDashboard';
 import { AIChatWidget } from './components/workspace/AIChatWidget';
 import { Watermark } from './components/common/Watermark';
 import { OnboardingModal } from './components/modals/OnboardingModal';
@@ -47,6 +48,7 @@ export default function App() {
           {currentPage === 'subject' && <SubjectSelectPage onNavigate={navigateTo} />}
           {currentPage === 'experiment' && <ExperimentSelectPage onNavigate={navigateTo} />}
           {currentPage === 'workspace' && <WorkspacePage onNavigate={navigateTo} />}
+          {currentPage === 'teacher_dashboard' && <TeacherDashboard onEnterLab={() => navigateTo('subject')} />}
         </ErrorBoundary>
       </main>
 
@@ -70,7 +72,7 @@ export default function App() {
 
       {/* Modals & Dialogs */}
       <ErrorBoundary>
-        <StudentDetailsGateModal />
+        <StudentDetailsGateModal onProceedTeacher={() => navigateTo('teacher_dashboard')} />
         <OnboardingModal />
         <DerivationModal />
         <ValidationDetailModal />

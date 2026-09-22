@@ -22,7 +22,7 @@ import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
 import { isValidRajalakshmiEmail, ALL_FACULTY_LIST, UNIVERSAL_TEACHER_PASSWORD } from '../../data/faculty';
 import recLogo from '../../assets/rec-logo.png';
 
-export function StudentDetailsGateModal({ onProceed }) {
+export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
   const {
     studentDetails,
     isStudentGateOpen,
@@ -174,7 +174,8 @@ export function StudentDetailsGateModal({ onProceed }) {
       setTeacherSuccessMsg('Faculty authentication successful! Launching portal...');
       setTimeout(() => {
         setStudentGateOpen(false);
-        if (onProceed) onProceed();
+        if (onProceedTeacher) onProceedTeacher();
+        else if (onProceed) onProceed();
       }, 700);
     } else {
       setLocalTeacherError(res.error || 'Invalid faculty email or password. Please verify credentials.');

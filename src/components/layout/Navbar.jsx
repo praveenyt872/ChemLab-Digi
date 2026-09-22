@@ -44,6 +44,16 @@ export function Navbar({ currentPage, onNavigate }) {
 
         {/* Center: Navigation Links */}
         <nav className="hidden lg:flex items-center gap-1">
+          {useAuthStore.getState().role === 'teacher' && (
+            <button
+              onClick={() => onNavigate('teacher_dashboard')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                currentPage === 'teacher_dashboard' ? 'bg-violet-600 text-white font-bold' : 'text-violet-300 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>Faculty Dashboard</span>
+            </button>
+          )}
           <button
             onClick={() => onNavigate('subject')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
@@ -84,9 +94,10 @@ export function Navbar({ currentPage, onNavigate }) {
         <div className="flex items-center gap-3 shrink-0">
           {useAuthStore.getState().role === 'teacher' && useAuthStore.getState().user?.email ? (
             <div className="flex items-center gap-1.5">
-              <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-violet-500/40 text-xs font-mono text-slate-200"
-                title={`Logged in as Faculty: ${useAuthStore.getState().user.email}`}
+              <button
+                onClick={() => onNavigate('teacher_dashboard')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-violet-500/40 text-xs font-mono text-slate-200 transition-all cursor-pointer text-left"
+                title={`Logged in as Faculty: ${useAuthStore.getState().user.email}. Click to open Teacher Dashboard.`}
               >
                 <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-[10px] uppercase">
                   F
@@ -95,7 +106,7 @@ export function Navbar({ currentPage, onNavigate }) {
                   <span className="font-semibold text-white block text-[11px] leading-tight max-w-[130px] truncate">{useAuthStore.getState().user.email}</span>
                   <span className="text-[9px] text-violet-400 block font-mono">Department Faculty</span>
                 </div>
-              </div>
+              </button>
               <button
                 onClick={async () => {
                   await useAuthStore.getState().logout();

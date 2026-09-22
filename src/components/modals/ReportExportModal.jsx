@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, FileDown, Printer, Loader2, Download, Mail } from 'lucide-react';
+import { X, FileDown, Printer, Loader2, Download, UploadCloud, CheckCircle2, AlertCircle, Clock, Calendar } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { formatValue, calculateTable, evaluateStepCalculations, formatResultString } from '../../engine/formulaEngine';
 import { KaTeXRenderer } from '../common/KaTeXRenderer';
@@ -18,7 +18,7 @@ import {
 
 import { SUBJECTS_CONFIG, GLOBAL_APP_CONFIG } from '../../data/subjects';
 import { getSchematicDiagram } from '../../utils/schematicAssets';
-import { FacultyEmailModal } from './FacultyEmailModal';
+import { submitLabReport, checkStudentSubmission, fetchExperimentDeadline } from '../../utils/submissionService';
 import recLogo from '../../assets/rec-logo.png';
 
 class ModalErrorBoundary extends React.Component {
@@ -134,7 +134,11 @@ export function ReportExportModal() {
     return getTodayFormattedDate();
   });
 
-  const [isFacultyModalOpen, setFacultyModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionSuccess, setSubmissionSuccess] = useState(null);
+  const [submissionError, setSubmissionError] = useState('');
+  const [deadlineInfo, setDeadlineInfo] = useState({ deadline_at: null, isExpired: false });
+  const [existingSubmission, setExistingSubmission] = useState(null);
 
   React.useEffect(() => {
     try {
@@ -144,7 +148,20 @@ export function ReportExportModal() {
       const savedDates = JSON.parse(localStorage.getItem('labflow_experiment_dates') || '{}');
       setExperimentDate(savedDates[currentExpId] || getTodayFormattedDate());
     } catch (e) {}
-  }, [currentExpId]);
+
+    if (isReportModalOpen && currentExpId) {
+      setSubmissionError('');
+      setSubmissionSuccess(null);
+      fetchExperimentDeadline(currentExpId).then(info => {
+        setDeadlineInfo(info || { deadline_at: null, isExpired: false });
+      });
+      if (studentDetails?.registerNumber) {
+        checkStudentSubmission(studentDetails.registerNumber, currentExpId).then(sub => {
+          setExistingSubmission(sub);
+        });
+      }
+    }
+  }, [currentExpId, isReportModalOpen, studentDetails?.registerNumber]);
 
   const handleExpNumberChange = (val) => {
     setExperimentNumber(val);
@@ -220,6 +237,55 @@ export function ReportExportModal() {
     }, 1500);
   };
 
+  const generatePdfInstance = async () => {
+    if (!reportRef.current) return null;
+    const element = reportRef.current;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      windowWidth: 1200,
+      ignoreElements: (node) => {
+        if (!node) return false;
+        return (
+          node.hasAttribute?.('data-html2canvas-ignore') ||
+          node.classList?.contains('no-print') ||
+          node.id === 'faculty-email-modal-portal'
+        );
+      }
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position = position - pdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+    }
+
+    return pdf;
+  };
+
   const handleDownloadPdf = async (customFileName = null) => {
     if (!reportRef.current) return;
     const finalFileName = (typeof customFileName === 'string' && customFileName.trim())
@@ -232,52 +298,12 @@ export function ReportExportModal() {
     try {
       setIsGeneratingPdf(true);
       await new Promise(r => setTimeout(r, 200));
-      const element = reportRef.current;
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        windowWidth: 1200,
-        ignoreElements: (node) => {
-          if (!node) return false;
-          return (
-            node.hasAttribute?.('data-html2canvas-ignore') ||
-            node.classList?.contains('no-print') ||
-            node.id === 'faculty-email-modal-portal'
-          );
-        }
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = position - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
+      const pdf = await generatePdfInstance();
+      if (pdf) {
+        pdf.save(finalFileName);
+        return true;
       }
-
-      pdf.save(finalFileName);
-      return true;
+      return false;
     } catch (err) {
       console.error('PDF export error:', err);
       window.print();
@@ -287,6 +313,53 @@ export function ReportExportModal() {
       setTimeout(() => {
         document.title = originalTitle;
       }, 1500);
+    }
+  };
+
+  const handleSubmitPdf = async () => {
+    if (isSubmitting || isGeneratingPdf) return;
+
+    if (deadlineInfo.isExpired) {
+      setSubmissionError('The submission deadline has passed. Submissions are no longer accepted for this experiment.');
+      return;
+    }
+
+    if (!studentDetails?.registerNumber || !studentDetails?.studentName) {
+      setSubmissionError('Please ensure your Student Name and Register Number are filled in before submitting.');
+      return;
+    }
+
+    setSubmissionError('');
+    setSubmissionSuccess(null);
+    setIsSubmitting(true);
+
+    try {
+      await new Promise(r => setTimeout(r, 200));
+      const pdf = await generatePdfInstance();
+      if (!pdf) {
+        throw new Error('Could not render document canvas into PDF.');
+      }
+      const pdfBlob = pdf.output('blob');
+
+      const res = await submitLabReport({
+        pdfBlob,
+        fileName: targetPdfFileName,
+        studentDetails,
+        experimentConfig,
+        subjectId: currentSubject
+      });
+
+      if (res.success) {
+        setSubmissionSuccess(res.data);
+        setExistingSubmission(res.data);
+      } else {
+        setSubmissionError(res.error || 'Failed to submit report. Please check connection and try again.');
+      }
+    } catch (err) {
+      console.error('Error submitting report to portal:', err);
+      setSubmissionError(err.message || 'An unexpected error occurred during submission.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1374,25 +1447,25 @@ export function ReportExportModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl report-modal-backdrop">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm report-modal-backdrop">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl glass-panel border border-cyan-500/40 p-6 shadow-2xl bg-slate-950 text-slate-100 space-y-4 report-modal-content"
+        className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white border border-slate-200 p-6 shadow-2xl text-slate-900 space-y-4 report-modal-content"
       >
         <ModalErrorBoundary onClose={() => setReportModalOpen(false)}>
           {/* Top Control Bar */}
-          <div className="flex items-center justify-between pb-3 border-b border-cyan-500/20 no-print">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 no-print gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <div className="w-9 h-9 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-600">
                 <FileDown className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-heading text-base font-bold text-slate-100">
+                <h3 className="font-heading text-base font-bold text-slate-900">
                   Official Experiment Report Export
                 </h3>
-                <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <p className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5 mt-0.5">
                   <img src={recLogo} alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
                   <span>Rajalakshmi Engineering College — Manual Standard Format</span>
                 </p>
@@ -1400,43 +1473,115 @@ export function ReportExportModal() {
             </div>
 
             <div className="flex items-center gap-2">
-              {isFluidMechanics && (
-                <button
-                  onClick={() => setFacultyModalOpen(true)}
-                  disabled={isGeneratingPdf || !isManualComplete}
-                  title={!isManualComplete ? 'Complete all Trial 2+ manual calculation fields before emailing report' : 'Send Report to Respected Faculty'}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-[0_0_15px_rgba(139,92,246,0.35)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Mail className="w-4 h-4 text-violet-200" />
-                  <span>Send to Faculty</span>
-                </button>
-              )}
+              <button
+                onClick={handleSubmitPdf}
+                disabled={isSubmitting || isGeneratingPdf || !isManualComplete || deadlineInfo.isExpired}
+                title={
+                  deadlineInfo.isExpired
+                    ? 'Submission deadline has passed. Submissions are closed.'
+                    : !isManualComplete
+                    ? 'Complete all Trial 2+ manual calculation fields before submitting'
+                    : 'Submit this experiment report as PDF to the Faculty Portal'
+                }
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-white font-bold text-xs transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                  existingSubmission
+                    ? 'bg-emerald-600 hover:bg-emerald-500'
+                    : 'bg-violet-600 hover:bg-violet-500'
+                }`}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                ) : existingSubmission ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-100" />
+                ) : (
+                  <UploadCloud className="w-4 h-4 text-violet-100" />
+                )}
+                <span>{existingSubmission ? 'Resubmit to Portal' : 'Submit Experiment'}</span>
+              </button>
 
               <button
                 onClick={() => handleDownloadPdf()}
                 disabled={isGeneratingPdf || !isManualComplete}
                 title={!isManualComplete ? 'Complete all Trial 2+ manual calculation fields before downloading report' : 'Download PDF File'}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 text-white font-bold text-xs hover:bg-violet-500 disabled:opacity-50 transition-all cursor-pointer shadow-md shadow-violet-600/30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold text-xs hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer shadow-xs disabled:cursor-not-allowed"
               >
-                {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Download className="w-4 h-4 text-white" />}
-                <span>Download PDF File</span>
+                {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin text-slate-700" /> : <Download className="w-4 h-4 text-slate-700" />}
+                <span>Download PDF</span>
               </button>
 
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 text-xs font-mono transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 text-xs font-mono transition-all cursor-pointer"
               >
-                <Printer className="w-4 h-4 text-violet-400" />
+                <Printer className="w-4 h-4 text-slate-600" />
                 <span>Print</span>
               </button>
 
               <button
                 onClick={() => setReportModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+          </div>
+
+          {/* Deadline & Portal Submission Status Banner (no-print) */}
+          <div className="no-print space-y-2">
+            {deadlineInfo?.deadline_at && (
+              <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-mono ${
+                deadlineInfo.isExpired
+                  ? 'bg-rose-50 border-rose-200 text-rose-800'
+                  : 'bg-violet-50 border-violet-200 text-violet-900'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <Clock className={`w-4 h-4 shrink-0 ${deadlineInfo.isExpired ? 'text-rose-600' : 'text-violet-600'}`} />
+                  <span>
+                    <strong>Submission Deadline:</strong> {new Date(deadlineInfo.deadline_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </span>
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase shrink-0 ${
+                  deadlineInfo.isExpired ? 'bg-rose-200 text-rose-900' : 'bg-violet-200 text-violet-900'
+                }`}>
+                  {deadlineInfo.isExpired ? 'Deadline Passed (Locked)' : 'Submissions Open'}
+                </span>
+              </div>
+            )}
+
+            {existingSubmission && (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Submitted to Portal:</strong> Already submitted on {new Date(existingSubmission.submitted_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </span>
+                </div>
+                <a
+                  href={existingSubmission.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-bold text-emerald-700 hover:text-emerald-900 text-[11px]"
+                >
+                  View Submitted PDF ↗
+                </a>
+              </div>
+            )}
+
+            {submissionSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-mono flex items-center gap-2 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>
+                  <strong>Success!</strong> Experiment report submitted to the Faculty Portal.
+                </span>
+              </div>
+            )}
+
+            {submissionError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{submissionError}</span>
+              </div>
+            )}
           </div>
 
           {/* Interpretation Status & Quick Edit Drawer (no-print) — Light / Mid-Light Theme */}
@@ -1597,20 +1742,6 @@ export function ReportExportModal() {
             </div>
 
           </div>
-
-          {/* Faculty Email Modal for Fluid Mechanics */}
-          {isFluidMechanics && (
-            <FacultyEmailModal
-              isOpen={isFacultyModalOpen}
-              onClose={() => setFacultyModalOpen(false)}
-              experimentConfig={experimentConfig}
-              experimentNumber={experimentNumber}
-              experimentDate={experimentDate}
-              studentDetails={studentDetails}
-              onDownloadPdf={handleDownloadPdf}
-              headlineResult={headlineResult}
-            />
-          )}
         </ModalErrorBoundary>
       </motion.div>
     </div>
