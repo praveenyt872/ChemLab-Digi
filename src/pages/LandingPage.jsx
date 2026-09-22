@@ -91,7 +91,7 @@ export function LandingPage({ onNavigate }) {
             className="group px-8 py-4 rounded-xl bg-violet-600 text-white font-bold text-base hover:bg-violet-700 shadow-md flex items-center gap-3 transition-all cursor-pointer"
           >
             <FlaskConical className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            <span>Enter Virtual Lab Dashboard</span>
+            <span>Enter into ChemLab Dashboard</span>
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </motion.div>
