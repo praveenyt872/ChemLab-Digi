@@ -331,6 +331,21 @@ export function ReportExportModal() {
         : (calculatedRows && calculatedRows.length > 0
             ? calculatedRows
             : calculateTable(part.sample_data || [], calcExprs, part.fixed_inputs || [], part.calculation_expressions));
+
+      // Always guarantee input columns reflect the actual student-entered observationRows
+      if (!isSub && observationRows && observationRows.length > 0) {
+        partRows = partRows.map((row, rIdx) => {
+          const obs = observationRows[rIdx];
+          if (!obs) return row;
+          const merged = { ...row };
+          partTrialInputs.forEach(inp => {
+            if (obs[inp.id] !== undefined && obs[inp.id] !== null && obs[inp.id] !== '') {
+              merged[inp.id] = obs[inp.id];
+            }
+          });
+          return merged;
+        });
+      }
     } catch (e) {
       console.error('Error calculating partRows:', e);
       partRows = observationRows || [];
@@ -355,6 +370,13 @@ export function ReportExportModal() {
             updatedRow[col.id] = parsed;
           } else {
             updatedRow[col.id] = null;
+          }
+        });
+
+        // Ensure trial input readings are never wiped or blanked out by manual calculation filtering
+        partTrialInputs.forEach(inp => {
+          if ((updatedRow[inp.id] === undefined || updatedRow[inp.id] === null || updatedRow[inp.id] === '') && observationRows?.[rIdx]?.[inp.id] !== undefined) {
+            updatedRow[inp.id] = observationRows[rIdx][inp.id];
           }
         });
 

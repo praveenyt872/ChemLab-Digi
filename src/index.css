@@ -105,8 +105,13 @@
 /* ------------------------------------------------------------- */
 /* PRINT STYLES FOR CLEAN PDF EXPORT */
 /* ------------------------------------------------------------- */
+@page {
+  size: A4 portrait;
+  margin: 0 !important; /* Strips browser-generated headers & footers (including URL) in Chrome / Edge */
+}
+
 @media print {
-  header, footer, main, nav, button, .no-print, [role="dialog"] > div:first-child {
+  header, footer, main, nav, button, .no-print, .hidden-print, [data-html2canvas-ignore="true"], #watermark-zynix, #ai-chat-button, [role="dialog"] > div:first-child {
     display: none !important;
   }
 
@@ -145,7 +150,7 @@
   .printable-report-sheet {
     background: #ffffff !important;
     color: #000000 !important;
-    padding: 20px !important;
+    padding: 12mm 10mm !important;
     border: none !important;
     box-shadow: none !important;
     width: 100% !important;

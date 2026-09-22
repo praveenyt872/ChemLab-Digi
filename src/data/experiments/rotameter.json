@@ -21,12 +21,12 @@
     {
       "id": "Q",
       "label": "Observed Flow Rate (Q)",
-      "latex": "Q = \\frac{V}{t}",
-      "derivation": "The volumetric flow rate Q represents the volume of fluid V collected in the measuring jar per unit time t:\n\n1. Measure volume V collected in cubic meters (m³).\n2. Record time t taken in seconds (s).\n3. Divide V by t: Q = V / t (m³/s).",
+      "latex": "Q = \\frac{V \\times 10^{-3}}{t}",
+      "derivation": "The volumetric flow rate Q represents the volume of fluid V collected in the measuring jar per unit time t:\n\n1. Measure volume V collected in liters (liter).\n2. Record time t taken in seconds (s).\n3. Calculate actual flow rate Q = (V × 10⁻³) / t (m³/s).",
       "purpose": "Calculates the actual volumetric flow rate passing through the rotameter for a given float reading.",
       "variables": [
-        { "symbol": "V", "meaning": "Volume of water collected", "unit": "m³", "typical_range": "0.001 – 0.01 m³" },
-        { "symbol": "t", "meaning": "Time taken for volume collection", "unit": "sec", "typical_range": "5 – 60 s" },
+        { "symbol": "V", "meaning": "Volume of water collected", "unit": "liter", "typical_range": "1 – 50 liter" },
+        { "symbol": "t", "meaning": "Time taken for volume collection", "unit": "sec", "typical_range": "5 – 180 s" },
         { "symbol": "Q", "meaning": "Observed Volumetric Flow Rate", "unit": "m³/s", "typical_range": "1×10⁻⁵ – 5×10⁻⁴ m³/s" }
       ],
       "assumptions": [
@@ -42,9 +42,9 @@
       "step_id": "Q",
       "step_number": 1,
       "label": "Step 1: Observed / Actual Flow Rate (Q)",
-      "formula_latex": "Q = \\frac{V}{t}",
-      "formula_expression": "V / t",
-      "substitution_template": "Q = \\frac{{V}}{{t}}",
+      "formula_latex": "Q = \\frac{V \\times 10^{-3}}{t}",
+      "formula_expression": "(V > 0.5 ? V * 0.001 : V) / t",
+      "substitution_template": "Q = \\frac{{{V} \\times 10^{-3}}}{{{t}}}",
       "depends_on": ["V", "t"],
       "unit": "m³/s",
       "format": "scientific",
@@ -52,24 +52,24 @@
     }
   ],
   "trial_inputs": [
-    { "id": "R", "label": "Rotameter Reading", "unit": "mm", "type": "number", "placeholder": "e.g. 50", "tooltip": "Position of float top edge on scale" },
-    { "id": "V", "label": "Volume Collected", "unit": "m³", "type": "number", "placeholder": "e.g. 0.002", "tooltip": "Volume of water collected in measuring jar" },
-    { "id": "t", "label": "Time Taken", "unit": "sec", "type": "number", "placeholder": "e.g. 20", "tooltip": "Stopwatch duration for collecting volume V" }
+    { "id": "R", "label": "Rotameter Reading", "unit": "LPH", "type": "number", "placeholder": "e.g. 600", "tooltip": "Position of float on rotameter scale (LPH)" },
+    { "id": "V", "label": "Volume Collected", "unit": "liter", "type": "number", "placeholder": "e.g. 25", "tooltip": "Volume of water collected in measuring jar/tank (liter)" },
+    { "id": "t", "label": "Time Taken", "unit": "sec", "type": "number", "placeholder": "e.g. 120", "tooltip": "Stopwatch duration for collecting volume V (sec)" }
   ],
   "fixed_inputs": [],
   "manual_calculation_mode": true,
   "calculation_expressions": {
-    "Q": "V / t"
+    "Q": "(V > 0.5 ? V * 0.001 : V) / t"
   },
   "calculations": [
     {
       "id": "Q",
       "step_number": 1,
       "label": "Step 1: Volumetric Flow Rate (Q)",
-      "formula_latex": "Q = \\frac{V}{t}",
-      "substitution_template": "Q = \\frac{{V}}{{t}}",
+      "formula_latex": "Q = \\frac{V \\times 10^{-3}}{t}",
+      "substitution_template": "Q = \\frac{{{V} \\times 10^{-3}}}{{{t}}}",
       "variables": [
-        { "symbol": "V", "label": "Volume Collected (V)", "source_field": "V", "unit": "m³" },
+        { "symbol": "V", "label": "Volume Collected (V)", "source_field": "V", "unit": "liter" },
         { "symbol": "t", "label": "Time Taken (t)", "source_field": "t", "unit": "sec" }
       ],
       "result_unit": "m³/s",
@@ -85,12 +85,12 @@
     "x": "Q",
     "y": "R",
     "x_label": "Observed Flow Rate Q (m³/s)",
-    "y_label": "Rotameter Reading R (mm)",
+    "y_label": "Rotameter Reading R (LPH)",
     "title": "Rotameter Calibration Curve (R vs Q)"
   },
   "graph_config": {
     "x_axis": { "label": "Observed Flow Rate Q (m³/s)", "variable_ref": "Q" },
-    "y_axis": { "label": "Rotameter Reading R (mm)", "variable_ref": "R" },
+    "y_axis": { "label": "Rotameter Reading R (LPH)", "variable_ref": "R" },
     "series": [
       {
         "id": "actual",
@@ -114,25 +114,24 @@
   "reference_code": {
     "python": {
       "label": "Python (NumPy / SciPy) Reference",
-      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Formula Q = V / t\ndef calculate_Q(V, t):\n    return V / t  # m^3/s\n\n# Trial observations\nV = np.array([0.001, 0.002, 0.003, 0.004, 0.005, 0.006]) # m^3\nt = np.array([45.0, 42.0, 38.0, 35.0, 31.0, 28.0])       # s\nR = np.array([20, 40, 60, 80, 100, 120])                  # mm\n\n# Calculate observed flow rate\nQ_obs = calculate_Q(V, t)\n\n# Linear regression theoretical calibration line\nslope, intercept = np.polyfit(Q_obs, R, 1)\nQ_line = np.linspace(min(Q_obs), max(Q_obs), 50)\nR_line = slope * Q_line + intercept\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(Q_obs, R, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(Q_line, R_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')\nplt.xlabel('Observed Flow Rate Q (m³/s)')\nplt.ylabel('Rotameter Reading R (mm)')\nplt.title('Rotameter Calibration Curve (R vs Q)')\nplt.grid(True)\nplt.legend()\nplt.show()"
+      "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Formula Q = (V * 1e-3) / t\ndef calculate_Q(V_liters, t):\n    return (V_liters * 1e-3) / t  # m^3/s\n\n# Trial observations\nV = np.array([25, 25, 25, 25, 25])  # liters\nt = np.array([120.0, 70.0, 50.0, 35.0, 30.0]) # s\nR = np.array([600, 1000, 1500, 2000, 2500])   # LPH\n\n# Calculate observed flow rate\nQ_obs = calculate_Q(V, t)\n\n# Linear regression theoretical calibration line\nslope, intercept = np.polyfit(Q_obs, R, 1)\nQ_line = np.linspace(min(Q_obs), max(Q_obs), 50)\nR_line = slope * Q_line + intercept\n\n# MATLAB-style Plotting\nplt.figure(figsize=(7, 4.5))\nplt.plot(Q_obs, R, 'o-', color='#0072BD', linewidth=1.5, label='Observed Data')\nplt.plot(Q_line, R_line, '--', color='#D95319', linewidth=1.5, label='Theoretical Line')\nplt.xlabel('Observed Flow Rate Q (m³/s)')\nplt.ylabel('Rotameter Reading R (LPH)')\nplt.title('Rotameter Calibration Curve (R vs Q)')\nplt.grid(True)\nplt.legend()\nplt.show()"
     },
     "matlab": {
       "label": "MATLAB Plot Script Reference",
-      "code": "% MATLAB Reference Script for Rotameter Calibration\n\n% Observed trial data\nV = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006]; % m^3\nt = [45.0, 42.0, 38.0, 35.0, 31.0, 28.0];       % sec\nR = [20, 40, 60, 80, 100, 120];                  % mm\n\n% Flow rate calculation\nQ_obs = V ./ t; % m^3/s\n\n% Linear regression theoretical fit\np = polyfit(Q_obs, R, 1);\nQ_fit = linspace(min(Q_obs), max(Q_obs), 100);\nR_fit = polyval(p, Q_fit);\n\n% Plotting with MATLAB default aesthetic\nfigure;\nplot(Q_obs, R, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(Q_fit, R_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nbox on; grid on;\nxlabel('Observed Flow Rate Q (m^3/s)');\nylabel('Rotameter Reading R (mm)');\ntitle('Rotameter Calibration Curve (R vs Q)');\nlegend('Location', 'northeast');"
+      "code": "% MATLAB Reference Script for Rotameter Calibration\n\n% Observed trial data\nV = [25, 25, 25, 25, 25];       % liters\nt = [120.0, 70.0, 50.0, 35.0, 30.0]; % sec\nR = [600, 1000, 1500, 2000, 2500];   % LPH\n\n% Flow rate calculation\nQ_obs = (V .* 0.001) ./ t; % m^3/s\n\n% Linear regression theoretical fit\np = polyfit(Q_obs, R, 1);\nQ_fit = linspace(min(Q_obs), max(Q_obs), 100);\nR_fit = polyval(p, Q_fit);\n\n% Plotting with MATLAB default aesthetic\nfigure;\nplot(Q_obs, R, 'o-', 'Color', [0 0.447 0.741], 'LineWidth', 1.5, 'DisplayName', 'Observed Data');\nhold on;\nplot(Q_fit, R_fit, '--', 'Color', [0.85 0.325 0.098], 'LineWidth', 1.5, 'DisplayName', 'Theoretical Line');\nbox on; grid on;\nxlabel('Observed Flow Rate Q (m^3/s)');\nylabel('Rotameter Reading R (LPH)');\ntitle('Rotameter Calibration Curve (R vs Q)');\nlegend('Location', 'northeast');"
     }
   },
   "validation_ranges": {
-    "R": { "min": 5, "max": 300, "label": "Rotameter Reading" },
-    "V": { "min": 0.0001, "max": 0.05, "label": "Volume (m³)" },
-    "t": { "min": 2, "max": 180, "label": "Time (sec)" }
+    "R": { "min": 50, "max": 5000, "label": "Rotameter Reading (LPH)" },
+    "V": { "min": 0.001, "max": 200, "label": "Volume (liter)" },
+    "t": { "min": 2, "max": 300, "label": "Time (sec)" }
   },
   "sample_data": [
-    { "R": 20, "V": 0.001, "t": 45 },
-    { "R": 40, "V": 0.002, "t": 42 },
-    { "R": 60, "V": 0.003, "t": 38 },
-    { "R": 80, "V": 0.004, "t": 35 },
-    { "R": 100, "V": 0.005, "t": 31 },
-    { "R": 120, "V": 0.006, "t": 28 }
+    { "R": 600, "V": 25, "t": 120 },
+    { "R": 1000, "V": 25, "t": 70 },
+    { "R": 1500, "V": 25, "t": 50 },
+    { "R": 2000, "V": 25, "t": 35 },
+    { "R": 2500, "V": 25, "t": 30 }
   ],
   "result_template": "The given rotameter is calibrated.",
   "precautions": [

@@ -180,10 +180,43 @@ const loadInitialManualCalcData = () => {
   return {};
 };
 
-const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isManualMode) => {
+const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isManualMode, activeConfig = null) => {
   if (!isManualMode || !computedRows) return computedRows;
   const expManuals = manualCalcData[expId] || {};
   const primaryKey = getPrimaryKey(expId);
+
+  // Identify trial inputs that must NEVER be cleared
+  const config = activeConfig || EXPERIMENT_CONFIGS[expId];
+  const inputIds = new Set();
+  if (config?.trial_inputs && Array.isArray(config.trial_inputs)) {
+    config.trial_inputs.forEach(inp => inputIds.add(inp.id));
+  }
+  if (config?.parts && Array.isArray(config.parts)) {
+    config.parts.forEach(p => {
+      if (p.trial_inputs && Array.isArray(p.trial_inputs)) {
+        p.trial_inputs.forEach(inp => inputIds.add(inp.id));
+      }
+    });
+  }
+
+  // Calculated columns that should start blank until entered by student
+  const calculatedColKeys = new Set();
+  if (config?.calculated_columns && Array.isArray(config.calculated_columns)) {
+    config.calculated_columns.forEach(col => calculatedColKeys.add(col.id));
+  }
+  if (config?.parts && Array.isArray(config.parts)) {
+    config.parts.forEach(p => {
+      if (p.calculated_columns && Array.isArray(p.calculated_columns)) {
+        p.calculated_columns.forEach(col => calculatedColKeys.add(col.id));
+      }
+    });
+  }
+  if (calculatedColKeys.size === 0) {
+    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V1', 'V2', 'f', 'NRe', 'h', 'dh', 'hf', 'K', 'Hs', 'Hd', 'HT', 'Ip', 'Op', 'eta', 'fc', 'Hst', 'fst', 'NREC'].forEach(k => calculatedColKeys.add(k));
+  }
+
+  // Never clear any trial input column (such as Volume V in rotameter)
+  inputIds.forEach(id => calculatedColKeys.delete(id));
 
   return computedRows.map((row, idx) => {
     if (idx === 0) return row; // Trial 1 is worked example reference row
@@ -192,8 +225,8 @@ const applyManualCalculationsToRows = (computedRows, expId, manualCalcData, isMa
     const stepsData = trialManualData.steps || {};
     const updatedRow = { ...row };
 
-    // Clear all calculated columns by default for Trial 2+ (must start blank)
-    ['H', 'Qa', 'Qact', 'Qth', 'Cd', 'A', 'Q', 'V', 'V1', 'V2', 'f', 'NRe', 'h', 'dh', 'hf', 'K', 'Hs', 'Hd', 'HT', 'Ip', 'Op', 'eta'].forEach(colKey => {
+    // Clear only genuine calculated columns for Trial 2+
+    calculatedColKeys.forEach(colKey => {
       if (updatedRow[colKey] !== undefined) {
         updatedRow[colKey] = null;
       }

@@ -6,10 +6,12 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineAIMessage } from '../pwa/OfflineAIMessage';
 
 export function AIChatWidget() {
-  const { isChatOpen, setChatOpen, chatMessages, sendChatMessage, isAiThinking, experimentConfig, activePartConfig, activePartId, currentSubject } = useExperimentStore();
+  const { isChatOpen, setChatOpen, chatMessages, sendChatMessage, isAiThinking, experimentConfig, activePartConfig, activePartId, currentSubject, isReportModalOpen } = useExperimentStore();
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
   const isOnline = useOnlineStatus();
+
+  if (isReportModalOpen) return null;
 
   const config = activePartConfig || experimentConfig;
   const isProcessControl = currentSubject === 'instrumentation-process-control' || experimentConfig?.subject === 'instrumentation-process-control';
@@ -50,10 +52,12 @@ export function AIChatWidget() {
     <>
       {/* Floating Action Button (Clean vibrant circle bottom-right) */}
       <motion.button
+        id="ai-chat-button"
+        data-html2canvas-ignore="true"
         onClick={() => setChatOpen(!isChatOpen)}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
-        className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-xl border cursor-pointer ${
+        className={`no-print hidden-print fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-xl border cursor-pointer ${
           isOnline
             ? 'bg-violet-600 hover:bg-violet-700 text-white border-violet-500'
             : 'bg-slate-700 hover:bg-slate-800 text-slate-300 border-slate-600'
@@ -77,7 +81,8 @@ export function AIChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-24 right-4 sm:right-6 z-40 w-[calc(100vw-32px)] sm:w-[420px] h-[550px] max-h-[80vh] rounded-2xl bg-white border border-[#EDEEF1] flex flex-col overflow-hidden shadow-2xl text-slate-900"
+            data-html2canvas-ignore="true"
+            className="no-print hidden-print fixed bottom-24 right-4 sm:right-6 z-40 w-[calc(100vw-32px)] sm:w-[420px] h-[550px] max-h-[80vh] rounded-2xl bg-white border border-[#EDEEF1] flex flex-col overflow-hidden shadow-2xl text-slate-900"
           >
             {/* Panel Header */}
             <div className="p-4 border-b border-[#EDEEF1] bg-slate-900 text-white flex items-center justify-between">
