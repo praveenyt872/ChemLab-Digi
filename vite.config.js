@@ -6,6 +6,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
+  resolve: {
+    alias: {
+      html2canvas: 'html2canvas-pro'
+    }
+  },
   plugins: [
     react(),
     tailwindcss(),

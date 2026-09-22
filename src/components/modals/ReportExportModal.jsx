@@ -4,7 +4,7 @@ import { X, FileDown, Printer, Loader2, Download, UploadCloud, CheckCircle2, Ale
 import { useExperimentStore } from '../../store/experimentStore';
 import { formatValue, calculateTable, evaluateStepCalculations, formatResultString } from '../../engine/formulaEngine';
 import { KaTeXRenderer } from '../common/KaTeXRenderer';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 import {
   ComposedChart,
