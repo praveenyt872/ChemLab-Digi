@@ -15,7 +15,8 @@ export function ManualCalculationPanel() {
     updateStepManualVariable,
     updateStepManualResult,
     stdTableA,
-    stdTableB
+    stdTableB,
+    selectedUnits
   } = useExperimentStore();
 
   const config = activePartConfig || experimentConfig;
@@ -85,7 +86,7 @@ export function ManualCalculationPanel() {
           <div className="flex items-center gap-3 flex-wrap text-slate-800 font-bold pt-1">
             {(config?.trial_inputs || []).map((inp) => (
               <span key={inp.id} className="px-2.5 py-1 rounded bg-slate-100 border border-slate-200">
-                {inp.label}: <span className="text-cyan-700">{trial1Obs[inp.id] || '—'} {inp.unit}</span>
+                {inp.label}: <span className="text-cyan-700">{trial1Obs[inp.id] || '—'} {(selectedUnits && selectedUnits[inp.id]) || inp.unit}</span>
               </span>
             ))}
           </div>

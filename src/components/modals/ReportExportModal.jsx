@@ -83,7 +83,9 @@ export function ReportExportModal() {
     setStudentInterpretation,
     manualCalculationData,
     pumpCurveMode,
-    setPumpCurveMode
+    setPumpCurveMode,
+    activeUnitSystem,
+    selectedUnits
   } = useExperimentStore();
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -1001,9 +1003,16 @@ export function ReportExportModal() {
           <div className="space-y-3 printable-section">
             {/* Table 1: Measured Readings */}
             <div className="space-y-1">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">
-                OBSERVATION TABLE (MEASURED READINGS):
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">
+                  OBSERVATION TABLE (MEASURED READINGS):
+                </h3>
+                {activeUnitSystem && activeUnitSystem !== 'default' && (
+                  <span className="text-[9px] font-mono font-bold text-black uppercase bg-gray-100 px-1.5 py-0.5 rounded border border-gray-400">
+                    Units: {activeUnitSystem}
+                  </span>
+                )}
+              </div>
               <div className="border border-black rounded overflow-hidden">
                 <table className="w-full text-center text-[10px] sm:text-[11px] font-mono border-collapse table-auto">
                   <thead>
@@ -1011,7 +1020,7 @@ export function ReportExportModal() {
                       <th className="py-1 px-1.5 border-r border-black text-center w-10 text-[10px] sm:text-[11px]">S.NO</th>
                       {partTrialInputs.map(inp => (
                         <th key={inp.id} className="py-1 px-1.5 border-r last:border-r-0 border-black font-bold break-words text-[10px] sm:text-[11px]">
-                          {formatHeaderLabel(inp.label, inp.unit)}
+                          {formatHeaderLabel(inp.label, (selectedUnits && selectedUnits[inp.id]) || inp.unit)}
                         </th>
                       ))}
                     </tr>
@@ -1073,7 +1082,14 @@ export function ReportExportModal() {
           </div>
         ) : (
           <div className="space-y-1 printable-section">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">OBSERVATION TABLE:</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-black font-mono underline">OBSERVATION TABLE:</h3>
+              {activeUnitSystem && activeUnitSystem !== 'default' && (
+                <span className="text-[9px] font-mono font-bold text-black uppercase bg-gray-100 px-1.5 py-0.5 rounded border border-gray-400">
+                  Units: {activeUnitSystem}
+                </span>
+              )}
+            </div>
             <div className="border border-black rounded overflow-hidden">
               <table className="w-full text-center text-[10px] sm:text-xs font-mono border-collapse table-auto">
                 <thead>
@@ -1081,7 +1097,7 @@ export function ReportExportModal() {
                     <th className="py-1 px-2 border-r border-black text-center w-10">S.NO</th>
                     {partTrialInputs.map(inp => (
                       <th key={inp.id} className="py-1 px-2 border-r border-black font-bold break-words">
-                        {formatHeaderLabel(inp.label, inp.unit)}
+                        {formatHeaderLabel(inp.label, (selectedUnits && selectedUnits[inp.id]) || inp.unit)}
                       </th>
                     ))}
                     {partCalcColumns.map(col => (

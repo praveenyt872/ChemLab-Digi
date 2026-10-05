@@ -16,6 +16,7 @@ import { calculateTable, calculateSummary, validateManualCalculation } from '../
 import { validateObservationData } from '../engine/validationEngine';
 import { askAILabAssistant } from '../engine/aiService';
 import { saveSessionToDb, loadSessionFromDb } from '../utils/indexedDbStore';
+import { convertValue, getUnitQuantity, getPresetUnit } from '../utils/unitConversion';
 
 const EXPERIMENT_CONFIGS = {
   rotameter_calibration: rotameterConfig,
@@ -46,10 +47,52 @@ const getPrimaryKey = (expId, activePartId = 'partA') => {
   return 'Cd';
 };
 
-const computeExperimentTable = (rows, activeConfig, fixedInputs) => {
+export const getInitialSelectedUnits = (config) => {
+  const units = {};
+  if (config?.trial_inputs && Array.isArray(config.trial_inputs)) {
+    config.trial_inputs.forEach(inp => {
+      if (inp.id && inp.unit) {
+        units[inp.id] = inp.unit;
+      }
+    });
+  }
+  return units;
+};
+
+export const normalizeRowsToBaseUnits = (rows, activeConfig, selectedUnits = {}) => {
   if (!activeConfig || !rows) return [];
+  const trialInputs = activeConfig.trial_inputs || [];
+  if (trialInputs.length === 0) return rows;
+
+  return rows.map(row => {
+    const normRow = { ...row };
+    trialInputs.forEach(inp => {
+      const currentUnit = selectedUnits[inp.id] || inp.unit;
+      const baseUnit = inp.unit;
+      if (currentUnit && baseUnit && currentUnit !== baseUnit && normRow[inp.id] !== undefined && normRow[inp.id] !== '') {
+        const val = parseFloat(normRow[inp.id]);
+        if (!isNaN(val) && isFinite(val)) {
+          normRow[inp.id] = convertValue(val, currentUnit, baseUnit);
+        }
+      }
+    });
+    return normRow;
+  });
+};
+
+const computeExperimentTable = (rows, activeConfig, fixedInputs, selectedUnits = {}) => {
+  if (!activeConfig || !rows) return [];
+  const normalizedRows = normalizeRowsToBaseUnits(rows, activeConfig, selectedUnits);
   const exprs = activeConfig.calculation_expressions || activeConfig.calculations;
-  return calculateTable(rows, exprs, fixedInputs, activeConfig.calculation_expressions);
+  const computed = calculateTable(normalizedRows, exprs, fixedInputs, activeConfig.calculation_expressions);
+
+  return computed.map((cRow, idx) => {
+    const orig = rows[idx] || {};
+    return {
+      ...cRow,
+      ...orig
+    };
+  });
 };
 
 export function getActivePartConfig(experimentConfig, activePartId = 'partA') {
@@ -279,10 +322,10 @@ export const useExperimentStore = create((set, get) => ({
   // Standardization Tables State (for RTD CSTR)
   stdTableA: defaultStdA,
   stdTableB: defaultStdB,
-  computedNNaOH: 2.0,
-  computedNHCl: 1.0,
+  // Unit System & Column Units State
+  activeUnitSystem: 'default',
+  selectedUnits: getInitialSelectedUnits(rotameterConfig),
 
-  // Table Data State
   // Table Data State
   observationRows: rotameterConfig.sample_data || [],
   calculatedRows: applyManualCalculationsToRows(
@@ -342,6 +385,7 @@ export const useExperimentStore = create((set, get) => ({
     const rawConfig = EXPERIMENT_CONFIGS[expId] || rotameterConfig;
     const defaultPartId = rawConfig.parts ? rawConfig.parts[0].id : 'partA';
     const activeConfig = getActivePartConfig(rawConfig, defaultPartId);
+    const defaultUnits = getInitialSelectedUnits(activeConfig);
 
     const stdA = defaultStdA;
     const stdB = defaultStdB;
@@ -349,7 +393,7 @@ export const useExperimentStore = create((set, get) => ({
     const effectiveFixed = getEffectiveFixedInputs(activeConfig, stdA, stdB);
 
     const initialRows = activeConfig.sample_data || [];
-    const computedRows = computeExperimentTable(initialRows, activeConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(initialRows, activeConfig, effectiveFixed, defaultUnits);
     const isManualMode = activeConfig.manual_calculation_mode || false;
     const { manualCalculationData } = get();
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, expId, manualCalculationData, isManualMode);
@@ -362,6 +406,8 @@ export const useExperimentStore = create((set, get) => ({
       experimentConfig: rawConfig,
       activePartId: defaultPartId,
       activePartConfig: activeConfig,
+      activeUnitSystem: 'default',
+      selectedUnits: defaultUnits,
       stdTableA: stdA,
       stdTableB: stdB,
       computedNNaOH: nNaOH,
@@ -386,9 +432,10 @@ export const useExperimentStore = create((set, get) => ({
     if (!experimentConfig) return;
 
     const activeConfig = getActivePartConfig(experimentConfig, partId);
+    const defaultUnits = getInitialSelectedUnits(activeConfig);
     const effectiveFixed = getEffectiveFixedInputs(activeConfig, stdTableA, stdTableB);
     const initialRows = activeConfig.sample_data || [];
-    const computedRows = computeExperimentTable(initialRows, activeConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(initialRows, activeConfig, effectiveFixed, defaultUnits);
     const isManualMode = activeConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const flags = validateObservationData(activeConfig, initialRows, calculatedRowsToSet);
@@ -398,6 +445,8 @@ export const useExperimentStore = create((set, get) => ({
     set({
       activePartId: partId,
       activePartConfig: activeConfig,
+      activeUnitSystem: 'default',
+      selectedUnits: defaultUnits,
       observationRows: initialRows,
       calculatedRows: calculatedRowsToSet,
       validationFlags: flags,
@@ -405,8 +454,103 @@ export const useExperimentStore = create((set, get) => ({
     });
   },
 
+  setSelectedUnit: (fieldId, targetUnit) => {
+    const { observationRows, activePartConfig, selectedUnits, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData } = get();
+    const currentUnit = selectedUnits[fieldId] || activePartConfig?.trial_inputs?.find(inp => inp.id === fieldId)?.unit || targetUnit;
+
+    if (currentUnit === targetUnit) return;
+
+    // Convert existing values in observationRows for this specific column
+    const updatedRows = observationRows.map(row => {
+      if (row[fieldId] === undefined || row[fieldId] === null || row[fieldId] === '') return row;
+      const converted = convertValue(row[fieldId], currentUnit, targetUnit);
+      return {
+        ...row,
+        [fieldId]: converted !== null && converted !== undefined ? String(converted) : row[fieldId]
+      };
+    });
+
+    const updatedSelectedUnits = {
+      ...selectedUnits,
+      [fieldId]: targetUnit
+    };
+
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
+    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed, updatedSelectedUnits);
+    const isManualMode = activePartConfig.manual_calculation_mode || false;
+    const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
+    const flags = validateObservationData(activePartConfig, updatedRows, calculatedRowsToSet);
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
+    const summary = calculateSummary(calculatedRowsToSet, primaryKey);
+
+    saveSessionToDb(currentExperimentId, {
+      activePartId,
+      observationRows: updatedRows,
+      calculatedRows: calculatedRowsToSet
+    });
+
+    set({
+      selectedUnits: updatedSelectedUnits,
+      activeUnitSystem: 'custom',
+      observationRows: updatedRows,
+      calculatedRows: calculatedRowsToSet,
+      validationFlags: flags,
+      headlineResult: summary
+    });
+  },
+
+  setUnitSystem: (systemName) => {
+    const { observationRows, activePartConfig, selectedUnits, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData } = get();
+    if (!activePartConfig) return;
+
+    const trialInputs = activePartConfig.trial_inputs || [];
+    const newSelectedUnits = { ...selectedUnits };
+    let updatedRows = [...observationRows];
+
+    trialInputs.forEach(inp => {
+      const qKey = getUnitQuantity(inp.unit);
+      const targetUnit = getPresetUnit(qKey, systemName, inp.unit);
+      const currentUnit = newSelectedUnits[inp.id] || inp.unit;
+
+      if (targetUnit && currentUnit !== targetUnit) {
+        updatedRows = updatedRows.map(row => {
+          if (row[inp.id] === undefined || row[inp.id] === null || row[inp.id] === '') return row;
+          const converted = convertValue(row[inp.id], currentUnit, targetUnit);
+          return {
+            ...row,
+            [inp.id]: converted !== null && converted !== undefined ? String(converted) : row[inp.id]
+          };
+        });
+        newSelectedUnits[inp.id] = targetUnit;
+      }
+    });
+
+    const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
+    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed, newSelectedUnits);
+    const isManualMode = activePartConfig.manual_calculation_mode || false;
+    const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
+    const flags = validateObservationData(activePartConfig, updatedRows, calculatedRowsToSet);
+    const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
+    const summary = calculateSummary(calculatedRowsToSet, primaryKey);
+
+    saveSessionToDb(currentExperimentId, {
+      activePartId,
+      observationRows: updatedRows,
+      calculatedRows: calculatedRowsToSet
+    });
+
+    set({
+      selectedUnits: newSelectedUnits,
+      activeUnitSystem: systemName,
+      observationRows: updatedRows,
+      calculatedRows: calculatedRowsToSet,
+      validationFlags: flags,
+      headlineResult: summary
+    });
+  },
+
   updateCell: (rowIndex, fieldId, value) => {
-    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData } = get();
+    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData, selectedUnits } = get();
     const updatedRows = [...observationRows];
     
     if (!updatedRows[rowIndex]) {
@@ -419,7 +563,7 @@ export const useExperimentStore = create((set, get) => ({
     };
 
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
-    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const flags = validateObservationData(activePartConfig, updatedRows, calculatedRowsToSet);
@@ -442,12 +586,12 @@ export const useExperimentStore = create((set, get) => ({
 
   // Standardization Table Actions
   updateStdCellA: (idx, field, value) => {
-    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, activePartId, manualCalculationData } = get();
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, activePartId, manualCalculationData, selectedUnits } = get();
     const updatedA = [...stdTableA];
     updatedA[idx] = { ...updatedA[idx], [field]: value };
 
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, updatedA, stdTableB);
-    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
@@ -464,12 +608,12 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   updateStdCellB: (idx, field, value) => {
-    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, activePartId, manualCalculationData } = get();
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, activePartId, manualCalculationData, selectedUnits } = get();
     const updatedB = [...stdTableB];
     updatedB[idx] = { ...updatedB[idx], [field]: value };
 
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, updatedB);
-    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const primaryKey = getPrimaryKey(currentExperimentId, activePartId);
@@ -486,10 +630,10 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   addStdRowA: () => {
-    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData } = get();
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData, selectedUnits } = get();
     const updatedA = [...stdTableA, { V1: 10, initial: 0, final: 0.5, concordant: true }];
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, updatedA, stdTableB);
-    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const { nNaOH, nHCl } = computeNormatilities(updatedA, stdTableB);
@@ -497,10 +641,10 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   addStdRowB: () => {
-    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData } = get();
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData, selectedUnits } = get();
     const updatedB = [...stdTableB, { V1: 2, initial: 0, final: 4, concordant: true }];
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, updatedB);
-    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const { nNaOH, nHCl } = computeNormatilities(stdTableA, updatedB);
@@ -508,11 +652,11 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   removeStdRowA: (idx) => {
-    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData } = get();
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData, selectedUnits } = get();
     if (stdTableA.length <= 1) return;
     const updatedA = stdTableA.filter((_, i) => i !== idx);
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, updatedA, stdTableB);
-    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const { nNaOH, nHCl } = computeNormatilities(updatedA, stdTableB);
@@ -520,11 +664,11 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   removeStdRowB: (idx) => {
-    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData } = get();
+    const { stdTableA, stdTableB, activePartConfig, observationRows, currentExperimentId, manualCalculationData, selectedUnits } = get();
     if (stdTableB.length <= 1) return;
     const updatedB = stdTableB.filter((_, i) => i !== idx);
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, updatedB);
-    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(observationRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const { nNaOH, nHCl } = computeNormatilities(stdTableA, updatedB);
@@ -532,7 +676,7 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   addRow: () => {
-    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData } = get();
+    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData, selectedUnits } = get();
     const newRow = {};
     (activePartConfig.trial_inputs || []).forEach(inp => {
       newRow[inp.id] = '';
@@ -540,7 +684,7 @@ export const useExperimentStore = create((set, get) => ({
 
     const updatedRows = [...observationRows, newRow];
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
-    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const flags = validateObservationData(activePartConfig, updatedRows, calculatedRowsToSet);
@@ -555,10 +699,10 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   removeRow: (rowIndex) => {
-    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData } = get();
+    const { observationRows, activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData, selectedUnits } = get();
     const updatedRows = observationRows.filter((_, idx) => idx !== rowIndex);
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
-    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(updatedRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const flags = validateObservationData(activePartConfig, updatedRows, calculatedRowsToSet);
@@ -573,7 +717,7 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   resetTable: () => {
-    const { activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData } = get();
+    const { activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData, selectedUnits } = get();
     const defaultRows = Array(5).fill(0).map(() => {
       const emptyRow = {};
       (activePartConfig.trial_inputs || []).forEach(inp => { emptyRow[inp.id] = ''; });
@@ -581,7 +725,7 @@ export const useExperimentStore = create((set, get) => ({
     });
 
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
-    const computedRows = computeExperimentTable(defaultRows, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(defaultRows, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const flags = validateObservationData(activePartConfig, defaultRows, calculatedRowsToSet);
@@ -597,10 +741,27 @@ export const useExperimentStore = create((set, get) => ({
   },
 
   loadSampleData: () => {
-    const { activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData } = get();
-    const sample = activePartConfig.sample_data || [];
+    const { activePartConfig, currentExperimentId, activePartId, stdTableA, stdTableB, manualCalculationData, selectedUnits } = get();
+    const rawSample = activePartConfig.sample_data || [];
+    const trialInputs = activePartConfig.trial_inputs || [];
+
+    // Convert raw sample data (in base units) to currently selected units if modified
+    const sample = rawSample.map(row => {
+      const convertedRow = { ...row };
+      trialInputs.forEach(inp => {
+        const currentUnit = selectedUnits[inp.id] || inp.unit;
+        if (currentUnit && inp.unit && currentUnit !== inp.unit && convertedRow[inp.id] !== undefined && convertedRow[inp.id] !== '') {
+          const converted = convertValue(convertedRow[inp.id], inp.unit, currentUnit);
+          if (converted !== null && converted !== undefined) {
+            convertedRow[inp.id] = converted;
+          }
+        }
+      });
+      return convertedRow;
+    });
+
     const effectiveFixed = getEffectiveFixedInputs(activePartConfig, stdTableA, stdTableB);
-    const computedRows = computeExperimentTable(sample, activePartConfig, effectiveFixed);
+    const computedRows = computeExperimentTable(sample, activePartConfig, effectiveFixed, selectedUnits);
     const isManualMode = activePartConfig.manual_calculation_mode || false;
     const calculatedRowsToSet = applyManualCalculationsToRows(computedRows, currentExperimentId, manualCalculationData, isManualMode);
     const flags = validateObservationData(activePartConfig, sample, calculatedRowsToSet);

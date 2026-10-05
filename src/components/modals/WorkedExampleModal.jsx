@@ -12,7 +12,8 @@ export function WorkedExampleModal() {
     activePartConfig,
     experimentConfig,
     observationRows,
-    calculatedRows
+    calculatedRows,
+    selectedUnits
   } = useExperimentStore();
 
   if (!isWorkedExampleOpen) return null;
@@ -73,7 +74,7 @@ export function WorkedExampleModal() {
               {(config?.trial_inputs || []).map((inp) => (
                 <div key={inp.id} className="p-2 rounded bg-slate-950 border border-slate-800/60 flex items-center justify-between">
                   <span className="text-slate-400">{inp.label}:</span>
-                  <span className="font-bold text-slate-100">{trial1Obs[inp.id] || '—'} {inp.unit}</span>
+                  <span className="font-bold text-slate-100">{trial1Obs[inp.id] || '—'} {(selectedUnits && selectedUnits[inp.id]) || inp.unit}</span>
                 </div>
               ))}
             </div>
