@@ -1,7 +1,7 @@
 import { evaluate } from 'mathjs';
 
 /**
- * Formula Engine for Chem Digi Lab
+ * Formula Engine for ChemZ Lab
  * Dynamically evaluates mathematical expressions defined in experiment JSON configs.
  * Uses mathjs parse & evaluate for safety (NO raw eval).
  */

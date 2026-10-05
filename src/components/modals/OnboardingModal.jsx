@@ -11,9 +11,9 @@ export function OnboardingModal() {
 
   const slides = [
     {
-      title: 'Welcome to Chem Digi Lab',
+      title: 'Welcome to ChemZ Lab',
       icon: <FlaskConical className="w-8 h-8 text-violet-600" />,
-      desc: 'Chem Digi Lab is a virtual laboratory platform designed for Chemical Engineering students. It automates calculations, builds calibration curves, and validates physics readings in real-time.'
+      desc: 'ChemZ Lab is a virtual laboratory platform designed for Chemical Engineering students. It automates calculations, builds calibration curves, and validates physics readings in real-time.'
     },
     {
       title: 'Enter Observations & Live Calculations',

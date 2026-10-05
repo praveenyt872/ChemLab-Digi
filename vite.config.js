@@ -18,8 +18,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'manifest.json'],
       manifest: {
-        name: 'Chem Digi Lab',
-        short_name: 'Chem Digi Lab',
+        name: 'ChemZ Lab',
+        short_name: 'ChemZ Lab',
         description: 'AI-powered virtual laboratory for Chemical Engineering students',
         theme_color: '#0a0a0f',
         background_color: '#0a0a0f',

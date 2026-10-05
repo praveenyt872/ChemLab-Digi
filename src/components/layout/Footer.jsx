@@ -12,7 +12,7 @@ export function Footer({ onNavigate }) {
             <FlaskConical className="w-4 h-4 text-violet-700" />
           </div>
           <div>
-            <span className="font-heading font-bold text-slate-900">Chem Digi Lab</span>
+            <span className="font-heading font-bold text-slate-900">ChemZ Lab</span>
             <p className="text-xs text-slate-500 font-sans flex items-center gap-1.5 mt-0.5">
               <img src={recLogo} alt="REC Logo" className="w-3.5 h-3.5 object-contain shrink-0" />
               <span>Rajalakshmi Engineering College</span>
