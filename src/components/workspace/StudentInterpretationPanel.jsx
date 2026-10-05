@@ -1,12 +1,11 @@
 import React from 'react';
-import { FileText, Sparkles, CheckCircle2 } from 'lucide-react';
+import { FileText, CheckCircle2 } from 'lucide-react';
 import { useExperimentStore } from '../../store/experimentStore';
 import { GlassCard } from '../common/GlassCard';
 
 export function StudentInterpretationPanel() {
   const {
     currentExperimentId,
-    experimentConfig,
     studentInterpretations,
     setStudentInterpretation
   } = useExperimentStore();
@@ -20,13 +19,6 @@ export function StudentInterpretationPanel() {
 
   const handleTextChange = (e) => {
     setStudentInterpretation(expId, e.target.value);
-  };
-
-  const handleInsertTemplate = () => {
-    const title = experimentConfig?.title || 'this experiment';
-    const sampleTemplate = `Experimental observations recorded during ${title} divert from theoretical calculations due to inherent physical system losses, fluid viscosity friction along internal pipe walls, and entrance/exit boundary layer turbulence. During trial measurement intervals, minor differential manometer reading parallax and small flow rate fluctuations contributed to variance between empirical readings and ideal mathematical models. Furthermore, ambient room temperature variations, minor fitting head losses, and instrument calibration tolerances account for the numerical deviation observed between bench measurements and theoretical predictions. These real-world physical dynamics explain why experimental results naturally diverge from idealized theoretical formulas.`;
-
-    setStudentInterpretation(expId, sampleTemplate);
   };
 
   return (
@@ -56,32 +48,13 @@ export function StudentInterpretationPanel() {
         </div>
       </div>
 
-      {/* Analytical Guidance Note */}
-      <div className="p-3.5 rounded-xl bg-violet-50/70 border border-violet-100 text-xs font-sans text-slate-700 space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="font-mono font-bold text-violet-800 uppercase tracking-wider block">
-            INTERPRETATION GUIDANCE
-          </span>
-          <button
-            onClick={handleInsertTemplate}
-            className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-violet-700 hover:text-violet-900 underline cursor-pointer"
-          >
-            <Sparkles className="w-3 h-3 text-violet-600" />
-            <span>Load Sample Guide Template</span>
-          </button>
-        </div>
-        <p className="leading-relaxed">
-          Provide your engineering analysis discussing why experimental observations divert from theoretical values (e.g. fluid skin friction, heat dissipation to ambient air, non-ideal mixing, pressure tap entrance losses, or instrument calibration tolerances).
-        </p>
-      </div>
-
       {/* Main Interpretation Textarea */}
       <div className="relative">
         <textarea
           rows={6}
           value={text}
           onChange={handleTextChange}
-          placeholder="Write your student interpretation here... Explain physical reasons for variance between experimental measurements and theoretical values."
+          placeholder="Write your student interpretation here... Explain physical reasons for variance between experimental measurements and theoretical values (e.g. fluid skin friction, heat dissipation to ambient air, non-ideal mixing, pressure tap entrance losses, or instrument calibration tolerances)."
           className="w-full p-4 rounded-xl text-xs font-sans leading-relaxed text-slate-900 placeholder-slate-400 bg-white border border-slate-200 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all shadow-inner"
         />
 
