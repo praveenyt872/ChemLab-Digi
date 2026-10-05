@@ -16,7 +16,9 @@ import {
   RefreshCw,
   LogOut,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  Layers,
+  CheckCheck
 } from 'lucide-react';
 import {
   fetchSubmissions,
@@ -30,6 +32,10 @@ import {
   deletePermanently,
   emptyRecycleBin
 } from '../../utils/submissionService';
+import {
+  combineStudentExperimentPdfs,
+  sortStudentSubmissionsByExpNumber
+} from '../../utils/pdfMergeService';
 
 const TOTAL_CLASS_STRENGTH = 65;
 
@@ -56,14 +62,16 @@ export function TeacherDashboard({ onEnterLab }) {
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Tab & Recycle Bin state
-  const [activeTab, setActiveTab] = useState('active'); // 'active' | 'recycle_bin'
+  // Tab, Merging, & Recycle Bin state
+  const [activeTab, setActiveTab] = useState('active'); // 'active' | 'combine' | 'recycle_bin'
   const [recycleBin, setRecycleBin] = useState([]);
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [isRestoringId, setIsRestoringId] = useState(null);
   const [isPermanentDeletingId, setIsPermanentDeletingId] = useState(null);
   const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);
   const [deleteSuccessMsg, setDeleteSuccessMsg] = useState('');
+  const [mergingRegNo, setMergingRegNo] = useState(null);
+  const [mergeStatus, setMergeStatus] = useState('');
 
   // Deadline editing state
   const [newDeadlineDate, setNewDeadlineDate] = useState('');
@@ -119,6 +127,65 @@ export function TeacherDashboard({ onEnterLab }) {
       return matchesExp && matchesSearch;
     });
   }, [recycleBin, selectedExpId, searchTerm]);
+
+  // Group all active submissions by student (Register Number)
+  const studentRecordsSummary = useMemo(() => {
+    const studentMap = new Map();
+
+    submissions.forEach(sub => {
+      const reg = String(sub.register_number || '').trim();
+      if (!reg) return;
+
+      if (!studentMap.has(reg)) {
+        studentMap.set(reg, {
+          registerNumber: reg,
+          studentName: sub.student_name || 'Student',
+          studentEmail: sub.student_email || '',
+          submissions: []
+        });
+      }
+
+      studentMap.get(reg).submissions.push(sub);
+    });
+
+    const list = Array.from(studentMap.values()).map(st => {
+      // Sort each student's submissions strictly by the experiment number entered/assigned by student
+      const sortedSubs = sortStudentSubmissionsByExpNumber(st.submissions);
+      return {
+        ...st,
+        submissions: sortedSubs,
+        completedCount: sortedSubs.length,
+        isFullyComplete: sortedSubs.length >= 10
+      };
+    });
+
+    // Natural sort by register number
+    return list.sort((a, b) => {
+      const matchA = a.registerNumber.match(/\d+$/);
+      const matchB = b.registerNumber.match(/\d+$/);
+      if (matchA && matchB) {
+        const numA = parseInt(matchA[0], 10);
+        const numB = parseInt(matchB[0], 10);
+        if (numA !== numB) return numA - numB;
+      }
+      return a.registerNumber.localeCompare(b.registerNumber, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }, [submissions]);
+
+  // Filter student records by search term
+  const filteredStudentRecords = useMemo(() => {
+    if (!searchTerm) return studentRecordsSummary;
+    const s = searchTerm.toLowerCase();
+    return studentRecordsSummary.filter(st =>
+      st.studentName.toLowerCase().includes(s) ||
+      st.registerNumber.toLowerCase().includes(s) ||
+      (st.studentEmail && st.studentEmail.toLowerCase().includes(s))
+    );
+  }, [studentRecordsSummary, searchTerm]);
+
+  const fullyCompletedStudentsCount = useMemo(() => {
+    return studentRecordsSummary.filter(st => st.isFullyComplete).length;
+  }, [studentRecordsSummary]);
 
   // Unique student submissions count for selected experiment
   const submittedCount = useMemo(() => {
@@ -283,6 +350,36 @@ export function TeacherDashboard({ onEnterLab }) {
     setDeleteSuccessMsg('All reports in the Recycle Bin have been permanently deleted.');
     setTimeout(() => setDeleteSuccessMsg(''), 4500);
     setIsEmptyingTrash(false);
+  };
+
+  // 5. Combine & Download all experiment PDFs for a student
+  const handleCombinePdfs = async (student) => {
+    if (!student.submissions || student.submissions.length === 0) {
+      alert('No submitted experiment reports available for this student.');
+      return;
+    }
+
+    setMergingRegNo(student.registerNumber);
+    setMergeStatus('Initializing merged document...');
+
+    const res = await combineStudentExperimentPdfs({
+      studentName: student.studentName,
+      registerNumber: student.registerNumber,
+      submissions: student.submissions,
+      onProgress: ({ current, total, status }) => {
+        setMergeStatus(status);
+      }
+    });
+
+    if (res.success) {
+      setDeleteSuccessMsg(`Combined Record for ${student.registerNumber} (${student.studentName}) downloaded successfully! (${res.count} experiments compiled)`);
+      setTimeout(() => setDeleteSuccessMsg(''), 5500);
+    } else {
+      alert('Failed to combine PDFs: ' + (res.error || 'Unknown error'));
+    }
+
+    setMergingRegNo(null);
+    setMergeStatus('');
   };
 
   return (
@@ -557,7 +654,7 @@ export function TeacherDashboard({ onEnterLab }) {
       {/* 5. Submissions & Recycle Bin Table Section */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         
-        {/* Navigation Tabs (Active vs Recycle Bin) */}
+        {/* Navigation Tabs (Active vs Combine 10-in-1 vs Recycle Bin) */}
         <div className="flex flex-wrap items-center justify-between border-b border-slate-200 px-6 pt-3 bg-slate-50/70 gap-3">
           <div className="flex items-center gap-2">
             <button
@@ -573,6 +670,24 @@ export function TeacherDashboard({ onEnterLab }) {
               <span>Active Submissions</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-violet-100 text-violet-800 font-bold">
                 {filteredSubmissions.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('combine')}
+              className={`pb-3 px-3.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'combine'
+                  ? 'border-indigo-600 text-indigo-700 bg-white rounded-t-xl shadow-xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Combine 10-in-1 Records</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                fullyCompletedStudentsCount > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+              }`}>
+                {fullyCompletedStudentsCount} Complete
               </span>
             </button>
 
@@ -600,7 +715,13 @@ export function TeacherDashboard({ onEnterLab }) {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder={activeTab === 'active' ? 'Search Active Submissions...' : 'Search Recycle Bin...'}
+              placeholder={
+                activeTab === 'active'
+                  ? 'Search Active Submissions...'
+                  : activeTab === 'combine'
+                  ? 'Search by Student Name or Reg No...'
+                  : 'Search Recycle Bin...'
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 shadow-xs"
@@ -715,7 +836,159 @@ export function TeacherDashboard({ onEnterLab }) {
           </div>
         )}
 
-        {/* TAB 2: RECYCLE BIN (DELETED REPORTS SPACE) */}
+        {/* TAB 2: COMBINE 10-IN-1 RECORDS */}
+        {activeTab === 'combine' && (
+          <div>
+            {/* Guidance Toolbar */}
+            <div className="p-4 bg-indigo-50/70 border-b border-indigo-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-indigo-950">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 shrink-0">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <strong className="block text-slate-900">Student Consolidated Records (Combined Single PDF)</strong>
+                  <span className="text-slate-600">
+                    Merges all submitted experiment reports into one single semester record PDF, organized in the order of experiment numbers given by the student (Ex. 1, 2, 3...).
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="px-3 py-1.5 rounded-xl bg-white border border-indigo-200 font-mono font-bold text-indigo-700 shadow-xs">
+                  {fullyCompletedStudentsCount} of {studentRecordsSummary.length} students completed all 10
+                </span>
+              </div>
+            </div>
+
+            {filteredStudentRecords.length === 0 ? (
+              <div className="p-12 text-center text-slate-500 space-y-2">
+                <Users className="w-8 h-8 mx-auto text-slate-300" />
+                <h3 className="text-sm font-bold text-slate-700">No Student Records Found</h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  {searchTerm
+                    ? 'No students matching your search criteria.'
+                    : 'No student submissions found. Once students submit experiments, they will appear here grouped by student.'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-indigo-50/50 border-b border-slate-200 text-slate-600 font-mono font-bold uppercase tracking-wider text-[11px]">
+                      <th className="py-3.5 px-4 w-12 text-center">#</th>
+                      <th className="py-3.5 px-4">Register Number</th>
+                      <th className="py-3.5 px-4">Student Name</th>
+                      <th className="py-3.5 px-4">Completion Status</th>
+                      <th className="py-3.5 px-4">Experiments Included (Student Order)</th>
+                      <th className="py-3.5 px-4 text-right">Combined Record</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-sans">
+                    {filteredStudentRecords.map((st, idx) => (
+                      <tr key={st.registerNumber || idx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4 text-center font-mono font-semibold text-slate-400">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-indigo-950">
+                          {st.registerNumber}
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-800">
+                          {st.studentName}
+                          {st.studentEmail && (
+                            <span className="block text-[10px] font-mono text-slate-400">
+                              {st.studentEmail}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1.5 max-w-[140px]">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className={`font-bold ${st.isFullyComplete ? 'text-emerald-700' : 'text-slate-600'}`}>
+                                {st.completedCount} / 10
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-400">
+                                {Math.round((st.completedCount / 10) * 100)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  st.isFullyComplete ? 'bg-emerald-500' : 'bg-indigo-500'
+                                }`}
+                                style={{ width: `${Math.min(100, (st.completedCount / 10) * 100)}%` }}
+                              />
+                            </div>
+                            {st.isFullyComplete && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                <CheckCheck className="w-3 h-3" /> All 10 Submitted
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-wrap gap-1 max-w-md">
+                            {st.submissions.map((sub, sIdx) => {
+                              const matchFile = (sub.file_name || '').match(/Exp_(\d+)/i);
+                              const expNum = matchFile ? matchFile[1] : (sIdx + 1);
+                              return (
+                                <a
+                                  key={sub.id || sIdx}
+                                  href={sub.pdf_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-[10px] font-mono border border-slate-200 transition-colors"
+                                  title={`View Ex. ${expNum}: ${sub.experiment_name || sub.experiment_id}`}
+                                >
+                                  <span>Ex.{expNum}</span>
+                                  <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                                </a>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleCombinePdfs(st)}
+                            disabled={mergingRegNo !== null}
+                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 ${
+                              st.isFullyComplete
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                            }`}
+                            title={
+                              st.isFullyComplete
+                                ? 'Combine and download complete 10-in-1 record PDF'
+                                : `Combine and download all ${st.completedCount} submitted experiment PDFs`
+                            }
+                          >
+                            {mergingRegNo === st.registerNumber ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span className="font-mono text-[11px]">{mergeStatus || 'Merging...'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-3.5 h-3.5" />
+                                <span>
+                                  {st.isFullyComplete
+                                    ? 'Combine 10-in-1 PDF'
+                                    : `Combine (${st.completedCount} in 1)`}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: RECYCLE BIN (DELETED REPORTS SPACE) */}
         {activeTab === 'recycle_bin' && (
           <div>
             {/* Informational Guidance & Empty Bin Toolbar */}
