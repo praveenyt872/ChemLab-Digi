@@ -96,16 +96,17 @@ export async function submitLabReport({
 export async function checkStudentSubmission(registerNumber, experimentId) {
   if (!registerNumber || !experimentId) return null;
   try {
+    const trashedIds = new Set(getRecycleBinSubmissions().map(t => t.id));
     const { data, error } = await supabase
       .from('lab_submissions')
       .select('*')
       .eq('register_number', String(registerNumber).trim())
       .eq('experiment_id', experimentId)
-      .order('submitted_at', { ascending: false })
-      .limit(1);
+      .order('submitted_at', { ascending: false });
 
     if (error || !data || data.length === 0) return null;
-    return data[0];
+    const active = data.find(item => !item.is_deleted && !trashedIds.has(item.id));
+    return active || null;
   } catch (err) {
     console.warn('Error checking student submission:', err);
     return null;
@@ -229,8 +230,12 @@ export async function fetchSubmissions({ subjectId = null, experimentId = null }
       return [];
     }
 
+    // Filter out items that are currently in the recycle bin
+    const trashedIds = new Set(getRecycleBinSubmissions().map(t => t.id));
+    const activeSubmissions = (data || []).filter(sub => !sub.is_deleted && !trashedIds.has(sub.id));
+
     // Sort by register number in natural ascending order (01, 02, 03... or 210701001, 210701002...)
-    const sorted = [...(data || [])].sort((a, b) => {
+    const sorted = [...activeSubmissions].sort((a, b) => {
       const regA = String(a.register_number || '').trim();
       const regB = String(b.register_number || '').trim();
 
@@ -290,5 +295,114 @@ export async function deleteSubmission(submissionId, pdfUrl = null) {
     console.error('Unexpected error deleting submission:', err);
     return { success: false, error: err.message };
   }
+}
+
+/* =========================================================================
+   RECYCLE BIN / SOFT-DELETE SYSTEM (Faculty Workspace)
+   ========================================================================= */
+
+const RECYCLE_BIN_KEY = 'chemlab_recycle_bin';
+
+/**
+ * Retrieves all soft-deleted reports stored in the Recycle Bin.
+ */
+export function getRecycleBinSubmissions() {
+  try {
+    const raw = localStorage.getItem(RECYCLE_BIN_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.warn('Error reading recycle bin from localStorage:', e);
+    return [];
+  }
+}
+
+/**
+ * Saves items into the Recycle Bin in localStorage.
+ */
+export function saveRecycleBinSubmissions(items) {
+  try {
+    localStorage.setItem(RECYCLE_BIN_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.warn('Error saving recycle bin to localStorage:', e);
+  }
+}
+
+/**
+ * Moves an active student submission to the Recycle Bin (Soft Delete).
+ */
+export async function moveToRecycleBin(submission) {
+  try {
+    if (!submission?.id) return { success: false, error: 'Invalid submission record' };
+    const current = getRecycleBinSubmissions();
+    const trashedItem = {
+      ...submission,
+      deleted_at: new Date().toISOString()
+    };
+    const updated = [trashedItem, ...current.filter(item => item.id !== submission.id)];
+    saveRecycleBinSubmissions(updated);
+
+    // Optionally mark is_deleted in Supabase if column exists
+    try {
+      await supabase
+        .from('lab_submissions')
+        .update({ is_deleted: true })
+        .eq('id', submission.id);
+    } catch (_) {}
+
+    return { success: true, data: trashedItem };
+  } catch (err) {
+    console.error('Error moving submission to recycle bin:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Restores a submission from the Recycle Bin back to the active table.
+ */
+export async function restoreFromRecycleBin(submissionId) {
+  try {
+    if (!submissionId) return { success: false, error: 'Invalid submission ID' };
+    const current = getRecycleBinSubmissions();
+    const restoredItem = current.find(item => item.id === submissionId);
+    const updated = current.filter(item => item.id !== submissionId);
+    saveRecycleBinSubmissions(updated);
+
+    // Optionally unmark is_deleted in Supabase if column exists
+    try {
+      await supabase
+        .from('lab_submissions')
+        .update({ is_deleted: false })
+        .eq('id', submissionId);
+    } catch (_) {}
+
+    return { success: true, data: restoredItem };
+  } catch (err) {
+    console.error('Error restoring submission from recycle bin:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Permanently deletes a submission from both database/storage and the recycle bin.
+ */
+export async function deletePermanently(submissionId, pdfUrl = null) {
+  const res = await deleteSubmission(submissionId, pdfUrl);
+  if (res.success) {
+    const current = getRecycleBinSubmissions();
+    saveRecycleBinSubmissions(current.filter(item => item.id !== submissionId));
+  }
+  return res;
+}
+
+/**
+ * Empties all items from the Recycle Bin permanently.
+ */
+export async function emptyRecycleBin() {
+  const current = getRecycleBinSubmissions();
+  for (const item of current) {
+    await deleteSubmission(item.id, item.pdf_url);
+  }
+  saveRecycleBinSubmissions([]);
+  return { success: true, count: current.length };
 }
 
