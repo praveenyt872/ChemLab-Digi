@@ -1501,7 +1501,9 @@ export function ReportExportModal() {
                 }
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-white font-bold text-xs transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                   existingSubmission
-                    ? 'bg-emerald-600 hover:bg-emerald-500'
+                    ? existingSubmission.status === 'not_approved'
+                      ? 'bg-amber-600 hover:bg-amber-500'
+                      : 'bg-emerald-600 hover:bg-emerald-500'
                     : 'bg-violet-600 hover:bg-violet-500'
                 }`}
               >
@@ -1512,7 +1514,13 @@ export function ReportExportModal() {
                 ) : (
                   <UploadCloud className="w-4 h-4 text-violet-100" />
                 )}
-                <span>{existingSubmission ? 'Resubmit to Portal' : 'Submit Experiment'}</span>
+                <span>
+                  {existingSubmission
+                    ? existingSubmission.status === 'not_approved'
+                      ? 'Resubmit Corrected Report'
+                      : 'Resubmit to Portal'
+                    : 'Submit Experiment'}
+                </span>
               </button>
 
               <button
@@ -1565,22 +1573,83 @@ export function ReportExportModal() {
             )}
 
             {existingSubmission && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>
-                    <strong>Submitted to Portal:</strong> Already submitted on {new Date(existingSubmission.submitted_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                  </span>
+              existingSubmission.status === 'approved' ? (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <strong className="text-emerald-900 font-bold">Faculty Review Status:</strong>
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-bold text-[10px] uppercase">
+                          Approved ✅
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-emerald-800 mt-0.5 font-sans">
+                        Your experiment report has been verified and approved by faculty. Submitted on {new Date(existingSubmission.submitted_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}.
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={existingSubmission.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-bold text-emerald-800 hover:text-emerald-950 text-[11px] shrink-0"
+                  >
+                    View Approved PDF ↗
+                  </a>
                 </div>
-                <a
-                  href={existingSubmission.pdf_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline font-bold text-emerald-700 hover:text-emerald-900 text-[11px]"
-                >
-                  View Submitted PDF ↗
-                </a>
-              </div>
+              ) : existingSubmission.status === 'not_approved' ? (
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs font-mono space-y-2 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <strong className="text-amber-900 font-bold">Faculty Review Status:</strong>
+                          <span className="px-2 py-0.5 rounded-md bg-amber-200 text-amber-950 font-bold text-[10px] uppercase">
+                            Not Approved (Corrections Required) ⚠️
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <a
+                      href={existingSubmission.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline font-bold text-amber-800 hover:text-amber-950 text-[11px] shrink-0"
+                    >
+                      View Submitted PDF ↗
+                    </a>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-white/80 border border-amber-200 text-[11px] font-sans text-amber-900 space-y-1">
+                    <strong>Faculty Remarks:</strong>
+                    <p className="italic">
+                      "{existingSubmission.faculty_remarks || 'Corrections required. Please review your calculations and meet faculty in the laboratory to obtain approval.'}"
+                    </p>
+                  </div>
+                  <p className="text-[11px] font-sans text-amber-800">
+                    💡 <em>Please make the requested corrections, revise your calculations or graphs, and click <strong>"Resubmit Corrected Report"</strong> or meet your faculty advisor.</em>
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span>
+                      <strong>Submitted to Portal:</strong> Submitted on {new Date(existingSubmission.submitted_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })} <span className="text-slate-500 font-semibold">(Pending Faculty Review ⏳)</span>
+                    </span>
+                  </div>
+                  <a
+                    href={existingSubmission.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-bold text-violet-700 hover:text-violet-900 text-[11px]"
+                  >
+                    View Submitted PDF ↗
+                  </a>
+                </div>
+              )
             )}
 
             {submissionSuccess && (
