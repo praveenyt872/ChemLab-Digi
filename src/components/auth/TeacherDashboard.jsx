@@ -468,7 +468,13 @@ export function TeacherDashboard({ onEnterLab }) {
       gmailComposeUrl: emailRes.gmailComposeUrl
     });
 
-    setEmailDispatchStatus(`Automated email successfully sent to ${emailRes.targetEmail}! Submission marked as Not Approved ⚠️`);
+    if (emailRes.sentDirectly) {
+      setEmailDispatchStatus(`Automated email successfully sent to ${emailRes.targetEmail}! Submission marked as Not Approved ⚠️`);
+    } else if (emailRes.notConfigured) {
+      setEmailDispatchStatus(`Submission marked as Not Approved ⚠️. Click "Open in College Gmail" below to send notification directly from your official college account.`);
+    } else {
+      setEmailDispatchStatus(`Submission marked as Not Approved ⚠️. Email notice prepared for ${emailRes.targetEmail}.`);
+    }
     setIsSendingEmail(false);
   };
 
@@ -1416,7 +1422,7 @@ export function TeacherDashboard({ onEnterLab }) {
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setNotApprovedModalSub(null)}
@@ -1425,7 +1431,40 @@ export function TeacherDashboard({ onEnterLab }) {
                 {emailDispatchStatus ? 'Close' : 'Cancel'}
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Option to send directly from College Google Account */}
+                <a
+                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                    notApprovedModalSub.student_email || `${String(notApprovedModalSub.register_number).toLowerCase().trim()}@rajalakshmi.edu.in`
+                  )}&su=${encodeURIComponent(
+                    `[ChemZ Lab] Corrections Required: ${notApprovedModalSub.experiment_name || notApprovedModalSub.experiment_id} - Not Approved`
+                  )}&body=${encodeURIComponent(
+                    `Dear ${notApprovedModalSub.student_name} (Reg. No: ${notApprovedModalSub.register_number}),\n\nYour submitted experiment report for "${notApprovedModalSub.experiment_name || notApprovedModalSub.experiment_id}" has not been approved by faculty.\n\nFaculty Remarks & Corrections Required:\n"${facultyRemarksInput}"\n\nPlease review your observations and calculations, make the required corrections, and meet the faculty in the laboratory to obtain approval.\n\nDepartment of Chemical Engineering\nRajalakshmi Engineering College`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={async () => {
+                    await updateSubmissionStatus({
+                      submissionId: notApprovedModalSub.id,
+                      status: 'not_approved',
+                      facultyRemarks: facultyRemarksInput,
+                      reviewedBy: user?.email || 'Faculty'
+                    });
+                    setSubmissions(prev => prev.map(s => s.id === notApprovedModalSub.id ? {
+                      ...s,
+                      status: 'not_approved',
+                      faculty_remarks: facultyRemarksInput
+                    } : s));
+                    setEmailDispatchStatus(`Submission marked as Not Approved ⚠️ and opened in College Gmail.`);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 font-semibold text-xs transition-all shadow-2xs"
+                  title="Opens college Gmail directly with pre-composed notice and marks status as Not Approved"
+                >
+                  <Mail className="w-3.5 h-3.5 text-red-500" />
+                  <span>Send via College Gmail</span>
+                </a>
+
+                {/* Automated serverless dispatch button */}
                 <button
                   type="button"
                   onClick={handleConfirmNotApproved}
@@ -1440,7 +1479,7 @@ export function TeacherDashboard({ onEnterLab }) {
                   ) : (
                     <>
                       <Send className="w-3.5 h-3.5" />
-                      <span>Send Email & Mark Not Approved</span>
+                      <span>Send Automated Email</span>
                     </>
                   )}
                 </button>
