@@ -470,8 +470,10 @@ export function TeacherDashboard({ onEnterLab }) {
 
     if (emailRes.sentDirectly) {
       setEmailDispatchStatus(`Automated email successfully sent to ${emailRes.targetEmail}! Submission marked as Not Approved ⚠️`);
+    } else if (emailRes.errorMessage) {
+      setEmailDispatchStatus(`Notice: ${emailRes.errorMessage}`);
     } else if (emailRes.notConfigured) {
-      setEmailDispatchStatus(`Submission marked as Not Approved ⚠️. Click "Open in College Gmail" below to send notification directly from your official college account.`);
+      setEmailDispatchStatus(`Submission marked as Not Approved ⚠️. Click "Send via College Gmail" below to send notification directly from your official college account.`);
     } else {
       setEmailDispatchStatus(`Submission marked as Not Approved ⚠️. Email notice prepared for ${emailRes.targetEmail}.`);
     }

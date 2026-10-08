@@ -159,18 +159,33 @@ ChemZ Lab Digital Laboratory Platform`;
       });
 
       if (brevoRes.ok) {
+        const data = await brevoRes.json().catch(() => ({}));
         return {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             success: true,
             provider: 'brevo',
-            message: `Email dispatched directly to ${targetEmail} via Brevo`
+            message: `Email dispatched directly to ${targetEmail} via Brevo`,
+            messageId: data.messageId
           })
         };
       } else {
         const errorText = await brevoRes.text();
         console.warn('Brevo API error:', brevoRes.status, errorText);
+        let errorJson = {};
+        try { errorJson = JSON.parse(errorText); } catch (_) {}
+        const errorMsg = errorJson.message || errorText;
+        return {
+          statusCode: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            success: false,
+            provider: 'brevo',
+            brevoError: errorMsg,
+            message: `Brevo API (${brevoRes.status}): ${errorMsg}`
+          })
+        };
       }
     }
 
@@ -181,7 +196,7 @@ ChemZ Lab Digital Laboratory Platform`;
       const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${resendKey}`,
+          'Authorization': `Bearer ${resendKey.trim()}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -195,18 +210,39 @@ ChemZ Lab Digital Laboratory Platform`;
       });
 
       if (resendRes.ok) {
+        const data = await resendRes.json().catch(() => ({}));
         return {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             success: true,
             provider: 'resend',
-            message: `Email dispatched directly to ${targetEmail} via Resend`
+            message: `Email dispatched directly to ${targetEmail} via Resend`,
+            id: data.id
           })
         };
       } else {
         const errorText = await resendRes.text();
         console.warn('Resend API error:', resendRes.status, errorText);
+        let errorJson = {};
+        try { errorJson = JSON.parse(errorText); } catch (_) {}
+        const errorMsg = errorJson.message || errorText;
+        
+        let hint = '';
+        if (resendRes.status === 403 || errorMsg.includes('testing emails')) {
+          hint = ' Resend free tier only sends to your own registered email address until a domain is verified. Use Brevo API Key or send via College Gmail.';
+        }
+
+        return {
+          statusCode: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            success: false,
+            provider: 'resend',
+            resendError: `${errorMsg}.${hint}`,
+            message: `Resend Error (${resendRes.status}): ${errorMsg}.${hint}`
+          })
+        };
       }
     }
 

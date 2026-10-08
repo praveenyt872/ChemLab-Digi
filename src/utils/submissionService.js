@@ -594,6 +594,7 @@ ChemZ Lab Digital Laboratory Platform`;
         success: true,
         sentDirectly: Boolean(data.success),
         notConfigured: Boolean(data.notConfigured),
+        errorMessage: data.message || data.resendError || data.brevoError || '',
         targetEmail,
         gmailComposeUrl,
         response: data
