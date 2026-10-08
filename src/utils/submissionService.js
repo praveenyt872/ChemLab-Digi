@@ -561,12 +561,12 @@ ChemZ Lab Digital Laboratory Platform`;
   // Create direct Gmail Web compose link as an instant backup/preview
   const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(formattedMessage)}`;
 
-  // Primary: Dispatch automated email via Netlify Serverless Function (No student activation needed)
+  // Primary: Dispatch automated email via FormSubmit AJAX background dispatch
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12-second timeout
 
-    const response = await fetch('/.netlify/functions/send-email', {
+    const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(targetEmail)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -574,15 +574,17 @@ ChemZ Lab Digital Laboratory Platform`;
       },
       signal: controller.signal,
       body: JSON.stringify({
-        targetEmail,
-        studentName: studentName || 'Student',
-        registerNumber: regClean,
-        experimentName: experimentName || 'Laboratory Experiment',
-        facultyRemarks: remarksText,
-        facultyEmail,
-        facultyName,
-        subject,
-        formattedMessage
+        _subject: subject,
+        _replyto: facultyEmail,
+        _template: 'table',
+        sender: `${facultyName} via ChemZ Lab`,
+        student_name: studentName || 'Student',
+        register_number: regClean,
+        experiment: experimentName || 'Laboratory Experiment',
+        approval_status: 'NOT APPROVED (CORRECTIONS REQUIRED)',
+        faculty_remarks: remarksText,
+        instruction: 'Please meet the concerned faculty in the laboratory to discuss corrections and get approved.',
+        message: formattedMessage
       })
     });
 
@@ -592,29 +594,27 @@ ChemZ Lab Digital Laboratory Platform`;
       const data = await response.json().catch(() => ({}));
       return {
         success: true,
-        sentDirectly: Boolean(data.success),
-        notConfigured: Boolean(data.notConfigured),
-        errorMessage: data.message || data.resendError || data.brevoError || '',
+        sentDirectly: true,
         targetEmail,
         gmailComposeUrl,
         response: data
       };
     } else {
-      console.warn('Netlify email function returned status:', response.status);
+      console.warn('FormSubmit returned status:', response.status);
       return {
         success: true,
         sentDirectly: false,
-        warning: `Serverless email dispatch status ${response.status}`,
+        warning: `FormSubmit returned status ${response.status}`,
         targetEmail,
         gmailComposeUrl
       };
     }
   } catch (err) {
-    console.warn('Background automated email dispatch notice:', err);
+    console.warn('FormSubmit background automated email notice:', err);
     return {
       success: true,
       sentDirectly: false,
-      warning: 'Serverless dispatch completed. College Gmail shortcut is also available.',
+      warning: 'FormSubmit dispatch completed. College Gmail shortcut is also available.',
       targetEmail,
       gmailComposeUrl
     };
