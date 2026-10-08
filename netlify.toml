@@ -6,8 +6,11 @@
 # These values are public by design: Vite inlines VITE_* vars into the client
 # bundle (the Supabase anon key is meant to be exposed to browsers and is
 # protected by Row Level Security), and FRONTEND_URL is a public URL.
+# SUPABASE_URL and SUPABASE_ANON_KEY hold the same public values as their VITE_*
+# counterparts, so they must be omitted too. SUPABASE_SERVICE_ROLE_KEY,
+# JWT_SECRET and BREVO_API_KEY are real secrets and are still scanned.
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,FRONTEND_URL"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,SUPABASE_URL,SUPABASE_ANON_KEY,FRONTEND_URL"
 
 [[redirects]]
   from = "/*"
