@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # These values are public by design: the Supabase URL and anon key are
+  # inlined into the client bundle by Vite (VITE_*), and the URLs/port also
+  # appear in source. Excluding them keeps secrets scanning from failing the
+  # build while still scanning for real secrets (service role key, JWT secret).
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,SUPABASE_URL,SUPABASE_ANON_KEY,FRONTEND_URL,PORT"
