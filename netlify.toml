@@ -3,6 +3,12 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# These values are public by design: Vite inlines VITE_* vars into the client
+# bundle (the Supabase anon key is meant to be exposed to browsers and is
+# protected by Row Level Security), and FRONTEND_URL is a public URL.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,FRONTEND_URL"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
