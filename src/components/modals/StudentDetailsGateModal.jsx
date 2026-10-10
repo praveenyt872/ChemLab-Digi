@@ -86,6 +86,7 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
 
   const handleSubjectChange = (e) => {
     const newSubKey = e.target.value;
+    if (newSubKey !== 'fluid_mechanics') return; // Only fluid mechanics is open
     setSelectedSubjectKey(newSubKey);
     setSubject(newSubKey);
     const subInfo = SUBJECTS_CONFIG[newSubKey];
@@ -384,8 +385,13 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
                             className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono text-violet-900 font-bold focus:border-violet-500 appearance-none cursor-pointer pr-10 shadow-sm"
                           >
                             {Object.entries(SUBJECTS_CONFIG).map(([key, subj]) => (
-                              <option key={key} value={key} className="bg-white text-slate-900 font-mono">
-                                {subj.courseTitle} ({subj.courseCode}) — {subj.name}
+                              <option
+                                key={key}
+                                value={key}
+                                disabled={key !== 'fluid_mechanics'}
+                                className={`bg-white font-mono ${key !== 'fluid_mechanics' ? 'text-slate-400' : 'text-slate-900'}`}
+                              >
+                                {subj.courseTitle} ({subj.courseCode}) — {subj.name} {key !== 'fluid_mechanics' ? '🔒 (Locked)' : ''}
                               </option>
                             ))}
                           </select>

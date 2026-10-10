@@ -38,9 +38,9 @@ export const ALL_FACULTY_LIST = [
   { name: 'Jeffith Manohar E', email: 'jeffithmanohar.e.2024.chem@rajalakshmi.edu.in', designation: 'Zynix Team' },
   { name: 'Jeffith Manohar E', email: 'jeffithmanohar@gmail.com', designation: 'Zynix Team' },
   { name: 'Praveen R', email: 'praveen.r.2024.chem@rajalakshmi.edu.in', designation: 'Website Builder' },
-  { name: 'Shrivarshini N', email: 'shrivarshini.n.2024.chem@rajalakshmi.edu.in', designation: 'Website Builder' },
-  { name: 'Samyuktha G', email: 'samyuktha.g.2024.chem@rajalakshmi.edu.in', designation: 'Website Builder' },
-  { name: 'Rahealcatherine V', email: 'rahealcatherine.v.2024.chem@rajalakshmi.edu.in', designation: 'Website Builder' },
+  { name: 'Shrivarshini N', email: 'shrivarshini.n.2024.chem@rajalakshmi.edu.in', designation: 'Zynix Team' },
+  { name: 'Samyuktha G', email: 'samyuktha.g.2024.chem@rajalakshmi.edu.in', designation: 'Zynix Team' },
+  { name: 'Rahealcatherine V', email: 'rahealcatherine.v.2024.chem@rajalakshmi.edu.in', designation: 'Zynix Team' },
   { name: 'Administrator (Praveen)', email: 'praveenyt872@gmail.com', designation: 'System Administrator' }
 ];
 

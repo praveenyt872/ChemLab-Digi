@@ -13,6 +13,7 @@ export function SubjectSelectPage({ onNavigate }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectSubject = (subId) => {
+    if (subId !== 'fluid_mechanics') return; // Strict lock: Only fluid mechanics is open
     setSubject(subId);
     if (authRole !== 'teacher' && (!studentDetails?.studentName || !studentDetails?.registerNumber || !isValidRajalakshmiEmail(studentDetails?.email))) {
       setStudentGateOpen(true);
@@ -38,7 +39,7 @@ export function SubjectSelectPage({ onNavigate }) {
       id: 'instrumentation-process-control',
       name: 'Process Control Lab',
       icon: <Gauge className="w-6 h-6 text-cyan-300" />,
-      active: true,
+      active: false,
       experimentsCount: 1,
       category: 'Process Control & Systems',
       desc: 'Response of first-order thermal system (Step & Sinusoidal input), time constant determination, AR, phase lag, and PID tuning.',
@@ -48,7 +49,7 @@ export function SubjectSelectPage({ onNavigate }) {
       id: 'heat_transfer',
       name: 'Heat Transfer',
       icon: <Flame className="w-6 h-6 text-amber-300" />,
-      active: true,
+      active: false,
       experimentsCount: 1,
       category: 'Thermal Operations',
       desc: 'Free convection over vertical cylinder, overall heat transfer coefficient h, and thermal calculations.',
@@ -67,7 +68,7 @@ export function SubjectSelectPage({ onNavigate }) {
       id: 'reaction_eng',
       name: 'Chemical Reaction Engineering',
       icon: <Atom className="w-6 h-6 text-violet-300" />,
-      active: true,
+      active: false,
       experimentsCount: 1,
       category: 'Kinetics & Reactor Design',
       desc: 'Continuous Stirred Tank Reactor (CSTR) non-ideality, impulse tracer injection, and RTD exit-age E curve.',

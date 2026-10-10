@@ -387,7 +387,8 @@ export const useExperimentStore = create((set, get) => ({
   // --- ACTIONS ---
 
   setSubject: (subjectId) => {
-    set({ currentSubject: subjectId });
+    // Only fluid mechanics lab is unlocked; lock all other modules
+    set({ currentSubject: subjectId === 'fluid_mechanics' ? 'fluid_mechanics' : 'fluid_mechanics' });
   },
 
   setExperiment: (expId) => {
