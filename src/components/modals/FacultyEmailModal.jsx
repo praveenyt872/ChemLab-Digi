@@ -56,8 +56,8 @@ STUDENT & INSTITUTIONAL IDENTIFICATION
 • Official Email     : ${studentDetails?.email || '—'}
 • Department         : Department of Chemical Engineering
 • College            : Rajalakshmi Engineering College, Chennai
-• Academic Year      : ${studentDetails?.academicYear || '2027-2028'}
-• Semester & Section : Semester ${studentDetails?.semester || 'VII'}, Section ${studentDetails?.section || 'B'}
+• Academic Year      : ${studentDetails?.academicYear || '—'}
+• Semester & Section : Semester ${studentDetails?.semester || 'III'}, Section ${studentDetails?.section || 'A'}
 
 ==================================================
 EXPERIMENT DETAILS

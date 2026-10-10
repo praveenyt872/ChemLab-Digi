@@ -189,8 +189,8 @@ export function ReportExportModal() {
     courseCode: 'CH23331',
     courseTitle: 'Fluid Mechanics Lab',
     field: 'Chemical Engineering',
-    semester: 'VII',
-    section: 'B'
+    semester: 'III',
+    section: 'A'
   };
 
   const subjectInfo = (SUBJECTS_CONFIG && (SUBJECTS_CONFIG[currentSubject] || SUBJECTS_CONFIG[experimentConfig?.subject])) || SUBJECTS_CONFIG?.fluid_mechanics || defaultSubjectInfo;
@@ -1772,7 +1772,7 @@ export function ReportExportModal() {
                   </tr>
                   <tr>
                     <td className="p-1.5 font-bold border-r border-black bg-gray-50">Academic Year</td>
-                    <td className="p-1.5 text-black">{studentDetails?.academicYear || '2027-2028'}</td>
+                    <td className="p-1.5 text-black">{studentDetails?.academicYear || '—'}</td>
                   </tr>
                   <tr>
                     <td className="p-1.5 font-bold border-r border-black bg-gray-50">Semester</td>

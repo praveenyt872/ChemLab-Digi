@@ -181,11 +181,20 @@ const loadInitialStudentDetails = () => {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.studentName && parsed.registerNumber) {
+        if (parsed.academicYear === '2027-2028') {
+          parsed.academicYear = '';
+        }
+        if (parsed.semester === 'VII') {
+          parsed.semester = 'III';
+        }
+        if (parsed.section === 'B') {
+          parsed.section = 'A';
+        }
         return {
           email: '',
-          academicYear: '2027-2028',
-          semester: 'VII',
-          section: 'B',
+          academicYear: '',
+          semester: 'III',
+          section: 'A',
           ...parsed
         };
       }
@@ -197,9 +206,9 @@ const loadInitialStudentDetails = () => {
     studentName: '',
     registerNumber: '',
     email: '',
-    academicYear: '2027-2028',
-    semester: 'VII',
-    section: 'B'
+    academicYear: '',
+    semester: 'III',
+    section: 'A'
   };
 };
 
@@ -996,9 +1005,9 @@ export const useExperimentStore = create((set, get) => ({
         studentName: '',
         registerNumber: '',
         email: '',
-        academicYear: '2027-2028',
-        semester: 'VII',
-        section: 'B'
+        academicYear: '',
+        semester: 'III',
+        section: 'A'
       },
       isStudentGateOpen: true
     });

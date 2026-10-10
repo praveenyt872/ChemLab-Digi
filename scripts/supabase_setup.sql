@@ -25,6 +25,7 @@ ALTER TABLE teacher_whitelist ADD COLUMN IF NOT EXISTS updated_at timestamptz DE
 INSERT INTO teacher_whitelist (email) VALUES
   ('hod.chem@rajalakshmi.edu.in'),
   ('jeffithmanohar.e.2024.chem@rajalakshmi.edu.in'),
+  ('jeffithmanohar@gmail.com'),
   ('praveenyt872@gmail.com'),
   ('praveen.r.2024.chem@rajalakshmi.edu.in'),
   ('shrivarshini.n.2024.chem@rajalakshmi.edu.in'),

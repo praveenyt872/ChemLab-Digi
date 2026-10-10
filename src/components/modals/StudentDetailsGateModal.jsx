@@ -49,10 +49,16 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
   const [selectedSubjectKey, setSelectedSubjectKey] = useState(currentSubject || 'fluid_mechanics');
   const [name, setName] = useState(studentDetails?.studentName || '');
   const [regNo, setRegNo] = useState(studentDetails?.registerNumber || '');
-  const [acadYear, setAcadYear] = useState(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
+  const [acadYear, setAcadYear] = useState(
+    (studentDetails?.academicYear && studentDetails.academicYear !== '2027-2028') ? studentDetails.academicYear : ''
+  );
   const activeSubjectInfo = SUBJECTS_CONFIG[selectedSubjectKey] || SUBJECTS_CONFIG.fluid_mechanics;
-  const [semester, setSemester] = useState(studentDetails?.semester || activeSubjectInfo?.semester || 'VII');
-  const [section, setSection] = useState(studentDetails?.section || activeSubjectInfo?.section || 'B');
+  const [semester, setSemester] = useState(
+    (studentDetails?.semester && studentDetails.semester !== 'VII') ? studentDetails.semester : (activeSubjectInfo?.semester || 'III')
+  );
+  const [section, setSection] = useState(
+    (studentDetails?.section && studentDetails.section !== 'B') ? studentDetails.section : (activeSubjectInfo?.section || 'A')
+  );
   const [localStudentError, setLocalStudentError] = useState('');
 
   // Teacher Form State
@@ -64,9 +70,15 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
   useEffect(() => {
     setName(studentDetails?.studentName || '');
     setRegNo(studentDetails?.registerNumber || '');
-    setAcadYear(studentDetails?.academicYear || GLOBAL_APP_CONFIG.defaultAcademicYear);
-    setSemester(studentDetails?.semester || activeSubjectInfo?.semester || 'VII');
-    setSection(studentDetails?.section || activeSubjectInfo?.section || 'B');
+    setAcadYear(
+      (studentDetails?.academicYear && studentDetails.academicYear !== '2027-2028') ? studentDetails.academicYear : ''
+    );
+    setSemester(
+      (studentDetails?.semester && studentDetails.semester !== 'VII') ? studentDetails.semester : (activeSubjectInfo?.semester || 'III')
+    );
+    setSection(
+      (studentDetails?.section && studentDetails.section !== 'B') ? studentDetails.section : (activeSubjectInfo?.section || 'A')
+    );
     setSelectedSubjectKey(currentSubject || 'fluid_mechanics');
   }, [studentDetails, isStudentGateOpen, currentSubject]);
 
@@ -107,17 +119,13 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
       setLocalStudentError('Please enter your Register Number.');
       return;
     }
-    if (!acadYear.trim()) {
-      setLocalStudentError('Please enter the Academic Year.');
-      return;
-    }
 
     const details = {
       ...studentDetails,
       studentName: name.trim(),
       registerNumber: regNo.trim(),
       email: studentDetails.email,
-      academicYear: acadYear.trim(),
+      academicYear: (acadYear || '').trim(),
       semester,
       section,
       isGoogleVerified: true
@@ -490,15 +498,13 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
                       {/* Academic Year */}
                       <div className="space-y-1">
                         <label className="text-xs font-mono text-slate-700 flex items-center justify-between font-semibold">
-                          <span>Academic Year <span className="text-violet-600">*</span></span>
-                          <span className="text-[10px] text-slate-400">e.g. 2027-2028</span>
+                          <span>Academic Year</span>
                         </label>
                         <input
                           type="text"
-                          required
                           value={acadYear}
                           onChange={(e) => setAcadYear(e.target.value)}
-                          placeholder="e.g. 2027-2028"
+                          placeholder=""
                           className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono text-slate-900 focus:border-violet-500 shadow-sm"
                         />
                       </div>
@@ -554,7 +560,7 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
                       <Mail className="w-3.5 h-3.5 text-violet-600" />
                       <span>Registered Faculty Email ID <span className="text-violet-600">*</span></span>
                     </span>
-                    <span className="text-[10px] text-violet-600 font-semibold">17 Registered Faculty</span>
+                    <span className="text-[10px] text-violet-600 font-semibold">{ALL_FACULTY_LIST.length} Authorized Accounts</span>
                   </label>
                   
                   {/* Select from faculty list or type */}
@@ -570,7 +576,7 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
                     />
                     <datalist id="faculty-emails-list">
                       {ALL_FACULTY_LIST.map((fac) => (
-                        <option key={fac.email} value={fac.email}>
+                        <option key={fac.email} value={fac.email} label={`${fac.name} (${fac.designation})`}>
                           {fac.name} ({fac.designation})
                         </option>
                       ))}

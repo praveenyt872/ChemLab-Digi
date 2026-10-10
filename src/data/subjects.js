@@ -5,8 +5,8 @@ export const SUBJECTS_CONFIG = {
     courseCode: 'CH23331',
     courseTitle: 'Fluid Mechanics Lab',
     field: 'Chemical Engineering',
-    semester: 'VII',
-    section: 'B'
+    semester: 'III',
+    section: 'A'
   },
   'instrumentation-process-control': {
     id: 'instrumentation-process-control',
@@ -14,8 +14,8 @@ export const SUBJECTS_CONFIG = {
     courseCode: 'CH23722',
     courseTitle: 'Process Control Lab',
     field: 'Chemical Engineering',
-    semester: 'VII',
-    section: 'B'
+    semester: 'III',
+    section: 'A'
   },
   heat_transfer: {
     id: 'heat_transfer',
@@ -23,7 +23,7 @@ export const SUBJECTS_CONFIG = {
     courseCode: 'CH23521',
     courseTitle: 'Heat Transfer Lab',
     field: 'Chemical Engineering',
-    semester: 'V',
+    semester: 'III',
     section: 'A'
   },
   mass_transfer: {
@@ -32,8 +32,8 @@ export const SUBJECTS_CONFIG = {
     courseCode: 'CH23333',
     courseTitle: 'Mass Transfer Lab',
     field: 'Chemical Engineering',
-    semester: 'VII',
-    section: 'B'
+    semester: 'III',
+    section: 'A'
   },
   reaction_eng: {
     id: 'reaction_eng',
@@ -41,8 +41,8 @@ export const SUBJECTS_CONFIG = {
     courseCode: 'CH23334',
     courseTitle: 'Reaction Engineering Lab',
     field: 'Chemical Engineering',
-    semester: 'VII',
-    section: 'B'
+    semester: 'III',
+    section: 'A'
   },
   mechanical_ops: {
     id: 'mechanical_ops',
@@ -50,14 +50,14 @@ export const SUBJECTS_CONFIG = {
     courseCode: 'CH23335',
     courseTitle: 'Particle Science and Technology Lab',
     field: 'Chemical Engineering',
-    semester: 'VII',
-    section: 'B'
+    semester: 'III',
+    section: 'A'
   }
 };
 
 export const GLOBAL_APP_CONFIG = {
   field: 'Chemical Engineering',
-  semester: 'VII',
-  section: 'B',
-  defaultAcademicYear: '2027-2028'
+  semester: 'III',
+  section: 'A',
+  defaultAcademicYear: ''
 };
