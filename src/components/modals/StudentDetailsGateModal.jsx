@@ -120,13 +120,17 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
       setLocalStudentError('Please enter your Register Number.');
       return;
     }
+    if (!acadYear.trim()) {
+      setLocalStudentError('Please enter the Academic Year.');
+      return;
+    }
 
     const details = {
       ...studentDetails,
       studentName: name.trim(),
       registerNumber: regNo.trim(),
       email: studentDetails.email,
-      academicYear: (acadYear || '').trim(),
+      academicYear: acadYear.trim(),
       semester,
       section,
       isGoogleVerified: true
@@ -504,10 +508,11 @@ export function StudentDetailsGateModal({ onProceed, onProceedTeacher }) {
                       {/* Academic Year */}
                       <div className="space-y-1">
                         <label className="text-xs font-mono text-slate-700 flex items-center justify-between font-semibold">
-                          <span>Academic Year</span>
+                          <span>Academic Year <span className="text-violet-600">*</span></span>
                         </label>
                         <input
                           type="text"
+                          required
                           value={acadYear}
                           onChange={(e) => setAcadYear(e.target.value)}
                           placeholder=""
