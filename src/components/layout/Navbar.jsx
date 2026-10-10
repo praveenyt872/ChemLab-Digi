@@ -4,7 +4,7 @@ import { useExperimentStore } from '../../store/experimentStore';
 import { useAuthStore } from '../../store/authStore';
 import { ScrollProgress } from '../common/ScrollProgress';
 import { OfflineBadge } from '../pwa/OfflineBadge';
-import { isValidRajalakshmiEmail } from '../../data/faculty';
+import { isValidRajalakshmiEmail, ALL_FACULTY_LIST } from '../../data/faculty';
 import recLogo from '../../assets/rec-logo.png';
 
 export function Navbar({ currentPage, onNavigate }) {
@@ -92,32 +92,38 @@ export function Navbar({ currentPage, onNavigate }) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3 shrink-0">
-          {useAuthStore.getState().role === 'teacher' && useAuthStore.getState().user?.email ? (
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => onNavigate('teacher_dashboard')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-violet-500/40 text-xs font-mono text-slate-200 transition-all cursor-pointer text-left"
-                title={`Logged in as Faculty: ${useAuthStore.getState().user.email}. Click to open Teacher Dashboard.`}
-              >
-                <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-[10px] uppercase">
-                  F
-                </div>
-                <div className="text-left hidden sm:block">
-                  <span className="font-semibold text-white block text-[11px] leading-tight max-w-[130px] truncate">{useAuthStore.getState().user.email}</span>
-                  <span className="text-[9px] text-violet-400 block font-mono">Department Faculty</span>
-                </div>
-              </button>
-              <button
-                onClick={async () => {
-                  await useAuthStore.getState().logout();
-                }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all cursor-pointer"
-                title="Sign out of faculty account"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : studentDetails?.studentName && isValidRajalakshmiEmail(studentDetails?.email) ? (
+          {useAuthStore.getState().role === 'teacher' && useAuthStore.getState().user?.email ? (() => {
+            const teacherEmail = useAuthStore.getState().user.email;
+            const matchedFaculty = ALL_FACULTY_LIST.find(f => f.email?.toLowerCase() === teacherEmail.toLowerCase());
+            const teacherName = matchedFaculty?.name || useAuthStore.getState().user.name || teacherEmail.split('@')[0];
+            const teacherRole = matchedFaculty?.designation || 'Department Faculty';
+            return (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onNavigate('teacher_dashboard')}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-violet-500/40 text-xs font-mono text-slate-200 transition-all cursor-pointer text-left"
+                  title={`Logged in as: ${teacherName} (${teacherEmail}). Click to open Teacher Dashboard.`}
+                >
+                  <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-[10px] uppercase">
+                    {teacherName.charAt(0) || 'F'}
+                  </div>
+                  <div className="text-left hidden sm:block">
+                    <span className="font-semibold text-white block text-[11px] leading-tight max-w-[150px] truncate">{teacherName}</span>
+                    <span className="text-[9px] text-violet-400 block font-mono">{teacherRole}</span>
+                  </div>
+                </button>
+                <button
+                  onClick={async () => {
+                    await useAuthStore.getState().logout();
+                  }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all cursor-pointer"
+                  title="Sign out of faculty account"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })() : studentDetails?.studentName && isValidRajalakshmiEmail(studentDetails?.email) ? (
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setStudentGateOpen(true)}

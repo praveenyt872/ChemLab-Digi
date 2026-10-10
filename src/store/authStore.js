@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../utils/supabaseClient';
 import bcrypt from 'bcryptjs';
-import { isValidRajalakshmiEmail, TEACHER_WHITELIST, UNIVERSAL_TEACHER_PASSWORD } from '../data/faculty';
+import { isValidRajalakshmiEmail, TEACHER_WHITELIST, UNIVERSAL_TEACHER_PASSWORD, ALL_FACULTY_LIST } from '../data/faculty';
 import { useExperimentStore } from './experimentStore';
 
 const normEmail = (email) => (email || '').trim().toLowerCase();
@@ -65,8 +65,15 @@ export const useAuthStore = create((set, get) => ({
       if (savedTeacher) {
         const teacherObj = JSON.parse(savedTeacher);
         if (teacherObj && teacherObj.email) {
+          const matchedFaculty = ALL_FACULTY_LIST.find(f => f.email?.toLowerCase() === teacherObj.email.toLowerCase());
+          const facultyName = matchedFaculty?.name || teacherObj.name || teacherObj.email.split('@')[0];
           set({
-            user: { email: teacherObj.email, role: 'teacher' },
+            user: {
+              email: teacherObj.email,
+              role: 'teacher',
+              name: facultyName,
+              designation: matchedFaculty?.designation || teacherObj.designation || 'Faculty In-Charge'
+            },
             role: 'teacher',
             isVerifiedStudent: true,
             authLoading: false
@@ -511,7 +518,14 @@ export const useAuthStore = create((set, get) => ({
 
     // Universal 6-digit department access password for all registered faculty
     if (password.trim() === UNIVERSAL_TEACHER_PASSWORD) {
-      const teacherUser = { email: cleanEmail, role: 'teacher' };
+      const matchedFaculty = ALL_FACULTY_LIST.find(f => f.email?.toLowerCase() === cleanEmail);
+      const facultyName = matchedFaculty?.name || cleanEmail.split('@')[0];
+      const teacherUser = {
+        email: cleanEmail,
+        role: 'teacher',
+        name: facultyName,
+        designation: matchedFaculty?.designation || 'Faculty In-Charge'
+      };
       localStorage.setItem('chemlab_teacher_session', JSON.stringify(teacherUser));
 
       set({

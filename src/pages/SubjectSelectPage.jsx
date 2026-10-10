@@ -5,11 +5,12 @@ import { useExperimentStore } from '../store/experimentStore';
 import { useAuthStore } from '../store/authStore';
 import { SUBJECT_THEMES } from '../components/common/SubjectCardTheme';
 import { ThemedSubjectCard } from '../components/common/ThemedSubjectCard';
-import { isValidRajalakshmiEmail } from '../data/faculty';
+import { isValidRajalakshmiEmail, ALL_FACULTY_LIST } from '../data/faculty';
 
 export function SubjectSelectPage({ onNavigate }) {
   const { setSubject, studentDetails, setStudentGateOpen } = useExperimentStore();
   const authRole = useAuthStore((s) => s.role);
+  const authUser = useAuthStore((s) => s.user);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectSubject = (subId) => {
@@ -21,7 +22,23 @@ export function SubjectSelectPage({ onNavigate }) {
     onNavigate('experiment');
   };
 
-  const studentName = studentDetails?.studentName || 'Student';
+  // Automatically lookup actual name for teacher from logged-in email
+  const matchedFaculty = (authRole === 'teacher' && authUser?.email)
+    ? ALL_FACULTY_LIST.find(f => f.email?.toLowerCase() === authUser.email.toLowerCase())
+    : null;
+
+  const greetingName = authRole === 'teacher'
+    ? (matchedFaculty?.name || authUser?.name || 'Faculty In-Charge')
+    : (studentDetails?.studentName || 'Student');
+
+  const roleSubtitle = authRole === 'teacher'
+    ? "Here's your virtual chemical engineering lab supervision & experiment workspace overview."
+    : "Here's your virtual chemical engineering lab progress & experiment workspace overview.";
+
+  const badgeText = authRole === 'teacher'
+    ? `Role: ${matchedFaculty?.designation || 'Faculty In-Charge'}`
+    : 'Field: Chemical Engineering (CH23331 / CH23722)';
+
   const hasStudentDetails = Boolean(studentDetails?.studentName && studentDetails?.registerNumber);
 
   const rawSubjects = [
@@ -103,16 +120,16 @@ export function SubjectSelectPage({ onNavigate }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Hi, {studentName} 👋
+            Hi, {greetingName} 👋
           </h1>
           <p className="text-sm text-slate-600 font-sans font-medium mt-1">
-            Here's your virtual chemical engineering lab progress & experiment workspace overview.
+            {roleSubtitle}
           </p>
         </div>
-        {hasStudentDetails && (
+        {(hasStudentDetails || authRole === 'teacher') && (
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono font-bold px-3.5 py-1.5 rounded-xl bg-violet-100/90 text-violet-800 border border-violet-200 shadow-xs">
-              Field: Chemical Engineering (CH23331 / CH23722)
+              {badgeText}
             </span>
           </div>
         )}
